@@ -1,0 +1,68 @@
+# Quick Translate
+
+Ứng dụng desktop chạy nền: bôi đen văn bản ở bất kỳ phần mềm nào, bản dịch hiện trong popup ngay tại vùng bôi đen. Mặc định dịch Anh ↔ Việt.
+
+## Cách dùng
+
+| Thao tác | Kết quả |
+|---|---|
+| Bôi đen (kéo chuột, double-click, triple-click) rồi bấm biểu tượng nhỏ cạnh con trỏ | Dịch vùng bôi đen |
+| `Alt+Q` | Dịch vùng bôi đen, không cần bấm biểu tượng |
+| `Alt+W` rồi kéo một hình chữ nhật | Dịch chữ trong vùng màn hình (OCR), dùng cho ảnh, PDF scan |
+| Bấm một từ trong phần văn bản gốc của popup | Tra riêng từ đó |
+| Giữ `Ctrl` và rê chuột lên một từ (bật trong Cài đặt) | Dịch từ dưới con trỏ, chỉ ở ứng dụng hỗ trợ |
+| Chuột phải biểu tượng ở khay hệ thống | Cài đặt, bật/tắt tự hiện biểu tượng, thoát |
+
+Tra một từ tiếng Anh thì popup có thêm nghĩa theo từ loại, phiên âm, định nghĩa tiếng Anh và nút mở từ điển Cambridge / Oxford.
+
+## Engine dịch
+
+1. **Google** (mặc định): không cần key, cần mạng.
+2. **Offline**: model Opus-MT chạy trên máy, không cần mạng hay key. Tải model trong Cài đặt → Engine dịch (khoảng 107 MB mỗi chiều). Khi engine chính lỗi (ví dụ mất mạng), ứng dụng tự chuyển sang offline.
+3. **Claude, DeepL**: chỉ dùng khi bạn nhập API key; là dự phòng sau offline.
+
+Offline dịch câu tốt. Từ đơn lẻ được tra trong danh sách từ Anh–Việt đóng gói sẵn (khoảng 7.500 mục từ Wiktionary, CC BY-SA 3.0, xem `src-tauri/data/NOTICE.md`); từ không có trong danh sách thì dịch bằng model và kém chính xác hơn.
+
+## Phát triển
+
+Cần Node 20+, pnpm, Rust (stable) và trên Windows là MSVC Build Tools + WebView2.
+
+```bash
+pnpm install
+```
+
+```bash
+pnpm tauri dev
+```
+
+```bash
+pnpm tauri build
+```
+
+Test:
+
+```bash
+cd src-tauri && cargo test
+```
+
+Test dịch offline thật (tải khoảng 210 MB model vào thư mục tạm):
+
+```bash
+cd src-tauri && cargo test offline_end_to_end -- --ignored --nocapture
+```
+
+## Cấu trúc
+
+- `src-tauri/src/platform/`: phần riêng từng hệ điều hành (đọc vùng bôi đen, hook chuột, cửa sổ nổi, OCR). Windows đầy đủ; macOS mới có phần đọc vùng bôi đen và theo dõi chuột, chưa chạy thử.
+- `src-tauri/src/engine/`: các engine dịch và từ điển.
+- `src-tauri/src/popup.rs`, `trigger.rs`, `capture.rs`: popup, nhận diện thao tác bôi đen, chọn vùng OCR.
+- `src/`: giao diện React (popup, lớp chọn vùng, cài đặt).
+- `docs/PLAN.md`, `docs/memory/PROGRESS.md`: kế hoạch và tiến độ.
+
+## Giới hạn hiện tại
+
+- Mới kiểm chứng trên Windows. Phần macOS đã viết nhưng chưa build và chưa chạy thử; chưa có OCR và hover trên macOS.
+- Trong app Electron/Chromium, popup đặt theo con trỏ chứ không theo toạ độ chính xác của vùng bôi đen.
+- Không hoạt động trên cửa sổ chạy quyền admin trừ khi Quick Translate cũng chạy quyền admin.
+- OCR dùng các gói ngôn ngữ OCR đã cài trong Windows.
+- API key lưu dạng văn bản thường trong `%APPDATA%\com.quicktranslate.app\settings.json`.

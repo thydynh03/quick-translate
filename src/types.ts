@@ -1,0 +1,81 @@
+export type DictEntry = { pos: string; terms: string[] };
+
+export type Translation = {
+  text: string;
+  from: string;
+  to: string;
+  engine: string;
+  phonetic: string | null;
+  dict: DictEntry[];
+  definitions: DictEntry[];
+  note: string | null;
+};
+
+export type PopupState =
+  | { mode: "hidden" }
+  | { mode: "icon" }
+  | { mode: "loading"; source: string }
+  | { mode: "result"; source: string; result: Translation }
+  | { mode: "error"; source: string; message: string };
+
+export type Settings = {
+  hotkey: string;
+  ocr_hotkey: string;
+  auto_trigger: boolean;
+  hover_translate: boolean;
+  engine: string;
+  fallback_offline: boolean;
+  primary_lang: string;
+  secondary_lang: string;
+  deepl_key: string;
+  anthropic_key: string;
+  excluded_apps: string[];
+  save_history: boolean;
+  english_definitions: boolean;
+  oxford_app_id: string;
+  oxford_app_key: string;
+};
+
+export type HistoryEntry = {
+  at: number;
+  source: string;
+  text: string;
+  from: string;
+  to: string;
+  engine: string;
+};
+
+export const LANGUAGES: [string, string][] = [
+  ["vi", "Tiếng Việt"],
+  ["en", "Tiếng Anh"],
+  ["ja", "Tiếng Nhật"],
+  ["ko", "Tiếng Hàn"],
+  ["zh", "Tiếng Trung"],
+  ["fr", "Tiếng Pháp"],
+  ["de", "Tiếng Đức"],
+  ["es", "Tiếng Tây Ban Nha"],
+  ["pt", "Tiếng Bồ Đào Nha"],
+  ["it", "Tiếng Ý"],
+  ["ru", "Tiếng Nga"],
+  ["th", "Tiếng Thái"],
+  ["id", "Tiếng Indonesia"],
+  ["ms", "Tiếng Mã Lai"],
+  ["hi", "Tiếng Hindi"],
+  ["ar", "Tiếng Ả Rập"],
+  ["tr", "Tiếng Thổ Nhĩ Kỳ"],
+  ["nl", "Tiếng Hà Lan"],
+  ["pl", "Tiếng Ba Lan"],
+  ["uk", "Tiếng Ukraina"],
+];
+
+export const ENGINE_NAMES: Record<string, string> = {
+  google: "Google",
+  deepl: "DeepL",
+  claude: "Claude",
+  offline: "Offline",
+};
+
+export function langName(code: string): string {
+  const base = code.toLowerCase().split("-")[0];
+  return LANGUAGES.find(([c]) => c === base)?.[1] ?? code.toUpperCase();
+}
