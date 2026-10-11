@@ -8,11 +8,10 @@
   const platform = navigator.userAgentData?.platform || navigator.platform || "";
   const touch = /Android|iPhone|iPad/i.test(navigator.userAgent) || (/Mac/i.test(platform) && navigator.maxTouchPoints > 1);
   const os = touch ? "" : /Win/i.test(platform) ? "windows" : /Mac/i.test(platform) ? "mac" : "";
-  const primary = document.querySelector("[data-download]");
-  const match = os && document.querySelector(`[data-os="${os}"] a.btn`);
-  if (primary && match) {
-    primary.href = match.href;
-    primary.textContent = os === "windows" ? "Tải cho Windows" : "Tải cho macOS";
+  // The visitor's own system gets the filled button; the other one stays secondary.
+  if (os === "mac") {
+    document.querySelector('[data-hero="mac"]')?.classList.remove("ghost");
+    document.querySelector('[data-hero="windows"]')?.classList.add("ghost");
   }
 
   const megabytes = (bytes) => (bytes / 1048576).toFixed(1).replace(".", ",") + " MB";

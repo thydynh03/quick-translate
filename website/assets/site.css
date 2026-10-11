@@ -192,6 +192,11 @@ kbd {
   box-shadow: 0 10px 24px -12px var(--accent);
 }
 
+.btn.ghost {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
 .btn.small {
   padding: 0.5em 1.1em;
   font-size: 0.95rem;
@@ -237,7 +242,7 @@ kbd {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 24px;
+  gap: 14px;
   margin: 34px 0 16px;
 }
 
