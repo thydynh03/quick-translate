@@ -2,6 +2,17 @@
 
 Ứng dụng desktop chạy nền: bôi đen văn bản ở bất kỳ phần mềm nào, bản dịch hiện trong popup ngay tại vùng bôi đen. Mặc định dịch Anh ↔ Việt.
 
+**Trang giới thiệu và tải về:** https://thydynh03.github.io/quick-translate/ · [Tài liệu](https://thydynh03.github.io/quick-translate/docs.html) · [Giấy phép](LICENSE)
+
+## Tải về
+
+| Hệ điều hành | Tệp | Ghi chú |
+|---|---|---|
+| Windows 10/11 x64 | [QuickTranslate-Setup-x64.exe](https://github.com/thydynh03/quick-translate/releases/latest/download/QuickTranslate-Setup-x64.exe) | Đầy đủ tính năng |
+| macOS 11+ (chip Apple) | [QuickTranslate-macOS-AppleSilicon.dmg](https://github.com/thydynh03/quick-translate/releases/latest/download/QuickTranslate-macOS-AppleSilicon.dmg) | Thử nghiệm: chưa có OCR và hover |
+
+Bộ cài chưa ký số, hệ điều hành sẽ cảnh báo khi mở lần đầu; xem hướng dẫn trong trang tài liệu.
+
 ## Cách dùng
 
 | Thao tác | Kết quả |
@@ -57,12 +68,18 @@ cd src-tauri && cargo test offline_end_to_end -- --ignored --nocapture
 - `src-tauri/src/engine/`: các engine dịch và từ điển.
 - `src-tauri/src/popup.rs`, `trigger.rs`, `capture.rs`: popup, nhận diện thao tác bôi đen, chọn vùng OCR.
 - `src/`: giao diện React (popup, lớp chọn vùng, cài đặt).
-- `docs/PLAN.md`, `docs/memory/PROGRESS.md`: kế hoạch và tiến độ.
+- `website/`: trang giới thiệu tĩnh, triển khai lên GitHub Pages bằng workflow `website`.
+- `.github/workflows/`: `build` (test trên Windows + macOS), `release` (đẩy tag `v*` để dựng và phát hành bộ cài), `website`.
+- `docs/PLAN.md`, `docs/memory/`: kế hoạch, tiến độ, bài học, quyết định.
 
 ## Giới hạn hiện tại
 
-- Mới kiểm chứng trên Windows. Phần macOS đã viết nhưng chưa build và chưa chạy thử; chưa có OCR và hover trên macOS.
+- Mới chạy thử thật trên Windows. Bản macOS build và qua test trên GitHub Actions nhưng chưa được chạy thử trên máy Mac thật; chưa có OCR và hover trên macOS.
 - Trong app Electron/Chromium, popup đặt theo con trỏ chứ không theo toạ độ chính xác của vùng bôi đen.
 - Không hoạt động trên cửa sổ chạy quyền admin trừ khi Quick Translate cũng chạy quyền admin.
 - OCR dùng các gói ngôn ngữ OCR đã cài trong Windows.
 - API key lưu dạng văn bản thường trong `%APPDATA%\com.quicktranslate.app\settings.json`.
+
+## Giấy phép
+
+MIT, © 2026 thydynh03. Xem [LICENSE](LICENSE). Danh sách từ Anh–Việt lấy từ Wiktionary (CC BY-SA 3.0), xem `src-tauri/data/NOTICE.md`.

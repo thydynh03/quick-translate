@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tài liệu Quick Translate – Cài đặt, phím tắt, dịch offline, OCR</title>
+  <meta name="description" content="Hướng dẫn sử dụng Quick Translate: cài trên Windows và macOS, bôi đen để dịch, phím tắt, tải model dịch offline, quét chữ trên ảnh, từ điển và cách khắc phục sự cố.">
+  <link rel="canonical" href="https://thydynh03.github.io/quick-translate/docs.html">
+  <meta property="og:type" content="article">
+  <meta property="og:locale" content="vi_VN">
+  <meta property="og:site_name" content="Quick Translate">
+  <meta property="og:title" content="Tài liệu Quick Translate">
+  <meta property="og:description" content="Cài đặt, phím tắt, dịch offline, OCR và khắc phục sự cố.">
+  <meta property="og:url" content="https://thydynh03.github.io/quick-translate/docs.html">
+  <meta property="og:image" content="https://thydynh03.github.io/quick-translate/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#1f4fd8">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/site.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Tài liệu Quick Translate",
+    "inLanguage": "vi",
+    "about": { "@type": "SoftwareApplication", "name": "Quick Translate" },
+    "author": { "@type": "Person", "name": "thydynh03" },
+    "mainEntityOfPage": "https://thydynh03.github.io/quick-translate/docs.html"
+  }
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">Bỏ qua điều hướng</a>
+  <header class="top">
+    <a class="brand" href="./" aria-label="Quick Translate, trang chủ">
+      <img src="assets/icon.svg" alt="" width="28" height="28">
+      <span>Quick Translate</span>
+    </a>
+    <nav class="nav" aria-label="Điều hướng chính">
+      <a href="./#cach-dung">Cách dùng</a>
+      <a href="./#offline">Dịch offline</a>
+      <a href="docs.html" aria-current="page">Tài liệu</a>
+      <a href="license.html">Giấy phép</a>
+      <a href="https://github.com/thydynh03/quick-translate" rel="noopener">GitHub</a>
+    </nav>
+    <a class="btn small" href="./#tai-ve">Tải về</a>
+  </header>
+
+  <div class="doc">
+    <nav class="toc" aria-label="Mục lục">
+      <a href="#cai-dat">Cài đặt</a>
+      <a href="#bat-dau">Bắt đầu nhanh</a>
+      <a href="#phim-tat">Thao tác và phím tắt</a>
+      <a href="#engine">Nguồn dịch</a>
+      <a href="#offline">Dịch offline</a>
+      <a href="#ocr">Quét chữ trên ảnh</a>
+      <a href="#tu-dien">Từ điển</a>
+      <a href="#tuy-chinh">Tuỳ chỉnh</a>
+      <a href="#du-lieu">Dữ liệu trên máy</a>
+      <a href="#su-co">Khắc phục sự cố</a>
+      <a href="#go-cai">Gỡ cài đặt</a>
+    </nav>
+
+    <main id="main" class="prose">
+      <h1>Tài liệu Quick Translate</h1>
+      <p>Trang này mô tả phiên bản 0.1. Windows có đầy đủ tính năng. Bản macOS đang thử nghiệm: có bôi đen để dịch và phím tắt, chưa có quét chữ trên ảnh và rê chuột để tra từ.</p>
+
+      <h2 id="cai-dat">Cài đặt</h2>
+      <h3>Windows 10 và 11</h3>
+      <ol>
+        <li>Tải <a href="https://github.com/thydynh03/quick-translate/releases/latest/download/QuickTranslate-Setup-x64.exe"><code>QuickTranslate-Setup-x64.exe</code></a> và mở tệp.</li>
+        <li>Nếu Windows hiện “Windows protected your PC”, bấm <strong>More info</strong> rồi <strong>Run anyway</strong>. Cảnh báo này xuất hiện vì bộ cài chưa có chữ ký số trả phí.</li>
+        <li>Đồng ý với giấy phép và bấm cài. Ứng dụng cài cho riêng tài khoản của bạn, không cần quyền quản trị.</li>
+      </ol>
+      <p>Máy cần WebView2, thành phần đã có sẵn trên Windows 11 và phần lớn máy Windows 10. Nếu thiếu, bộ cài sẽ tự tải.</p>
+
+      <h3>macOS 11 trở lên, chip Apple</h3>
+      <ol>
+        <li>Tải <a href="https://github.com/thydynh03/quick-translate/releases/latest/download/QuickTranslate-macOS-AppleSilicon.dmg"><code>QuickTranslate-macOS-AppleSilicon.dmg</code></a>, mở ra và kéo Quick Translate vào thư mục Applications.</li>
+        <li>Lần mở đầu tiên macOS sẽ chặn vì ứng dụng chưa được Apple công chứng. Vào <strong>System Settings → Privacy &amp; Security</strong>, kéo xuống và bấm <strong>Open Anyway</strong>. Cách khác là chạy lệnh sau trong Terminal:
+          <pre><code>xattr -dr com.apple.quarantine "/Applications/Quick Translate.app"</code></pre>
+        </li>
+        <li>Cấp quyền <strong>Accessibility</strong> cho Quick Translate trong <strong>System Settings → Privacy &amp; Security → Accessibility</strong>, rồi mở lại ứng dụng. Không có quyền này, ứng dụng không đọc được vùng bôi đen.</li>
+      </ol>
+
+      <h3>Kiểm tra tệp tải về</h3>
+      <p>Mỗi bản phát hành kèm tệp <code>SHA256SUMS.txt</code>. So mã của tệp bạn tải với mã trong đó:</p>
+      <pre><code>Get-FileHash .\QuickTranslate-Setup-x64.exe -Algorithm SHA256</code></pre>
+      <pre><code>shasum -a 256 QuickTranslate-macOS-AppleSilicon.dmg</code></pre>
+
+      <h2 id="bat-dau">Bắt đầu nhanh</h2>
+      <ol>
+        <li>Mở Quick Translate. Lần đầu, cửa sổ Cài đặt hiện ra; những lần sau ứng dụng chạy nền với biểu tượng ở khay hệ thống.</li>
+        <li>Sang một ứng dụng bất kỳ và bôi đen một câu tiếng Anh.</li>
+        <li>Bấm biểu tượng nhỏ hiện cạnh con trỏ, hoặc nhấn <kbd>Alt</kbd><kbd>Q</kbd>.</li>
+        <li>Bấm ra ngoài popup hoặc cuộn trang để đóng. Bấm ghim nếu muốn giữ popup lại.</li>
+      </ol>
+
+      <h2 id="phim-tat">Thao tác và phím tắt</h2>
+      <table>
+        <thead><tr><th>Thao tác</th><th>Kết quả</th></tr></thead>
+        <tbody>
+          <tr><td>Kéo chuột, nhấp đúp, nhấp ba lần, rồi bấm biểu tượng</td><td>Dịch vùng vừa bôi đen</td></tr>
+          <tr><td><kbd>Alt</kbd><kbd>Q</kbd></td><td>Dịch vùng đang bôi đen, không cần bấm biểu tượng</td></tr>
+          <tr><td><kbd>Alt</kbd><kbd>W</kbd> rồi kéo một hình chữ nhật</td><td>Nhận dạng và dịch chữ trong vùng màn hình (Windows)</td></tr>
+          <tr><td>Bấm một từ trong câu gốc của popup</td><td>Tra riêng từ đó</td></tr>
+          <tr><td>Giữ <kbd>Ctrl</kbd> và để chuột trên một từ</td><td>Dịch từ dưới con trỏ (Windows, bật trong Cài đặt)</td></tr>
+          <tr><td>Chuột phải vào biểu tượng ở khay hệ thống</td><td>Mở Cài đặt, bật hoặc tắt biểu tượng tự hiện, thoát</td></tr>
+        </tbody>
+      </table>
+      <p>Popup có các nút đọc to, sao chép bản dịch, ghim và đóng. Ứng dụng tự chọn chiều dịch: văn bản tiếng Việt được dịch sang ngôn ngữ thứ hai (mặc định tiếng Anh), các ngôn ngữ khác được dịch sang tiếng Việt.</p>
+
+      <h2 id="engine">Nguồn dịch</h2>
+      <table>
+        <thead><tr><th>Nguồn</th><th>Cần gì</th><th>Khi nào dùng</th></tr></thead>
+        <tbody>
+          <tr><td>Google Translate</td><td>Mạng</td><td>Mặc định</td></tr>
+          <tr><td>Offline (Opus-MT)</td><td>Tải model một lần</td><td>Tự dùng khi nguồn chính lỗi hoặc mất mạng; cũng có thể đặt làm nguồn chính</td></tr>
+          <tr><td>Claude</td><td>API key của Anthropic</td><td>Dự phòng sau offline, hoặc đặt làm nguồn chính</td></tr>
+          <tr><td>DeepL</td><td>API key của DeepL</td><td>Dự phòng sau offline, hoặc đặt làm nguồn chính</td></tr>
+        </tbody>
+      </table>
+      <p>Chọn nguồn chính trong <strong>Cài đặt → Engine dịch</strong>. Khi nguồn chính không phản hồi, ứng dụng thử lần lượt offline, Claude, DeepL, Google và ghi chú trong popup là đã dùng nguồn dự phòng.</p>
+      <p class="note">Google Translate được gọi qua địa chỉ web công khai, không phải API trả phí. Google có thể giới hạn nếu gửi quá nhiều yêu cầu trong thời gian ngắn; khi đó ứng dụng chuyển sang nguồn dự phòng.</p>
+
+      <h2 id="offline">Dịch offline</h2>
+      <ol>
+        <li>Mở <strong>Cài đặt → Engine dịch</strong>, phần model offline.</li>
+        <li>Bấm tải cho từng chiều bạn cần, ví dụ Anh → Việt và Việt → Anh. Mỗi chiều khoảng 107 MB.</li>
+        <li>Từ đó, khi mất mạng ứng dụng tự dịch trên máy. Một câu thường mất khoảng một giây.</li>
+      </ol>
+      <p>Các cặp không có model trực tiếp, ví dụ Nhật → Việt, được dịch qua tiếng Anh nên cần cả hai model. Model là Opus-MT của Helsinki-NLP, tải từ Hugging Face.</p>
+      <p>Chất lượng: câu đầy đủ dịch khá tốt. Với một từ tiếng Anh đơn lẻ, ứng dụng tra trong danh sách khoảng 7.500 mục từ Wiktionary có sẵn; từ không có trong danh sách sẽ do model dịch và có thể kém chính xác.</p>
+
+      <h2 id="ocr">Quét chữ trên ảnh</h2>
+      <p>Nhấn <kbd>Alt</kbd><kbd>W</kbd>, màn hình tối lại; kéo một hình chữ nhật quanh phần chữ. Nhấn <kbd>Esc</kbd> để huỷ. Tính năng dùng bộ nhận dạng chữ có sẵn của Windows, nên chỉ đọc được những ngôn ngữ đã cài gói OCR trong <strong>Settings → Time &amp; language → Language &amp; region</strong>. Chưa có trên macOS.</p>
+
+      <h2 id="tu-dien">Từ điển</h2>
+      <p>Khi bạn tra một từ tiếng Anh và đang có mạng, popup hiện nghĩa tiếng Việt theo từ loại, phiên âm và định nghĩa tiếng Anh lấy từ Free Dictionary API. Hai nút Cambridge và Oxford mở mục từ tương ứng trong trình duyệt.</p>
+      <p>Nếu bạn có tài khoản Oxford Dictionaries API, nhập <code>app_id</code> và <code>app_key</code> trong Cài đặt để lấy định nghĩa từ Oxford. Cambridge không cung cấp API công khai nên ứng dụng chỉ mở trang web của họ.</p>
+
+      <h2 id="tuy-chinh">Tuỳ chỉnh</h2>
+      <ul>
+        <li><strong>Phím tắt:</strong> bấm vào ô phím tắt rồi nhấn tổ hợp mới.</li>
+        <li><strong>Tự hiện biểu tượng:</strong> tắt nếu bạn chỉ muốn dịch bằng phím tắt.</li>
+        <li><strong>Ngôn ngữ:</strong> ngôn ngữ chính là ngôn ngữ bạn muốn đọc; ngôn ngữ thứ hai dùng khi văn bản gốc đã là ngôn ngữ chính.</li>
+        <li><strong>Ứng dụng loại trừ:</strong> nhập tên tệp chạy, ví dụ <code>keepass.exe</code>, để biểu tượng không hiện trong ứng dụng đó.</li>
+        <li><strong>Khởi động cùng máy:</strong> bật để ứng dụng tự chạy nền khi đăng nhập.</li>
+      </ul>
+
+      <h2 id="du-lieu">Dữ liệu trên máy</h2>
+      <table>
+        <thead><tr><th>Hệ điều hành</th><th>Thư mục</th></tr></thead>
+        <tbody>
+          <tr><td>Windows</td><td><code>%APPDATA%\com.quicktranslate.app</code></td></tr>
+          <tr><td>macOS</td><td><code>~/Library/Application Support/com.quicktranslate.app</code></td></tr>
+        </tbody>
+      </table>
+      <p>Thư mục này chứa cài đặt, lịch sử dịch (tối đa 500 mục, tắt được) và model offline. API key được lưu dạng văn bản thường trong tệp cài đặt, vì vậy đừng chia sẻ thư mục này. Ứng dụng không gửi dữ liệu nào về máy chủ của tác giả.</p>
+
+      <h2 id="su-co">Khắc phục sự cố</h2>
+      <h3>Bôi đen nhưng không thấy biểu tượng</h3>
+      <ul>
+        <li>Kiểm tra mục tự hiện biểu tượng trong Cài đặt và ở khay hệ thống.</li>
+        <li>Thử <kbd>Alt</kbd><kbd>Q</kbd>. Một số ứng dụng không báo vùng bôi đen cho hệ điều hành; phím tắt vẫn hoạt động vì nó sao chép vùng chọn.</li>
+        <li>Trên Windows, cửa sổ chạy bằng quyền quản trị chỉ làm việc với Quick Translate khi ứng dụng cũng chạy bằng quyền quản trị.</li>
+        <li>Trên macOS, kiểm tra quyền Accessibility.</li>
+      </ul>
+      <h3>Popup không nằm đúng dưới vùng bôi đen</h3>
+      <p>Các ứng dụng dựng bằng Electron hoặc Chromium không cung cấp toạ độ vùng chọn, nên popup được đặt theo vị trí con trỏ.</p>
+      <h3>Báo lỗi dịch</h3>
+      <p>Thường do mất mạng trong khi chưa tải model offline. Tải model cho chiều dịch bạn dùng, hoặc kiểm tra kết nối.</p>
+      <h3>Phím tắt không phản hồi</h3>
+      <p>Tổ hợp phím có thể đã bị phần mềm khác chiếm. Đổi sang tổ hợp khác trong Cài đặt.</p>
+      <p>Nếu vẫn chưa được, hãy <a href="https://github.com/thydynh03/quick-translate/issues">mở một báo lỗi trên GitHub</a>, kèm phiên bản hệ điều hành và tên ứng dụng bạn đang bôi đen. Trên Windows, nhật ký nằm ở <code>%TEMP%\quick-translate.log</code>.</p>
+
+      <h2 id="go-cai">Gỡ cài đặt</h2>
+      <p>Windows: <strong>Settings → Apps → Installed apps</strong>, tìm Quick Translate và chọn Uninstall. macOS: kéo ứng dụng từ Applications vào Thùng rác. Muốn xoá cả cài đặt và model offline thì xoá thêm thư mục dữ liệu nêu ở trên.</p>
+    </main>
+  </div>
+
+  <footer class="foot">
+    <div class="wrap foot-row">
+      <p>© 2026 thydynh03. Phát hành theo <a href="license.html">giấy phép MIT</a>.</p>
+      <nav aria-label="Liên kết cuối trang">
+        <a href="./">Trang chủ</a>
+        <a href="license.html">Giấy phép</a>
+        <a href="https://github.com/thydynh03/quick-translate/issues" rel="noopener">Báo lỗi</a>
+        <a href="https://github.com/thydynh03/quick-translate" rel="noopener">Mã nguồn</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>

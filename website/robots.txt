@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://thydynh03.github.io/quick-translate/sitemap.xml

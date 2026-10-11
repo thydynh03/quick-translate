@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quick Translate – Bôi đen để dịch ở mọi ứng dụng trên Windows và macOS</title>
+  <meta name="description" content="Quick Translate là phần mềm dịch miễn phí cho máy tính: bôi đen văn bản ở bất kỳ ứng dụng nào, bản dịch hiện ngay tại chỗ. Dịch Anh – Việt, dịch offline không cần mạng, quét chữ trên ảnh (OCR).">
+  <link rel="canonical" href="https://thydynh03.github.io/quick-translate/">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#1f4fd8">
+
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="vi_VN">
+  <meta property="og:site_name" content="Quick Translate">
+  <meta property="og:title" content="Quick Translate – Bôi đen để dịch ở mọi ứng dụng">
+  <meta property="og:description" content="Phần mềm dịch miễn phí cho Windows và macOS. Bôi đen là dịch, có dịch offline và OCR.">
+  <meta property="og:url" content="https://thydynh03.github.io/quick-translate/">
+  <meta property="og:image" content="https://thydynh03.github.io/quick-translate/assets/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Quick Translate dịch đoạn văn bản đang được bôi đen">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/icon-256.png">
+  <link rel="manifest" href="site.webmanifest">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/site.css">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Quick Translate",
+    "description": "Phần mềm dịch cho máy tính: bôi đen văn bản ở bất kỳ ứng dụng nào để xem bản dịch ngay tại chỗ. Hỗ trợ dịch offline và OCR.",
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "Windows 10, Windows 11, macOS 11+",
+    "inLanguage": "vi",
+    "softwareVersion": "0.1.0",
+    "license": "https://thydynh03.github.io/quick-translate/license.html",
+    "url": "https://thydynh03.github.io/quick-translate/",
+    "downloadUrl": "https://github.com/thydynh03/quick-translate/releases/latest",
+    "image": "https://thydynh03.github.io/quick-translate/assets/icon-512.png",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "VND" },
+    "author": { "@type": "Person", "name": "thydynh03", "url": "https://github.com/thydynh03" }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      { "@type": "Question", "name": "Quick Translate có miễn phí không?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Có. Quick Translate miễn phí và mã nguồn mở theo giấy phép MIT. Dịch bằng Google và dịch offline đều không cần tài khoản hay API key." } },
+      { "@type": "Question", "name": "Không có mạng thì có dịch được không?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Được, sau khi bạn tải model offline trong phần Cài đặt (khoảng 107 MB cho mỗi chiều dịch). Khi mất mạng, ứng dụng tự chuyển sang dịch trên máy." } },
+      { "@type": "Question", "name": "Quick Translate dùng được trong những ứng dụng nào?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Mọi ứng dụng cho phép bôi đen và sao chép văn bản: trình duyệt, Word, PDF, Claude, Slack, Zalo, VS Code. Với ảnh hoặc PDF scan, dùng chế độ quét vùng màn hình." } },
+      { "@type": "Question", "name": "Văn bản tôi bôi đen được gửi đi đâu?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Khi dịch online, đoạn văn bản được gửi tới dịch vụ dịch bạn chọn (mặc định là Google Translate). Khi dịch offline, văn bản không rời khỏi máy. Ứng dụng không có máy chủ riêng và không thu thập dữ liệu." } },
+      { "@type": "Question", "name": "Vì sao Windows hoặc macOS cảnh báo khi cài?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Bộ cài chưa được ký bằng chứng chỉ trả phí nên hệ điều hành hiện cảnh báo với nhà phát hành chưa xác định. Trang tài liệu có hướng dẫn từng bước và mã SHA-256 để bạn kiểm tra tệp tải về." } }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">Bỏ qua điều hướng</a>
+
+  <header class="top">
+    <a class="brand" href="./" aria-label="Quick Translate, trang chủ">
+      <img src="assets/icon.svg" alt="" width="28" height="28">
+      <span>Quick Translate</span>
+    </a>
+    <nav class="nav" aria-label="Điều hướng chính">
+      <a href="#cach-dung">Cách dùng</a>
+      <a href="#offline">Dịch offline</a>
+      <a href="docs.html">Tài liệu</a>
+      <a href="license.html">Giấy phép</a>
+      <a href="https://github.com/thydynh03/quick-translate" rel="noopener">GitHub</a>
+    </nav>
+    <a class="btn small" href="#tai-ve">Tải về</a>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Phần mềm dịch cho Windows và macOS</p>
+        <h1>Bôi đen là dịch.<br>Ở mọi ứng dụng.</h1>
+        <p class="lead">Đang đọc email, PDF hay một đoạn chat tiếng Anh? Bôi đen đoạn cần hiểu, bản dịch hiện ngay bên dưới. Không phải chuyển cửa sổ, không phải sao chép sang trình duyệt.</p>
+        <div class="cta">
+          <a class="btn" id="primary-download" href="#tai-ve" data-download>Tải Quick Translate</a>
+          <a class="link" href="#cach-dung">Xem cách hoạt động</a>
+        </div>
+        <p class="fine" id="release-line">Miễn phí, mã nguồn mở. Không cần tài khoản.</p>
+      </div>
+
+      <div class="demo" id="demo">
+        <div class="demo-tabs" role="tablist" aria-label="Các tình huống minh hoạ">
+          <button role="tab" data-scene="select" aria-selected="true">Bôi đen</button>
+          <button role="tab" data-scene="word" aria-selected="false">Tra một từ</button>
+          <button role="tab" data-scene="ocr" aria-selected="false">Quét chữ trên ảnh</button>
+          <button role="tab" data-scene="offline" aria-selected="false">Mất mạng</button>
+        </div>
+        <div class="stage" aria-hidden="true">
+          <div class="win">
+            <div class="win-bar"><span class="win-title"></span><span class="win-net"></span></div>
+            <div class="win-body"></div>
+          </div>
+          <div class="ocr-box"></div>
+          <span class="trigger"><img src="assets/icon.svg" alt="" width="30" height="30"></span>
+          <div class="pop">
+            <p class="pop-route"></p>
+            <div class="pop-body"></div>
+          </div>
+          <svg class="cursor" viewBox="0 0 20 24" width="20" height="24"><path d="M2 1.5v18l4.6-4.3 3 7 2.9-1.3-3-6.8h6.3z" fill="#111" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>
+        </div>
+        <p class="demo-caption" aria-live="polite">Bôi đen một đoạn văn bản, bấm biểu tượng vừa hiện ra, bản dịch nằm ngay bên dưới.</p>
+      </div>
+    </section>
+
+    <section class="band" id="cach-dung">
+      <div class="wrap">
+        <h2>Ba cách gọi bản dịch</h2>
+        <p class="section-lead">Chọn cách hợp với việc bạn đang làm. Cả ba đều giữ nguyên vùng bôi đen và trả lại clipboard như cũ.</p>
+        <div class="ways">
+          <article>
+            <p class="way-key">Kéo chuột</p>
+            <h3>Bôi đen rồi bấm biểu tượng</h3>
+            <p>Kéo chuột, nhấp đúp vào một từ hoặc nhấp ba lần vào một đoạn. Một biểu tượng nhỏ hiện cạnh con trỏ; bấm vào đó để xem bản dịch. Không bấm thì nó tự biến mất.</p>
+          </article>
+          <article>
+            <p class="way-key"><kbd>Alt</kbd><kbd>Q</kbd></p>
+            <h3>Phím tắt, không cần chuột</h3>
+            <p>Bôi đen bằng bàn phím rồi nhấn phím tắt. Bạn đổi được tổ hợp phím trong Cài đặt nếu nó trùng với phần mềm khác.</p>
+          </article>
+          <article>
+            <p class="way-key"><kbd>Alt</kbd><kbd>W</kbd></p>
+            <h3>Quét một vùng màn hình</h3>
+            <p>Dành cho chữ không bôi đen được: ảnh chụp, PDF scan, video đang dừng. Kéo một hình chữ nhật quanh chữ, ứng dụng nhận dạng rồi dịch.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="split" id="tu-dien">
+      <div class="wrap two">
+        <div>
+          <h2>Tra một từ thì ra cả mục từ điển</h2>
+          <p>Nhấp đúp vào một từ tiếng Anh, popup cho bạn nghĩa tiếng Việt xếp theo từ loại, phiên âm, và định nghĩa bằng tiếng Anh. Muốn đọc kỹ hơn, có nút mở thẳng mục từ đó trên Cambridge hoặc Oxford Learner’s.</p>
+          <p>Trong popup, mỗi từ của câu gốc đều bấm được. Gặp một từ lạ giữa câu, bấm vào nó để tra riêng mà không cần bôi đen lại.</p>
+        </div>
+        <figure class="entry" aria-label="Ví dụ mục từ trong popup">
+          <p class="entry-word">attend <span>/əˈtend/</span></p>
+          <dl>
+            <div><dt>động từ</dt><dd>tham dự, có mặt, đi học</dd></div>
+            <div><dt>định nghĩa</dt><dd>to be present at an event, or to go regularly to a place</dd></div>
+          </dl>
+          <p class="entry-links">Cambridge · Oxford Learner’s</p>
+        </figure>
+      </div>
+    </section>
+
+    <section class="band" id="offline">
+      <div class="wrap">
+        <h2>Mất mạng vẫn dịch được</h2>
+        <p class="section-lead">Quick Translate thử lần lượt ba nguồn dịch. Bạn không cần cấu hình gì để hai nguồn đầu hoạt động.</p>
+        <ol class="chain">
+          <li>
+            <h3>Google Translate</h3>
+            <p>Mặc định khi có mạng. Không cần tài khoản, không cần API key.</p>
+          </li>
+          <li>
+            <h3>Model chạy trên máy</h3>
+            <p>Khi mất mạng hoặc Google không phản hồi, ứng dụng tự chuyển sang model Opus-MT đã tải sẵn. Văn bản không rời khỏi máy. Mỗi chiều dịch nặng khoảng 107 MB, tải một lần trong Cài đặt.</p>
+          </li>
+          <li>
+            <h3>Claude hoặc DeepL</h3>
+            <p>Chỉ dùng khi bạn tự nhập API key. Hợp với câu dài cần văn phong tự nhiên hơn; hoàn toàn không bắt buộc.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="split" id="rieng-tu">
+      <div class="wrap two">
+        <div>
+          <h2>Biết rõ văn bản của mình đi đâu</h2>
+          <p>Ứng dụng không có máy chủ riêng, không yêu cầu đăng nhập và không gửi số liệu sử dụng về đâu cả. Mã nguồn công khai trên GitHub để bất kỳ ai cũng kiểm tra được.</p>
+        </div>
+        <ul class="facts">
+          <li><strong>Dịch online:</strong> đoạn bạn bôi đen được gửi tới dịch vụ dịch đang chọn, mặc định là Google.</li>
+          <li><strong>Dịch offline:</strong> mọi thứ xử lý trên máy bạn.</li>
+          <li><strong>Lịch sử và API key:</strong> lưu trong thư mục dữ liệu của ứng dụng trên máy. Tắt được lịch sử trong Cài đặt.</li>
+          <li><strong>Ứng dụng nhạy cảm:</strong> thêm trình quản lý mật khẩu hay ngân hàng vào danh sách loại trừ để biểu tượng dịch không xuất hiện ở đó.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="download" id="tai-ve">
+      <div class="wrap">
+        <h2>Tải Quick Translate</h2>
+        <p class="section-lead" id="release-meta">Bản mới nhất, miễn phí theo <a href="license.html">giấy phép MIT</a>.</p>
+        <div class="platforms">
+          <article data-os="windows">
+            <h3>Windows</h3>
+            <p>Windows 10 hoặc 11, 64-bit. Đầy đủ tính năng: bôi đen, phím tắt, OCR, rê chuột để tra từ.</p>
+            <a class="btn" href="https://github.com/thydynh03/quick-translate/releases/latest/download/QuickTranslate-Setup-x64.exe" data-asset="QuickTranslate-Setup-x64.exe">Tải cho Windows <span class="size"></span></a>
+          </article>
+          <article data-os="mac">
+            <h3>macOS <span class="tag">thử nghiệm</span></h3>
+            <p>macOS 11 trở lên, máy chip Apple (M1 trở đi). Có bôi đen để dịch và phím tắt; OCR và rê chuột chưa có trên macOS.</p>
+            <a class="btn" href="https://github.com/thydynh03/quick-translate/releases/latest/download/QuickTranslate-macOS-AppleSilicon.dmg" data-asset="QuickTranslate-macOS-AppleSilicon.dmg">Tải cho macOS <span class="size"></span></a>
+          </article>
+        </div>
+        <p class="fine">Bộ cài chưa có chữ ký số trả phí nên hệ điều hành sẽ hỏi lại khi mở lần đầu. Xem <a href="docs.html#cai-dat">hướng dẫn cài đặt</a>, <a href="https://github.com/thydynh03/quick-translate/releases/latest">mã SHA-256 và các bản trước</a>.</p>
+      </div>
+    </section>
+
+    <section class="faq" id="hoi-dap">
+      <div class="wrap narrow">
+        <h2>Câu hỏi thường gặp</h2>
+        <details>
+          <summary>Quick Translate có miễn phí không?</summary>
+          <p>Có. Ứng dụng miễn phí và mã nguồn mở theo giấy phép MIT. Dịch bằng Google và dịch offline đều không cần tài khoản hay API key.</p>
+        </details>
+        <details>
+          <summary>Không có mạng thì có dịch được không?</summary>
+          <p>Được, sau khi bạn tải model offline trong Cài đặt → Engine dịch (khoảng 107 MB cho mỗi chiều). Khi mất mạng, ứng dụng tự chuyển sang dịch trên máy và ghi chú điều đó trong popup.</p>
+        </details>
+        <details>
+          <summary>Dùng được trong những ứng dụng nào?</summary>
+          <p>Mọi ứng dụng cho phép bôi đen và sao chép văn bản: trình duyệt, Word, trình đọc PDF, Claude, Slack, Zalo, VS Code. Với ảnh hoặc PDF scan, dùng chế độ quét vùng màn hình.</p>
+        </details>
+        <details>
+          <summary>Dịch được những ngôn ngữ nào?</summary>
+          <p>Khi online, ứng dụng dịch được các ngôn ngữ Google Translate hỗ trợ và tự nhận ngôn ngữ nguồn. Mặc định là Anh ↔ Việt: gặp tiếng Việt thì dịch sang tiếng Anh, còn lại dịch sang tiếng Việt. Dịch offline hiện có các cặp đi qua tiếng Anh như Việt, Nhật, Trung, Pháp, Đức.</p>
+        </details>
+        <details>
+          <summary>Văn bản tôi bôi đen được gửi đi đâu?</summary>
+          <p>Khi dịch online, đoạn văn bản được gửi tới dịch vụ dịch bạn chọn. Khi dịch offline, nó không rời khỏi máy. Ứng dụng không có máy chủ riêng và không thu thập dữ liệu.</p>
+        </details>
+        <details>
+          <summary>Vì sao Windows hoặc macOS cảnh báo khi cài?</summary>
+          <p>Vì bộ cài chưa được ký bằng chứng chỉ trả phí. <a href="docs.html#cai-dat">Trang tài liệu</a> hướng dẫn từng bước và cách đối chiếu mã SHA-256 của tệp tải về.</p>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-row">
+      <p>© 2026 thydynh03. Phát hành theo <a href="license.html">giấy phép MIT</a>.</p>
+      <nav aria-label="Liên kết cuối trang">
+        <a href="docs.html">Tài liệu</a>
+        <a href="license.html">Giấy phép</a>
+        <a href="https://github.com/thydynh03/quick-translate/issues" rel="noopener">Báo lỗi</a>
+        <a href="https://github.com/thydynh03/quick-translate" rel="noopener">Mã nguồn</a>
+      </nav>
+    </div>
+    <p class="wrap fine">Quick Translate không liên kết với Google, Cambridge University Press, Oxford University Press, DeepL hay Anthropic. Tên các dịch vụ thuộc về chủ sở hữu tương ứng.</p>
+  </footer>
+
+  <script src="assets/site.js" defer></script>
+</body>
+</html>
