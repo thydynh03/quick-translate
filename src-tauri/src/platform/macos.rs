@@ -13,11 +13,13 @@ use std::time::{Duration, Instant};
 
 use accessibility_sys::{
     kAXBoundsForRangeParameterizedAttribute, kAXErrorSuccess, kAXFocusedUIElementAttribute,
-    kAXSelectedTextAttribute, kAXSelectedTextRangeAttribute, kAXValueTypeCGRect,
-    AXUIElementCopyAttributeValue, AXUIElementCopyParameterizedAttributeValue,
+    kAXSelectedTextAttribute, kAXSelectedTextRangeAttribute, kAXTrustedCheckOptionPrompt, kAXValueTypeCGRect,
+    AXIsProcessTrustedWithOptions, AXUIElementCopyAttributeValue, AXUIElementCopyParameterizedAttributeValue,
     AXUIElementCreateSystemWide, AXUIElementRef, AXValueGetValue, AXValueRef,
 };
 use core_foundation::base::{CFGetTypeID, CFRelease, CFTypeRef, TCFType};
+use core_foundation::boolean::CFBoolean;
+use core_foundation::dictionary::CFDictionary;
 use core_foundation::runloop::{kCFRunLoopCommonModes, CFRunLoop};
 use core_foundation::string::{CFString, CFStringRef};
 use core_graphics::event::{
@@ -163,9 +165,27 @@ pub fn foreground_app() -> Option<String> {
 
 // -------------------------------------------------------------- mouse hook
 
+/// True when the app may use the Accessibility API. With `prompt`, macOS
+/// shows its dialog pointing the user to System Settings.
+fn accessibility_granted(prompt: bool) -> bool {
+    unsafe {
+        let key = CFString::wrap_under_get_rule(kAXTrustedCheckOptionPrompt);
+        let value = if prompt { CFBoolean::true_value() } else { CFBoolean::false_value() };
+        let options = CFDictionary::from_CFType_pairs(&[(key.as_CFType(), value.as_CFType())]);
+        AXIsProcessTrustedWithOptions(options.as_concrete_TypeRef())
+    }
+}
+
 /// Listens to mouse buttons and the wheel with a listen-only event tap.
+/// Waits for the Accessibility permission, so granting it needs no restart.
 pub fn start_mouse_hook(tx: Sender<MouseEvent>) {
     std::thread::spawn(move || {
+        if !accessibility_granted(true) {
+            crate::log("mouse tap: waiting for the Accessibility permission");
+            while !accessibility_granted(false) {
+                std::thread::sleep(Duration::from_secs(2));
+            }
+        }
         let tap = CGEventTap::new(
             CGEventTapLocation::HID,
             CGEventTapPlacement::HeadInsertEventTap,
@@ -200,7 +220,7 @@ pub fn start_mouse_hook(tx: Sender<MouseEvent>) {
                     CFRunLoop::run_current();
                 }
             },
-            Err(()) => crate::log("mouse tap: not permitted (grant Accessibility access)"),
+            Err(()) => crate::log("mouse tap: could not be created"),
         }
     });
 }
