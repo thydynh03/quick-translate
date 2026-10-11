@@ -10,3 +10,4 @@
 - Kéo chọn vùng OCR phải dùng pointer events + `setPointerCapture`, nếu không sẽ kẹt khi lớp phủ chưa có focus.
 - Bash tool không có cargo trong PATH; `pnpm tauri build` báo "cargo metadata: program not found".
 - `preview_start` có thể nhặt `launch.json` của thư mục cha; kiểm tra tên server trả về.
+- Windows.Media.Ocr không có tiếng Việt (máy này chỉ có en-US, ja). Quét chữ Việt bằng Alt+W ra chữ mất dấu → dịch sai. Muốn OCR tiếng Việt phải tự kèm engine khác (ví dụ PaddleOCR ONNX qua `ort`).
