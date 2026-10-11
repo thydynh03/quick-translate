@@ -32,7 +32,7 @@ Cập nhật: 2026-10-12. Plan gốc: `docs/PLAN.md`. Hướng dẫn dùng: `REA
 ## CHƯA kiểm chứng
 
 - macOS: build + `cargo test` qua trên GitHub Actions (macos-latest), có .dmg ký ad-hoc. CHƯA chạy trên máy Mac thật. Thiếu: OCR (Vision), hover, popup không cướp focus (NSPanel), tên app đang mở. App hỏi quyền Accessibility và chờ được cấp.
-- Bộ cài v0.1.0 từ CI chưa cài thử trên máy này (bản build cục bộ trước đó đã cài/chạy/gỡ được).
+- Bộ cài v0.1.0 từ CI: đã cài im lặng trên máy này (2026-10-12), app mở và chạy; chưa chạy lại bộ test thao tác chuột với bản này. App ĐANG được cài trên máy.
 - Claude, DeepL, Oxford API: chỉ có unit test parse; chưa gọi thật vì không có key.
 
 ## Không làm được / quyết định
@@ -44,7 +44,7 @@ Xem `DECISIONS.md`. Cambridge không có API công khai → chỉ mở link. Oxf
 1. Chạy thử trên Mac thật; NSPanel, Vision OCR; bản Intel.
 2. Ký số (chứng chỉ Windows, Apple Developer ID + notarize) để hết cảnh báo khi cài.
 3. Tự cập nhật trong app (tauri-plugin-updater cần khoá ký).
-4. SEO: đăng ký Google Search Console, gửi sitemap; tên miền riêng nếu muốn.
+4. SEO: Search Console đã xác minh (tệp `website/google59c0ec488f146fc5.html`, KHÔNG xoá) và đã gửi `sitemap.xml` ngày 2026-10-12, trạng thái ban đầu "Không thể tìm nạp" — kiểm tra lại sau 1–2 ngày. Tên miền riêng nếu muốn.
 5. Từ điển offline lớn hơn; gợi ý tải model ở lần chạy đầu.
 
 ## Ghi chú kỹ thuật
