@@ -21,22 +21,31 @@ Cập nhật: 2026-10-12. Plan gốc: `docs/PLAN.md`. Hướng dẫn dùng: `REA
 - Bộ cài NSIS: `src-tauri/target/release/bundle/nsis/Quick Translate_0.1.0_x64-setup.exe` (7,2 MB). Bản build trước đó đã cài im lặng, chạy, gỡ cài — đều được; bản build cuối (sau khi thêm macos.rs, không đổi code Windows) chưa cài lại. Máy hiện KHÔNG còn bản cài.
 - 30 unit test Rust pass + 2 test thật (`--ignored`).
 
-## Đã viết nhưng CHƯA kiểm chứng
+## Phát hành (2026-10-12)
 
-- macOS (`platform/macos.rs`): đọc vùng chọn qua Accessibility API, Cmd+C dự phòng, event tap chuột. Chỉ mới kiểm tra kiểu riêng file này với crate thật cho target `aarch64-apple-darwin`; CHƯA build cả app, CHƯA chạy. Thiếu: OCR (Vision), hover, popup không cướp focus (NSPanel), tên app đang mở. Workflow `.github/workflows/build.yml` build Windows + macOS khi đẩy lên GitHub (chưa từng chạy).
-- Claude (`claude-haiku-5-5`), DeepL, Oxford Dictionaries API: chỉ có unit test parse; chưa gọi thật vì không có key.
+- Repo công khai: https://github.com/thydynh03/quick-translate (MIT, commit bằng email noreply).
+- Web: https://thydynh03.github.io/quick-translate/ (thư mục `website/`, workflow `website`). Có trang chủ với animation 4 cảnh, `docs.html`, `license.html`, sitemap, robots, JSON-LD, ảnh og.
+- Bản v0.1.0: `QuickTranslate-Setup-x64.exe` (7,2 MB), `QuickTranslate-macOS-AppleSilicon.dmg` (9,6 MB), `SHA256SUMS.txt`. Đã tải lại từ link `releases/latest/download/...` và khớp SHA-256.
+- Phát hành bản mới: tăng version ở 3 file (xem AGENTS.md), đẩy tag `vX.Y.Z`.
+- App: icon mới (`src-tauri/app-icon.svg`), tab Giới thiệu, giấy phép hiện trong bộ cài NSIS.
+
+## CHƯA kiểm chứng
+
+- macOS: build + `cargo test` qua trên GitHub Actions (macos-latest), có .dmg ký ad-hoc. CHƯA chạy trên máy Mac thật. Thiếu: OCR (Vision), hover, popup không cướp focus (NSPanel), tên app đang mở. App hỏi quyền Accessibility và chờ được cấp.
+- Bộ cài v0.1.0 từ CI chưa cài thử trên máy này (bản build cục bộ trước đó đã cài/chạy/gỡ được).
+- Claude, DeepL, Oxford API: chỉ có unit test parse; chưa gọi thật vì không có key.
 
 ## Không làm được / quyết định
 
-- Cambridge API: cổng dictionary-api.cambridge.org chuyển hướng về trang chủ, cần xin key riêng → chỉ có nút mở web.
-- Oxford API: cần app_id/app_key của người dùng; giấy phép thương mại theo trang của họ từ khoảng £5.000/năm/ngôn ngữ.
+Xem `DECISIONS.md`. Cambridge không có API công khai → chỉ mở link. Oxford API trả phí → người dùng tự nhập key.
 
-## Việc tiếp theo nếu làm tiếp
+## Việc tiếp theo
 
-1. Đẩy lên GitHub, xem CI macOS, sửa lỗi build; thử trên máy Mac thật.
-2. macOS: NSPanel cho popup, Vision OCR.
-3. Lần chạy đầu gợi ý tải model en↔vi; từ điển offline lớn hơn.
-4. Ký số bộ cài (Windows SmartScreen sẽ cảnh báo bản chưa ký).
+1. Chạy thử trên Mac thật; NSPanel, Vision OCR; bản Intel.
+2. Ký số (chứng chỉ Windows, Apple Developer ID + notarize) để hết cảnh báo khi cài.
+3. Tự cập nhật trong app (tauri-plugin-updater cần khoá ký).
+4. SEO: đăng ký Google Search Console, gửi sitemap; tên miền riêng nếu muốn.
+5. Từ điển offline lớn hơn; gợi ý tải model ở lần chạy đầu.
 
 ## Ghi chú kỹ thuật
 
