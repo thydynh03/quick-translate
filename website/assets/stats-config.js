@@ -10,7 +10,7 @@ window.QT_STATS_URL = "";
     if (localStorage.getItem("qt-ping") === today) return;
     let id = localStorage.getItem("qt-id");
     if (!id) {
-      id = crypto.randomUUID();
+      id = crypto.randomUUID ? crypto.randomUUID() : "w" + Math.random().toString(36).slice(2) + Date.now().toString(36);
       localStorage.setItem("qt-id", id);
     }
     fetch(`${url}/ping`, {
@@ -18,6 +18,7 @@ window.QT_STATS_URL = "";
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ kind: "web", id, version: "", os: "" }),
       keepalive: true,
-    }).then((response) => response.ok && localStorage.setItem("qt-ping", today));
+    }).then((response) => response.ok && localStorage.setItem("qt-ping", today))
+      .catch(() => {});
   } catch {}
 })();

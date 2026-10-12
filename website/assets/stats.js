@@ -51,6 +51,7 @@
       for (const { day, kind, n } of data.daily) if (byDay[day]) byDay[day][kind] = n;
       const days = Object.keys(byDay);
       const today = byDay[days[days.length - 1]];
+      for (const id of ["t-app-total", "t-app-period", "t-web-period"]) set(id, 0);
       set("t-app-today", today.app); set("t-web-today", today.web);
       for (const { kind, total, period } of data.totals) {
         if (kind === "app") { set("t-app-total", total); set("t-app-period", period); }
@@ -61,6 +62,8 @@
       for (const day of days) {
         const col = document.createElement("div");
         col.title = `${day}: app ${byDay[day].app}, web ${byDay[day].web}`;
+        col.setAttribute("role", "listitem");
+        col.setAttribute("aria-label", col.title);
         for (const kind of ["app", "web"]) {
           const bar = document.createElement("i");
           bar.className = kind;

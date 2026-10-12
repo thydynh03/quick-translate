@@ -54,7 +54,8 @@ fn body(id: &str) -> serde_json::Value {
     })
 }
 
-/// Pings now and then every 24 hours while the app runs.
+/// Pings 10 minutes after start, so a first run can turn it off before anything is sent,
+/// then every 24 hours; a failed ping is retried after an hour.
 pub fn start(app: AppHandle) {
     let Some(endpoint) = ENDPOINT.map(str::trim).filter(|url| !url.is_empty()) else {
         return;
@@ -68,15 +69,22 @@ pub fn start(app: AppHandle) {
             Ok(client) => client,
             Err(_) => return,
         };
+        tokio::time::sleep(Duration::from_secs(600)).await;
         loop {
+            let mut wait = 24 * 3600;
             let enabled = app.state::<AppState>().settings.read().usage_stats;
             if enabled {
                 let id = install_id(&app);
-                if let Err(error) = client.post(&url).json(&body(&id)).send().await {
-                    crate::log(format!("stats: {error}"));
+                let sent = client.post(&url).json(&body(&id)).send().await;
+                match sent.and_then(|response| response.error_for_status()) {
+                    Ok(_) => {}
+                    Err(error) => {
+                        crate::log(format!("stats: {error}"));
+                        wait = 3600;
+                    }
                 }
             }
-            tokio::time::sleep(Duration::from_secs(24 * 3600)).await;
+            tokio::time::sleep(Duration::from_secs(wait)).await;
         }
     });
 }

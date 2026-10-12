@@ -27,7 +27,7 @@ export default {
     }
 
     if (url.pathname === "/stats" && request.method === "GET") {
-      const days = Math.min(Math.max(Number(url.searchParams.get("days")) || 30, 1), 365);
+      const days = Math.min(Math.max(Math.trunc(Number(url.searchParams.get("days"))) || 30, 1), 365);
       const since = new Date(Date.now() - (days - 1) * 86400000).toISOString().slice(0, 10);
       const [daily, totals, versions, systems] = await env.DB.batch([
         env.DB.prepare("SELECT day, kind, COUNT(*) AS n FROM hits WHERE day >= ? GROUP BY day, kind ORDER BY day").bind(since),
@@ -35,7 +35,8 @@ export default {
           "SELECT kind, COUNT(DISTINCT id) AS total, COUNT(DISTINCT CASE WHEN day >= ? THEN id END) AS period FROM hits GROUP BY kind",
         ).bind(since),
         env.DB.prepare(
-          "SELECT version, COUNT(DISTINCT id) AS n FROM hits WHERE kind = 'app' AND day >= ? GROUP BY version ORDER BY n DESC",
+          // Each machine counts once, under the version of its latest ping.
+          "SELECT version, COUNT(*) AS n FROM hits h WHERE kind = 'app' AND day >= ? AND day = (SELECT MAX(day) FROM hits WHERE kind = 'app' AND id = h.id) GROUP BY version ORDER BY n DESC",
         ).bind(since),
         env.DB.prepare("SELECT os, COUNT(DISTINCT id) AS n FROM hits WHERE kind = 'app' AND day >= ? GROUP BY os ORDER BY n DESC").bind(
           since,
