@@ -14,6 +14,7 @@ pub mod google;
 pub mod lang;
 pub mod ocr_vi;
 pub mod offline;
+pub mod openai;
 pub mod wordbook;
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -70,6 +71,9 @@ async fn run_engine(
         "deepl" => deepl::translate(&settings.deepl_key, text, from, to).await,
         "claude" => claude::translate(&settings.anthropic_key, text, from, to).await,
         "offline" => run_offline(models, text, from, to).await,
+        "openai" => {
+            openai::translate(&settings.openai_base, &settings.openai_key, &settings.openai_model, text, from, to).await
+        }
         other => anyhow::bail!("Engine \"{other}\" chưa được hỗ trợ"),
     }
 }
@@ -98,7 +102,7 @@ pub async fn translate(settings: &Settings, models: &Path, text: &str) -> anyhow
 }
 
 /// `models` is the folder that holds the downloaded offline models.
-async fn translate_text(settings: &Settings, models: &Path, text: &str) -> anyhow::Result<Translation> {
+pub async fn translate_text(settings: &Settings, models: &Path, text: &str) -> anyhow::Result<Translation> {
     let (from, to) = direction(settings, text);
     let mut result = run_engine(&settings.engine, settings, models, text, &from, &to).await;
 
@@ -134,6 +138,9 @@ pub fn fallbacks(settings: &Settings) -> Vec<&'static str> {
     }
     if !settings.deepl_key.trim().is_empty() {
         order.push("deepl");
+    }
+    if openai::configured(settings) {
+        order.push("openai");
     }
     order.push("google");
     order.retain(|name| *name != settings.engine);

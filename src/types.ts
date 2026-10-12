@@ -34,6 +34,12 @@ export type Settings = {
   english_definitions: boolean;
   oxford_app_id: string;
   oxford_app_key: string;
+  window_hotkey: string;
+  popup_font_size: number;
+  popup_opacity: number;
+  openai_base: string;
+  openai_key: string;
+  openai_model: string;
 };
 
 export type HistoryEntry = {
@@ -73,6 +79,7 @@ export const ENGINE_NAMES: Record<string, string> = {
   deepl: "DeepL",
   claude: "Claude",
   offline: "Offline",
+  openai: "AI (OpenAI API)",
 };
 
 export function langName(code: string): string {

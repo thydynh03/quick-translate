@@ -44,6 +44,7 @@ const ENGINES: { id: string; hint: string }[] = [
   { id: "deepl", hint: "Cần API key của DeepL." },
   { id: "claude", hint: "Cần API key của Anthropic. Dịch tự nhiên hơn với câu dài, chậm hơn." },
   { id: "offline", hint: "Chạy trên máy, không cần mạng. Cần tải model trước." },
+  { id: "openai", hint: "ChatGPT, Gemini hoặc model chạy trên máy (Ollama, LM Studio). Điền địa chỉ API và model bên dưới." },
 ];
 
 /** Builds a shortcut string such as "Ctrl+Shift+D" from a key event. */
@@ -196,6 +197,39 @@ export default function Settings() {
                 <input type="checkbox" checked={config.hover_translate} onChange={(e) => update({ hover_translate: e.target.checked })} />
               </label>
               <label className="row">
+                <span>Phím tắt dịch cả cửa sổ đang mở</span>
+                <input
+                  readOnly
+                  value={config.window_hotkey}
+                  onKeyDown={(e) => {
+                    e.preventDefault();
+                    const shortcut = shortcutFrom(e);
+                    if (shortcut) update({ window_hotkey: shortcut });
+                  }}
+                />
+              </label>
+              <label className="row">
+                <span>Cỡ chữ popup ({config.popup_font_size}px)</span>
+                <input
+                  type="range"
+                  min={12}
+                  max={22}
+                  value={config.popup_font_size}
+                  onChange={(e) => update({ popup_font_size: Number(e.target.value) })}
+                />
+              </label>
+              <label className="row">
+                <span>Độ đậm nền popup ({config.popup_opacity}%)</span>
+                <input
+                  type="range"
+                  min={60}
+                  max={100}
+                  step={5}
+                  value={config.popup_opacity}
+                  onChange={(e) => update({ popup_opacity: Number(e.target.value) })}
+                />
+              </label>
+              <label className="row">
                 <span>Khởi động cùng máy</span>
                 <input type="checkbox" checked={autostart} onChange={(e) => toggleAutostart(e.target.checked)} />
               </label>
@@ -285,6 +319,26 @@ export default function Settings() {
               <label className="row">
                 <span>Thêm định nghĩa tiếng Anh và phiên âm IPA (Free Dictionary API, cần mạng)</span>
                 <input type="checkbox" checked={config.english_definitions} onChange={(e) => update({ english_definitions: e.target.checked })} />
+              </label>
+            </section>
+
+            <section>
+              <h2>AI qua OpenAI API (tuỳ chọn)</h2>
+              <p className="help">
+                Dùng được với mọi dịch vụ tương thích OpenAI. ChatGPT: https://api.openai.com/v1. Gemini:
+                https://generativelanguage.googleapis.com/v1beta/openai. Ollama trên máy: http://localhost:11434/v1 (không cần key).
+              </p>
+              <label className="row">
+                <span>Địa chỉ API</span>
+                <input defaultValue={config.openai_base} onBlur={(e) => update({ openai_base: e.target.value.trim() })} />
+              </label>
+              <label className="row">
+                <span>Tên model</span>
+                <input defaultValue={config.openai_model} onBlur={(e) => update({ openai_model: e.target.value.trim() })} />
+              </label>
+              <label className="row">
+                <span>API key</span>
+                <input type="password" defaultValue={config.openai_key} onBlur={(e) => update({ openai_key: e.target.value.trim() })} />
               </label>
             </section>
 

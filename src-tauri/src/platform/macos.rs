@@ -239,8 +239,12 @@ pub fn show_overlay(window: &tauri::WebviewWindow) {
 
 // ------------------------------------------------------- not yet supported
 
-pub fn ocr_region(_rect: Rect, _vietnamese: Option<&std::path::Path>) -> anyhow::Result<String> {
+pub fn ocr_lines(_rect: Rect, _vietnamese: Option<&std::path::Path>) -> anyhow::Result<Vec<(Rect, String)>> {
     anyhow::bail!("OCR chưa hỗ trợ trên macOS")
+}
+
+pub fn foreground_rect() -> Option<Rect> {
+    None
 }
 
 pub fn word_at(_x: i32, _y: i32) -> Option<Selection> {

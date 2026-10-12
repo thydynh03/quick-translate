@@ -78,6 +78,19 @@ fn register_hotkeys(app: &AppHandle) -> Vec<String> {
             failed.push(ocr_hotkey);
         }
     }
+
+    let window_hotkey = app.state::<AppState>().settings.read().window_hotkey.clone();
+    if !window_hotkey.trim().is_empty() {
+        let result = shortcuts.on_shortcut(window_hotkey.as_str(), |app, _shortcut, event| {
+            if event.state() == ShortcutState::Pressed {
+                capture::start_window(app);
+            }
+        });
+        if let Err(error) = result {
+            log(format!("hotkey {window_hotkey}: {error}"));
+            failed.push(window_hotkey);
+        }
+    }
     failed
 }
 

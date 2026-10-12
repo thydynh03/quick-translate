@@ -33,6 +33,8 @@ Cập nhật: 2026-10-12. Plan gốc: `docs/PLAN.md`. Hướng dẫn dùng: `REA
 
 - v0.1.2 (2026-10-12): Alt+W đọc được tiếng Việt khi đã tải model `ocr-vi` (VietOCR ONNX, ~147 MB, nút tải nằm cuối danh sách model offline). Đã test thật: chữ tiếng Việt trong Notepad, Windows OCR ra mất dấu còn VietOCR ra đủ dấu (`cargo test reads_the_screen -- --ignored`, cần biến môi trường ghi trong file test). Sai lặt vặt còn lại: đôi khi mất dấu chấm cuối đoạn, sai hoa/thường.
 
+- v0.1.3 (2026-10-12): (1) `Alt+E` dịch cả cửa sổ đang mở (`capture::start_window`): OCR theo dòng, gộp đoạn, dịch 4 luồng, vẽ đè bản dịch; đã test thật với Notepad, vị trí khớp. (2) Cài đặt: cỡ chữ + độ đậm nền popup. (3) Engine `openai` cho mọi API tương thích OpenAI (ChatGPT/Gemini/Ollama/LM Studio) — chỉ có unit test, CHƯA gọi thật. Chưa làm: hồ sơ theo từng ứng dụng, dịch thời gian thực, Microsoft Store.
+
 ## CHƯA kiểm chứng
 
 - macOS: build + `cargo test` qua trên GitHub Actions (macos-latest), có .dmg ký ad-hoc. CHƯA chạy trên máy Mac thật. Thiếu: OCR (Vision), hover, popup không cướp focus (NSPanel), tên app đang mở. App hỏi quyền Accessibility và chờ được cấp.

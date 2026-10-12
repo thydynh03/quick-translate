@@ -57,12 +57,29 @@ export default function Popup() {
     };
   }, []);
 
+  // Text size and opacity come from the settings.
+  const [look, setLook] = useState("");
+  useEffect(() => {
+    const apply = () =>
+      invoke<{ popup_font_size: number; popup_opacity: number }>("get_settings").then((settings) => {
+        const root = document.documentElement.style;
+        root.fontSize = `${settings.popup_font_size}px`;
+        root.setProperty("--popup-opacity", `${settings.popup_opacity}%`);
+        setLook(`${settings.popup_font_size}/${settings.popup_opacity}`);
+      });
+    apply();
+    const unlisten = listen("settings-changed", apply);
+    return () => {
+      unlisten.then((off) => off());
+    };
+  }, []);
+
   // Tell the window how tall the rendered card is.
   useLayoutEffect(() => {
     if (!card.current) return;
     const height = Math.min(card.current.scrollHeight + 2, MAX_HEIGHT);
     invoke("popup_resize", { height });
-  }, [state]);
+  }, [state, look]);
 
   if (state.mode === "hidden") return null;
 

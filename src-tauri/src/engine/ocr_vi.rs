@@ -256,7 +256,7 @@ mod tests {
         let root = PathBuf::from(std::env::var("QT_OCR_VI_ROOT").unwrap());
         let edges: Vec<i32> = std::env::var("QT_OCR_RECT").unwrap().split(',').map(|v| v.parse().unwrap()).collect();
         let rect = Rect { left: edges[0], top: edges[1], right: edges[2], bottom: edges[3] };
-        println!("WINDOWS: {}", crate::platform::ocr_region(rect, None).unwrap());
-        println!("VIETOCR: {}", crate::platform::ocr_region(rect, Some(&root)).unwrap());
+        println!("WINDOWS: {}", crate::capture::join_lines(crate::platform::ocr_lines(rect, None).unwrap()));
+        println!("VIETOCR: {}", crate::capture::join_lines(crate::platform::ocr_lines(rect, Some(&root)).unwrap()));
     }
 }

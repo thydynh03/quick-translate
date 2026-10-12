@@ -371,12 +371,11 @@ fn grab(rect: Rect) -> anyhow::Result<(Vec<u8>, i32, i32)> {
     }
 }
 
-/// Reads the text in a screen rectangle with the Windows OCR engine, using
-/// the OCR languages installed for the user.
-/// Reads the text in a screen rectangle. `vietnamese` is the models folder
-/// when the Vietnamese recogniser is installed: Windows has no Vietnamese OCR,
-/// so its engine only locates the words and that model reads them.
-pub fn ocr_region(rect: Rect, vietnamese: Option<&std::path::Path>) -> anyhow::Result<String> {
+/// Reads the text in a screen rectangle, line by line, with each line's box
+/// relative to the rectangle. `vietnamese` is the models folder when the
+/// Vietnamese recogniser is installed: Windows has no Vietnamese OCR, so its
+/// engine only locates the words and that model reads them.
+pub fn ocr_lines(rect: Rect, vietnamese: Option<&std::path::Path>) -> anyhow::Result<Vec<(Rect, String)>> {
     use windows::Graphics::Imaging::{BitmapAlphaMode, BitmapPixelFormat, SoftwareBitmap};
     use windows::Media::Ocr::OcrEngine;
     use windows::Storage::Streams::DataWriter;
@@ -403,28 +402,44 @@ pub fn ocr_region(rect: Rect, vietnamese: Option<&std::path::Path>) -> anyhow::R
     let mut lines = Vec::new();
     for line in result.Lines()? {
         let mut text = line.Text()?.to_string();
+        let mut words = Vec::new();
+        for word in line.Words()? {
+            let bounds = word.BoundingRect()?;
+            words.push(Rect {
+                left: bounds.X.floor() as i32,
+                top: bounds.Y.floor() as i32,
+                right: (bounds.X + bounds.Width).ceil() as i32,
+                bottom: (bounds.Y + bounds.Height).ceil() as i32,
+            });
+        }
+        let Some(bounds) = words.iter().copied().reduce(|a, b| a.union(&b)) else { continue };
         if let Some(root) = vietnamese.filter(|_| latin) {
-            let mut words = Vec::new();
-            for word in line.Words()? {
-                let bounds = word.BoundingRect()?;
-                words.push(Rect {
-                    left: bounds.X.floor() as i32,
-                    top: bounds.Y.floor() as i32,
-                    right: (bounds.X + bounds.Width).ceil() as i32,
-                    bottom: (bounds.Y + bounds.Height).ceil() as i32,
-                });
-            }
             match crate::engine::ocr_vi::read_line(root, &pixels, width, height, &words) {
                 Ok(read) if !read.is_empty() => text = read,
                 Ok(_) => {}
                 Err(error) => crate::log(format!("ocr-vi: {error:#}")),
             }
         }
-        lines.push(text);
+        lines.push((bounds, text));
     }
-    // Lines of one paragraph are wrapped sentences: join them for translation.
-    Ok(lines.join(" "))
+    Ok(lines)
 }
+
+/// Bounds of the window the user is working in.
+pub fn foreground_rect() -> Option<Rect> {
+    use windows::Win32::Foundation::RECT;
+    use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowRect};
+    unsafe {
+        let window = GetForegroundWindow();
+        if window.0.is_null() {
+            return None;
+        }
+        let mut rect = RECT::default();
+        GetWindowRect(window, &mut rect).ok()?;
+        Some(Rect { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom })
+    }
+}
+
 // ------------------------------------------------------------------- hover
 
 /// The word under a screen point, for apps that expose text through UI

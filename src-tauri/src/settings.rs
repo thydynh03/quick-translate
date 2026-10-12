@@ -33,6 +33,16 @@ pub struct Settings {
     /// Oxford Dictionaries API credentials (optional).
     pub oxford_app_id: String,
     pub oxford_app_key: String,
+    /// Global shortcut that translates every text block of the active window in place.
+    pub window_hotkey: String,
+    /// Popup text size in CSS pixels.
+    pub popup_font_size: u32,
+    /// Popup background opacity in percent.
+    pub popup_opacity: u32,
+    /// Any OpenAI-compatible chat API: OpenAI, Gemini's compatible endpoint, Ollama, LM Studio.
+    pub openai_base: String,
+    pub openai_key: String,
+    pub openai_model: String,
 }
 
 impl Default for Settings {
@@ -53,6 +63,12 @@ impl Default for Settings {
             english_definitions: true,
             oxford_app_id: String::new(),
             oxford_app_key: String::new(),
+            window_hotkey: "Alt+E".into(),
+            popup_font_size: 14,
+            popup_opacity: 100,
+            openai_base: String::new(),
+            openai_key: String::new(),
+            openai_model: String::new(),
         }
     }
 }
