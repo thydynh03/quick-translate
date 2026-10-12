@@ -8,6 +8,11 @@ use serde_json::Value;
 use super::{lang, DictEntry, Translation};
 
 const ENDPOINT: &str = "https://translate.googleapis.com/translate_a/single";
+/// A second keyless endpoint with its own quota, for when the first one
+/// refuses. It returns the translation only: no dictionary, no reading.
+const SPARE: &str = "https://clients5.google.com/translate_a/t";
+/// Requests that do not look like a browser are limited much sooner.
+const AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
 
 pub async fn translate(text: &str, from: &str, to: &str) -> anyhow::Result<Translation> {
     // QT_GOOGLE_ENDPOINT lets a test point the engine at an unreachable host.
@@ -22,14 +27,50 @@ pub async fn translate(text: &str, from: &str, to: &str) -> anyhow::Result<Trans
     let response = client
         .post(url)
         .header("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
-        .body(body)
+        .header("User-Agent", AGENT)
+        .body(body.clone())
         .send()
         .await?;
     if !response.status().is_success() {
-        anyhow::bail!("Google Translate trả về lỗi {}", response.status());
+        // Usually 429: this network address has used up its share. The spare
+        // endpoint counts separately, so try it before giving up.
+        let status = response.status();
+        let spare = client
+            .post(format!("{SPARE}?client=dict-chrome-ex&sl={from}&tl={to}"))
+            .header("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
+            .header("User-Agent", AGENT)
+            .body(body)
+            .send()
+            .await;
+        if let Ok(spare) = spare {
+            if spare.status().is_success() {
+                if let Ok(translation) = parse_spare(&spare.json().await?, from, to) {
+                    return Ok(translation);
+                }
+            }
+        }
+        anyhow::bail!("Google Translate trả về lỗi {status}");
     }
     let json: Value = response.json().await?;
     parse(&json, from, to)
+}
+
+/// The spare endpoint answers `["text"]` when the source language was given
+/// and `[["text", "detected language"]]` when it was not.
+pub(crate) fn parse_spare(json: &Value, from: &str, to: &str) -> anyhow::Result<Translation> {
+    let first = json.get(0);
+    let text = first.and_then(Value::as_str).or_else(|| first.and_then(|pair| pair.get(0)).and_then(Value::as_str));
+    let detected = first.and_then(|pair| pair.get(1)).and_then(Value::as_str).unwrap_or(from);
+    match text.map(str::trim).filter(|text| !text.is_empty()) {
+        Some(text) => Ok(Translation {
+            text: text.to_string(),
+            from: detected.to_string(),
+            to: to.to_string(),
+            engine: "google".into(),
+            ..Default::default()
+        }),
+        None => anyhow::bail!("Google Translate không trả về bản dịch"),
+    }
 }
 
 pub(crate) fn parse(json: &Value, from: &str, to: &str) -> anyhow::Result<Translation> {
@@ -86,6 +127,35 @@ pub(crate) fn parse(json: &Value, from: &str, to: &str) -> anyhow::Result<Transl
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reads_both_shapes_of_the_spare_endpoint() {
+        let known = parse_spare(&serde_json::json!(["tổ chức"]), "en", "vi").unwrap();
+        assert_eq!((known.text.as_str(), known.from.as_str()), ("tổ chức", "en"));
+        let detected = parse_spare(&serde_json::json!([["Xin chào.", "en"]]), "auto", "vi").unwrap();
+        assert_eq!((detected.text.as_str(), detected.from.as_str()), ("Xin chào.", "en"));
+        assert!(parse_spare(&serde_json::json!([]), "en", "vi").is_err());
+    }
+
+    /// The spare endpoint answers a real request, as it must when the main one refuses.
+    #[test]
+    #[ignore]
+    fn spare_endpoint_answers() {
+        let client = reqwest::Client::new();
+        let result = tauri::async_runtime::block_on(async {
+            let response = client
+                .post(format!("{SPARE}?client=dict-chrome-ex&sl=auto&tl=vi"))
+                .header("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
+                .header("User-Agent", AGENT)
+                .body("q=Good%20morning.")
+                .send()
+                .await
+                .unwrap();
+            parse_spare(&response.json().await.unwrap(), "auto", "vi")
+        });
+        println!("{result:?}");
+        assert_eq!(result.unwrap().from, "en");
+    }
 
     /// Calls the real service: run with `cargo test -- --ignored google_answers`.
     #[test]
