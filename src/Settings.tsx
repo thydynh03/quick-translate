@@ -215,6 +215,7 @@ export default function Settings() {
                 <span>Phím tắt dịch cả cửa sổ đang mở</span>
                 <input
                   className="hotkey"
+                  title="Bấm vào rồi nhấn tổ hợp phím mới"
                   readOnly
                   value={config.window_hotkey}
                   onKeyDown={(e) => {
@@ -228,6 +229,7 @@ export default function Settings() {
                 <span>Phím tắt bật/tắt dịch thời gian thực</span>
                 <input
                   className="hotkey"
+                  title="Bấm vào rồi nhấn tổ hợp phím mới"
                   readOnly
                   value={config.live_hotkey}
                   onKeyDown={(e) => {

@@ -43,7 +43,7 @@ Cập nhật: 2026-10-12. Plan gốc: `docs/PLAN.md`. Hướng dẫn dùng: `REA
 
 - v0.1.6: thêm cài đặt `instant_translate` ("Bôi đen là dịch ngay"): trong `trigger::on_selection_gesture`, khi accessibility đọc được vùng bôi đen thì gọi thẳng `popup::translate_text`; khi phải dùng Ctrl+C thì vẫn hiện biểu tượng (cố ý, tránh tự gửi Ctrl+C). CHƯA test bằng tay.
 
-- v0.1.8 (2026-10-12): sửa popup vô hình chặn chuột sau khi đóng (`platform::hide_overlay`, dùng cho popup và lớp phủ `Alt+R`); hai ô phím tắt Alt+E/Alt+R trong Cài đặt dùng class `hotkey`; ghi log lý do engine chính lỗi trước khi dùng dự phòng; test `google_answers` (ignored) gọi Google thật. Đã test tay flashcard trong app: lưu/bỏ lưu từ popup, tab Từ vựng, mã QR, xoá. Google bị 429 nhiều giờ sau các lần test Alt+E dồn dập rồi tự hết. Worker thống kê vẫn chưa triển khai (cần người dùng `wrangler login`).
+- v0.1.8 (2026-10-12): sửa popup vô hình chặn chuột sau khi đóng (`platform::hide_overlay`, dùng cho popup và lớp phủ `Alt+R`); hai ô phím tắt Alt+E/Alt+R trong Cài đặt dùng class `hotkey`; ghi log lý do engine chính lỗi trước khi dùng dự phòng; test `google_answers` (ignored) gọi Google thật. CHƯA test lại `Alt+R` sau khi sửa và chưa nhìn lại hai ô phím tắt. Đã test tay flashcard trong app: lưu/bỏ lưu từ popup, tab Từ vựng, mã QR, xoá. Google bị 429 nhiều giờ sau các lần test Alt+E dồn dập rồi tự hết. Worker thống kê vẫn chưa triển khai (cần người dùng `wrangler login`).
 
 ## CHƯA kiểm chứng
 
