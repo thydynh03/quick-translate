@@ -302,7 +302,7 @@ export default function Settings() {
                 />
               </label>
               <label className="row">
-                <span>Bôi đen một từ: giải thích nghĩa của từ theo ngữ cảnh câu chứa nó</span>
+                <span>Bôi đen 1–4 từ: giải thích nghĩa theo ngữ cảnh câu chứa chúng</span>
                 <input type="checkbox" checked={config.explain_in_context} onChange={(e) => update({ explain_in_context: e.target.checked })} />
               </label>
               <p className="help">

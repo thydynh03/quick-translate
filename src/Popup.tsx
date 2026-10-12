@@ -55,7 +55,7 @@ export default function Popup() {
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
-  const [trail, setTrail] = useState<string[]>([]);
+  const [trail, setTrail] = useState<{ text: string; context: string | null }[]>([]);
   const card = useRef<HTMLDivElement>(null);
   // The card the popup shows now; an older vocab_has answer must not change `saved`.
   const shownKey = useRef("");
@@ -124,6 +124,7 @@ export default function Popup() {
 
   const source = state.source;
   const result = state.mode === "result" ? state.result : null;
+  const shownContext = result?.context?.sentence ?? null;
   const words = tokens(source);
   const clickable = words.filter((w) => w.trim()).length > 1;
 
@@ -138,15 +139,16 @@ export default function Popup() {
   const lookup = (word: string) => {
     const clean = word.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
     if (!clean) return;
-    setTrail((t) => [...t, source]);
+    setTrail((t) => [...t, { text: source, context: shownContext }]);
     // The sentence the word was clicked in gives it context.
-    invoke("popup_lookup", { text: clean, context: source.length <= 600 ? source : null });
+    const sentence = result?.context?.sentence ?? source;
+    invoke("popup_lookup", { text: clean, context: sentence.length <= 600 ? sentence : null });
   };
 
   const back = () => {
     const previous = trail[trail.length - 1];
     setTrail((t) => t.slice(0, -1));
-    invoke("popup_lookup", { text: previous, context: null });
+    invoke("popup_lookup", { text: previous.text, context: previous.context });
   };
 
   const copy = async () => {

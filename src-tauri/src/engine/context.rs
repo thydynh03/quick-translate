@@ -43,7 +43,11 @@ pub fn question(word: &str, sentence: &str) -> String {
 
 /// Reads the model's JSON answer, tolerating a code fence around it.
 pub fn parse_answer(raw: &str) -> anyhow::Result<Explained> {
-    let trimmed = raw.trim().trim_start_matches("```json").trim_start_matches("```").trim_end_matches("```").trim();
+    // Models may wrap the object in prose or a code fence: take the outermost braces.
+    let trimmed = match (raw.find('{'), raw.rfind('}')) {
+        (Some(start), Some(end)) if start < end => &raw[start..=end],
+        _ => raw.trim(),
+    };
     let json: Value = serde_json::from_str(trimmed).map_err(|_| anyhow::anyhow!("AI trả về dữ liệu không đúng định dạng"))?;
     let field = |name: &str| json.get(name).and_then(Value::as_str).unwrap_or_default().trim().to_string();
     let explained = Explained { meaning: field("meaning"), sentence: field("sentence") };
@@ -107,6 +111,7 @@ mod tests {
             Explained { meaning: "ngân hàng".into(), sentence: "Tôi ra ngân hàng.".into() }
         );
         assert!(parse_answer("not json").is_err());
+        assert_eq!(parse_answer("Here you go: {\"meaning\": \"a\", \"sentence\": \"b\"} Hope it helps.").unwrap().meaning, "a");
         assert!(parse_answer("{\"meaning\": \"x\", \"sentence\": \"\"}").is_err());
     }
 

@@ -127,7 +127,10 @@ pub async fn explain(key: &str, word: &str, sentence: &str, to: &str) -> anyhow:
         .await?;
     let status = response.status();
     let json: Value = response.json().await?;
-    anyhow::ensure!(status.is_success(), "Claude trả về lỗi {}", status.as_u16());
+    if !status.is_success() {
+        let message = json.pointer("/error/message").and_then(Value::as_str).unwrap_or("không rõ lỗi");
+        anyhow::bail!("Claude trả về lỗi {}: {message}", status.as_u16());
+    }
     let answer: String = json
         .get("content")
         .and_then(Value::as_array)
