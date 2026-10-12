@@ -5,8 +5,8 @@
 //! Reading the screen (OCR through the Vision framework) needs the Screen
 //! Recording permission.
 //!
-//! Not yet implemented here: hover lookup, and a non-activating panel for
-//! the popup — showing it briefly activates Quick Translate.
+//! Not yet implemented here: a non-activating panel for the popup — showing
+//! it briefly activates Quick Translate.
 
 use std::ffi::{c_char, c_void, CStr};
 use std::ptr;
@@ -16,12 +16,14 @@ use std::time::{Duration, Instant};
 
 use accessibility_sys::{
     kAXBoundsForRangeParameterizedAttribute, kAXErrorSuccess, kAXFocusedUIElementAttribute,
-    kAXSelectedTextAttribute, kAXSelectedTextRangeAttribute, kAXTrustedCheckOptionPrompt, kAXValueTypeCGRect,
-    AXIsProcessTrustedWithOptions, AXUIElementCopyAttributeValue, AXUIElementCopyParameterizedAttributeValue,
-    AXUIElementCreateSystemWide, AXUIElementRef, AXValueGetValue, AXValueRef,
+    kAXRangeForPositionParameterizedAttribute, kAXSelectedTextAttribute, kAXSelectedTextRangeAttribute,
+    kAXTrustedCheckOptionPrompt, kAXValueAttribute, kAXValueTypeCFRange, kAXValueTypeCGPoint, kAXValueTypeCGRect,
+    AXIsProcessTrustedWithOptions, AXUIElementCopyAttributeValue, AXUIElementCopyElementAtPosition,
+    AXUIElementCopyParameterizedAttributeValue, AXUIElementCreateSystemWide, AXUIElementRef, AXValueCreate,
+    AXValueGetValue, AXValueRef,
 };
 use core_foundation::array::{CFArray, CFArrayGetCount, CFArrayGetValueAtIndex, CFArrayRef};
-use core_foundation::base::{CFGetTypeID, CFRelease, CFType, CFTypeRef, TCFType};
+use core_foundation::base::{CFGetTypeID, CFRange, CFRelease, CFType, CFTypeRef, TCFType};
 use core_foundation::data::{CFDataGetBytePtr, CFDataGetLength, CFDataRef};
 use core_foundation::dictionary::{CFDictionaryGetValue, CFDictionaryRef};
 use core_foundation::number::{kCFNumberSInt32Type, CFNumberGetValue, CFNumberRef};
@@ -85,34 +87,159 @@ pub fn selection_via_accessibility() -> Option<Selection> {
         });
 
         let mut rect = None;
+        let mut context = None;
         if let Some(range) = copy_attribute(element, kAXSelectedTextRangeAttribute) {
-            let mut bounds: CFTypeRef = ptr::null();
-            let attribute = CFString::from_static_string(kAXBoundsForRangeParameterizedAttribute);
-            let status = AXUIElementCopyParameterizedAttributeValue(
-                element,
-                attribute.as_concrete_TypeRef(),
-                range,
-                &mut bounds,
-            );
-            if status == kAXErrorSuccess && !bounds.is_null() {
-                let mut cg = CGRect::new(&CGPoint::new(0.0, 0.0), &CGSize::new(0.0, 0.0));
-                let read = AXValueGetValue(bounds as AXValueRef, kAXValueTypeCGRect, &mut cg as *mut CGRect as *mut c_void);
-                if read && cg.size.width > 0.0 && cg.size.height > 0.0 {
-                    rect = Some(Rect {
-                        left: to_pixels(cg.origin.x),
-                        top: to_pixels(cg.origin.y),
-                        right: to_pixels(cg.origin.x + cg.size.width),
-                        bottom: to_pixels(cg.origin.y + cg.size.height),
-                    });
+            rect = bounds_for_value(element, range);
+            // A word or short phrase: also read the sentence it sits in.
+            if let (Some(selected), Some(r)) = (&text, range_of(range)) {
+                if selected.split_whitespace().count() <= 4 {
+                    context = sentence_in_value(element, r.location).filter(|s| s.trim() != selected.trim());
                 }
-                CFRelease(bounds);
             }
             CFRelease(range);
         }
         CFRelease(focused);
 
         let text = text?.trim().to_string();
-        (!text.is_empty()).then_some(Selection { text, rect, context: None })
+        (!text.is_empty()).then_some(Selection { text, rect, context })
+    }
+}
+
+/// Screen bounds of an AXValue holding a CFRange of `element`'s text.
+unsafe fn bounds_for_value(element: AXUIElementRef, range: CFTypeRef) -> Option<Rect> {
+    let mut bounds: CFTypeRef = ptr::null();
+    let attribute = CFString::from_static_string(kAXBoundsForRangeParameterizedAttribute);
+    let status = AXUIElementCopyParameterizedAttributeValue(element, attribute.as_concrete_TypeRef(), range, &mut bounds);
+    if status != kAXErrorSuccess || bounds.is_null() {
+        return None;
+    }
+    let mut cg = CGRect::new(&CGPoint::new(0.0, 0.0), &CGSize::new(0.0, 0.0));
+    let read = AXValueGetValue(bounds as AXValueRef, kAXValueTypeCGRect, &mut cg as *mut CGRect as *mut c_void);
+    CFRelease(bounds);
+    (read && cg.size.width > 0.0 && cg.size.height > 0.0).then(|| Rect {
+        left: to_pixels(cg.origin.x),
+        top: to_pixels(cg.origin.y),
+        right: to_pixels(cg.origin.x + cg.size.width),
+        bottom: to_pixels(cg.origin.y + cg.size.height),
+    })
+}
+
+unsafe fn range_of(value: CFTypeRef) -> Option<CFRange> {
+    let mut range = CFRange { location: 0, length: 0 };
+    AXValueGetValue(value as AXValueRef, kAXValueTypeCFRange, &mut range as *mut CFRange as *mut c_void).then_some(range)
+}
+
+/// Longest text read from one element; bigger documents are skipped.
+const MAX_VALUE_CHARS: usize = 200_000;
+
+/// The element's whole text (AXValue), when it is a string of sensible size.
+unsafe fn value_text(element: AXUIElementRef) -> Option<String> {
+    let value = copy_attribute(element, kAXValueAttribute)?;
+    let text = (CFGetTypeID(value) == CFString::type_id()).then(|| CFString::wrap_under_get_rule(value as CFStringRef).to_string());
+    CFRelease(value);
+    text.filter(|t| t.len() <= MAX_VALUE_CHARS * 4)
+}
+
+/// Accessibility ranges count UTF-16 units; the sentence code counts chars.
+fn utf16_to_char_offset(text: &str, utf16: usize) -> usize {
+    let mut units = 0;
+    for (index, c) in text.chars().enumerate() {
+        if units >= utf16 {
+            return index;
+        }
+        units += c.len_utf16();
+    }
+    text.chars().count()
+}
+
+/// The sentence of the element's text around a UTF-16 position.
+unsafe fn sentence_in_value(element: AXUIElementRef, location: isize) -> Option<String> {
+    let text = value_text(element)?;
+    let offset = utf16_to_char_offset(&text, location.max(0) as usize);
+    let paragraph_start = text.chars().take(offset).collect::<Vec<_>>().iter().rposition(|c| *c == '\n').map_or(0, |i| i + 1);
+    let paragraph: String = text.chars().skip(paragraph_start).take_while(|c| *c != '\n').collect();
+    crate::sentence::around(&paragraph, offset - paragraph_start)
+}
+
+/// The word of `text` around a char offset.
+fn word_around(text: &str, offset: usize) -> Option<String> {
+    let chars: Vec<char> = text.chars().collect();
+    let is_word = |c: char| c.is_alphanumeric() || c == '\'' || c == '-';
+    if offset >= chars.len() || !is_word(chars[offset]) {
+        return None;
+    }
+    let start = (0..offset).rev().take_while(|&i| is_word(chars[i])).last().unwrap_or(offset);
+    let end = (offset..chars.len()).take_while(|&i| is_word(chars[i])).last().unwrap_or(offset) + 1;
+    let word: String = chars[start..end].iter().collect();
+    let word = word.trim_matches(|c: char| !c.is_alphanumeric()).to_string();
+    (!word.is_empty()).then_some(word)
+}
+
+/// The element under a screen point (pixels) and the text position under it.
+unsafe fn text_at_point(x: i32, y: i32) -> Option<(AXUIElementRef, CFRange)> {
+    let (px, py) = (x as f64 / scale(), y as f64 / scale());
+    let system = AXUIElementCreateSystemWide();
+    let mut element: AXUIElementRef = ptr::null_mut();
+    let status = AXUIElementCopyElementAtPosition(system, px as f32, py as f32, &mut element);
+    CFRelease(system as CFTypeRef);
+    if status != kAXErrorSuccess || element.is_null() {
+        return None;
+    }
+    let point = CGPoint::new(px, py);
+    let value = AXValueCreate(kAXValueTypeCGPoint, &point as *const CGPoint as *const c_void);
+    let mut found: CFTypeRef = ptr::null();
+    let attribute = CFString::from_static_string(kAXRangeForPositionParameterizedAttribute);
+    let status = AXUIElementCopyParameterizedAttributeValue(element, attribute.as_concrete_TypeRef(), value as CFTypeRef, &mut found);
+    CFRelease(value as CFTypeRef);
+    if status != kAXErrorSuccess || found.is_null() {
+        CFRelease(element as CFTypeRef);
+        return None;
+    }
+    let range = range_of(found);
+    CFRelease(found);
+    match range {
+        Some(range) => Some((element, range)),
+        None => {
+            CFRelease(element as CFTypeRef);
+            None
+        }
+    }
+}
+
+/// Bounds of one character, to check the pointer is really over text.
+unsafe fn char_bounds(element: AXUIElementRef, location: isize) -> Option<Rect> {
+    let range = CFRange { location, length: 1 };
+    let value = AXValueCreate(kAXValueTypeCFRange, &range as *const CFRange as *const c_void);
+    let rect = bounds_for_value(element, value as CFTypeRef);
+    CFRelease(value as CFTypeRef);
+    rect
+}
+
+/// A rectangle a few pixels around the pointer, for placing the card.
+fn pointer_rect(x: i32, y: i32) -> Rect {
+    Rect { left: x, top: y - 10, right: x, bottom: y + 12 }
+}
+
+/// Shared by word_at and sentence_at: reads the text under the pointer.
+fn read_at(x: i32, y: i32, sentence: bool) -> Option<Selection> {
+    unsafe {
+        let (element, range) = text_at_point(x, y)?;
+        let near = char_bounds(element, range.location).is_some_and(|r| r.left - 4 <= x && x <= r.right + 4 && r.top - 4 <= y && y <= r.bottom + 4);
+        let found = near
+            .then(|| value_text(element))
+            .flatten()
+            .and_then(|text| {
+                let offset = utf16_to_char_offset(&text, range.location.max(0) as usize);
+                if sentence {
+                    sentence_in_value(element, range.location)
+                } else {
+                    word_around(&text, offset)
+                }
+            });
+        let rect = char_bounds(element, range.location).map(|r| Rect { left: x, right: x, ..r });
+        CFRelease(element as CFTypeRef);
+        let text = found?.trim().to_string();
+        (!text.is_empty()).then(|| Selection { text, rect: rect.or(Some(pointer_rect(x, y))), context: None })
     }
 }
 
@@ -505,23 +632,50 @@ pub fn show_passive(window: &tauri::WebviewWindow) {
     });
 }
 
-// ------------------------------------------------------- not yet supported
+// ------------------------------------------------------------------- hover
 
-pub fn word_at(_x: i32, _y: i32) -> Option<Selection> {
-    None
+/// The word under a screen point, in apps that expose their text through
+/// the Accessibility API (TextEdit, Notes, Safari, Mail…).
+pub fn word_at(x: i32, y: i32) -> Option<Selection> {
+    read_at(x, y, false)
 }
 
-pub fn sentence_at(_x: i32, _y: i32) -> Option<Selection> {
-    None
+/// The whole sentence under a screen point, from its start to its full stop.
+pub fn sentence_at(x: i32, y: i32) -> Option<Selection> {
+    read_at(x, y, true)
 }
 
+#[link(name = "CoreGraphics", kind = "framework")]
+extern "C" {
+    fn CGEventSourceFlagsState(state: i32) -> u64;
+}
+
+/// Control is the "translate what I point at" modifier, as on Windows.
 pub fn hover_modifier_down() -> bool {
-    false
+    const COMBINED_SESSION_STATE: i32 = 0;
+    const CONTROL: u64 = 1 << 18;
+    unsafe { CGEventSourceFlagsState(COMBINED_SESSION_STATE) & CONTROL != 0 }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn utf16_offsets_become_char_offsets() {
+        // "😀" is two UTF-16 units but one char.
+        assert_eq!(utf16_to_char_offset("a😀b", 3), 2);
+        assert_eq!(utf16_to_char_offset("Việt Nam", 5), 5);
+        assert_eq!(utf16_to_char_offset("ab", 10), 2);
+    }
+
+    #[test]
+    fn word_around_an_offset() {
+        let text = "Please confirm whether you can't attend.";
+        assert_eq!(word_around(text, 9).as_deref(), Some("confirm"));
+        assert_eq!(word_around(text, 29).as_deref(), Some("can't"));
+        assert_eq!(word_around(text, 6), None);
+    }
 
     #[link(name = "ImageIO", kind = "framework")]
     unsafe extern "C" {
