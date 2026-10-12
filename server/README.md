@@ -1,5 +1,7 @@
 # Máy chủ thống kê
 
+Đang chạy tại https://quick-translate-stats.request-desk.workers.dev (triển khai 2026-10-12, tài khoản Cloudflare của chủ dự án).
+
 Cloudflare Worker + D1 (gói miễn phí đủ dùng). Đếm số máy dùng app và số trình duyệt vào web mỗi ngày.
 Mỗi máy/trình duyệt có một mã ngẫu nhiên; không lưu IP, không lưu nội dung dịch.
 Để giới hạn số liệu giả, máy chủ chỉ giữ một mã băm của địa chỉ mạng trong đúng ngày đó (xem "Chống số liệu giả").
@@ -26,7 +28,8 @@ Sau đó:
 
 Chạy ngay trong worker, nên dùng được cả ở địa chỉ `workers.dev` (rule của WAF chỉ áp cho tên miền riêng).
 
-- Mỗi địa chỉ mạng gọi `/ping` tối đa 10 lần mỗi phút (`[[ratelimits]]` trong `wrangler.toml`).
+- Mỗi địa chỉ mạng gọi `/ping` tối đa 10 lần mỗi phút (`[[ratelimits]]` trong `wrangler.toml`, cộng một bộ đếm trong bộ nhớ worker). Lớp này chỉ chặn được lũ lớn: khi thử thật 40 lần trong 20 giây vẫn lọt, vì yêu cầu rải qua nhiều máy chủ của Cloudflare. Lớp chặn chắc chắn là mức theo ngày bên dưới.
+- Địa chỉ IPv6 được tính theo mạng (64 bit đầu), vì một mạng có vô số địa chỉ.
 - Mỗi địa chỉ mạng chỉ thêm được 30 mã mới mỗi ngày (`DAILY_NEW_IDS` trong `src/index.js`). Mã đã được tính trong ngày thì gửi lại không tốn lượt.
 - Vượt mức thì nhận mã 429. App tự thử lại sau một giờ.
 - Bảng `senders` giữ mã băm SHA-256 của địa chỉ trộn với muối ngẫu nhiên của ngày; muối và các dòng này bị xoá khi worker nhận lượt gửi đầu tiên của ngày sau. Địa chỉ IP không được ghi lại.

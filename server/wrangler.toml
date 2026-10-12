@@ -6,7 +6,7 @@ compatibility_date = "2026-09-01"
 binding = "DB"
 database_name = "quick-translate-stats"
 # Thay bằng id in ra từ `wrangler d1 create quick-translate-stats`.
-database_id = "REPLACE_ME"
+database_id = "87374570-04a7-4637-89c7-80f5255c3014"
 
 # Mỗi địa chỉ mạng gọi /ping tối đa 10 lần mỗi phút.
 [[ratelimits]]
