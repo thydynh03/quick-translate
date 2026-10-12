@@ -14,6 +14,7 @@ mod history;
 mod platform;
 mod popup;
 mod settings;
+mod telemetry;
 mod trigger;
 mod vocab;
 
@@ -297,6 +298,7 @@ pub fn run() {
             capture::create_window(&handle)?;
             build_tray(&handle)?;
             register_hotkeys(&handle);
+            telemetry::start(handle.clone());
 
             let (tx, rx) = std::sync::mpsc::channel();
             platform::start_mouse_hook(tx);

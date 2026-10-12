@@ -59,6 +59,8 @@ pub struct Settings {
     pub openai_key: String,
     pub openai_model: String,
     pub profiles: Vec<Profile>,
+    /// Sends an anonymous daily ping (random id, version, OS) to count users.
+    pub usage_stats: bool,
 }
 
 impl Settings {
@@ -109,6 +111,7 @@ impl Default for Settings {
             openai_key: String::new(),
             openai_model: String::new(),
             profiles: Vec::new(),
+            usage_stats: true,
         }
     }
 }

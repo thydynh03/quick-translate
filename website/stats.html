@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Thống kê Quick Translate</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/site.css">
+  <style>
+    .dash { padding: 32px 0 64px; }
+    .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin: 20px 0 32px; }
+    .tile { background: var(--card); border-radius: var(--radius); padding: 16px 18px; box-shadow: 0 1px 0 rgba(0,0,0,.04); }
+    .tile b { display: block; font-size: 1.9rem; font-variant-numeric: tabular-nums; }
+    .tile span { color: var(--soft); font-size: .9rem; }
+    .panel { background: var(--card); border-radius: var(--radius); padding: 18px; margin-bottom: 20px; overflow-x: auto; }
+    .panel h2 { font-size: 1.1rem; margin: 0 0 12px; }
+    .chart { display: flex; align-items: flex-end; gap: 3px; height: 160px; }
+    .chart div { flex: 1; min-width: 4px; display: flex; flex-direction: column-reverse; gap: 1px; height: 100%; }
+    .chart i { display: block; border-radius: 2px 2px 0 0; }
+    .app { background: var(--accent); } .web { background: var(--select); }
+    .legend { color: var(--soft); font-size: .85rem; margin-top: 8px; }
+    .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin: 0 4px 0 12px; }
+    table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--tone); }
+    td.n, th.n { text-align: right; }
+    .muted { color: var(--soft); }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="./" aria-label="Quick Translate, trang chủ">
+      <img src="assets/icon.svg" alt="" width="28" height="28">
+      <span>Quick Translate</span>
+    </a>
+    <nav class="nav" aria-label="Điều hướng chính">
+      <a href="docs.html">Tài liệu</a>
+      <a href="stats.html" aria-current="page">Thống kê</a>
+    </nav>
+  </header>
+
+  <main class="wrap dash">
+    <h1>Thống kê</h1>
+    <p class="muted">Lượt tải lấy từ GitHub Releases. Người dùng đếm theo mã ngẫu nhiên mỗi máy/trình duyệt mỗi ngày, không lưu IP.</p>
+
+    <div class="tiles">
+      <div class="tile"><b id="t-downloads">–</b><span>Tổng lượt tải</span></div>
+      <div class="tile"><b id="t-win">–</b><span>Tải bản Windows</span></div>
+      <div class="tile"><b id="t-mac">–</b><span>Tải bản macOS</span></div>
+      <div class="tile"><b id="t-app-today">–</b><span>Người dùng app hôm nay</span></div>
+      <div class="tile"><b id="t-app-period">–</b><span>Người dùng app 30 ngày</span></div>
+      <div class="tile"><b id="t-app-total">–</b><span>Máy đã từng dùng app</span></div>
+      <div class="tile"><b id="t-web-today">–</b><span>Khách web hôm nay</span></div>
+      <div class="tile"><b id="t-web-period">–</b><span>Khách web 30 ngày</span></div>
+    </div>
+
+    <section class="panel">
+      <h2>Người dùng mỗi ngày (30 ngày)</h2>
+      <div class="chart" id="chart"></div>
+      <p class="legend"><i class="app"></i>App <i class="web"></i>Web</p>
+      <p class="muted" id="users-note"></p>
+    </section>
+
+    <section class="panel">
+      <h2>Lượt tải theo phiên bản</h2>
+      <table><thead><tr><th>Phiên bản</th><th>Ngày</th><th class="n">Windows</th><th class="n">macOS</th><th class="n">Tổng</th></tr></thead><tbody id="releases"></tbody></table>
+    </section>
+
+    <section class="panel">
+      <h2>App đang dùng (30 ngày)</h2>
+      <table><thead><tr><th>Phiên bản / hệ điều hành</th><th class="n">Số máy</th></tr></thead><tbody id="breakdown"></tbody></table>
+    </section>
+  </main>
+
+  <script src="assets/stats-config.js"></script>
+  <script src="assets/stats.js" defer></script>
+</body>
+</html>

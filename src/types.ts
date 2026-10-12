@@ -33,6 +33,7 @@ export type Settings = {
   anthropic_key: string;
   excluded_apps: string[];
   save_history: boolean;
+  usage_stats: boolean;
   english_definitions: boolean;
   oxford_app_id: string;
   oxford_app_key: string;
