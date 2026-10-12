@@ -33,20 +33,35 @@ const ICONS = {
   pin: "M9 3h6l-1 6 4 4H6l4-4-1-6zM12 13v8",
   close: "M6 6l12 12M18 6 6 18",
   back: "M15 5l-7 7 7 7",
+  save: "M6 3h12v18l-6-4-6 4z",
 };
 
 export default function Popup() {
   const [state, setState] = useState<PopupState>({ mode: "hidden" });
   const [pinned, setPinned] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [trail, setTrail] = useState<string[]>([]);
   const card = useRef<HTMLDivElement>(null);
+  // The card the popup shows now; an older vocab_has answer must not change `saved`.
+  const shownKey = useRef("");
 
   useEffect(() => {
     invoke<PopupState>("popup_state").then(setState);
     const unlisten = listen<PopupState>("popup-state", (event) => {
       setState(event.payload);
       setCopied(false);
+      setSaved(false);
+      setSaveError("");
+      const next = event.payload;
+      const key = next.mode === "result" ? `${next.result.to}|${next.source}` : "";
+      shownKey.current = key;
+      if (next.mode === "result") {
+        invoke<boolean>("vocab_has", { front: next.source, to: next.result.to }).then((has) => {
+          if (shownKey.current === key) setSaved(has);
+        }, (error) => setSaveError(String(error)));
+      }
       if (event.payload.mode === "hidden" || event.payload.mode === "icon") {
         setPinned(false);
         setTrail([]);
@@ -126,6 +141,33 @@ export default function Popup() {
     setCopied(true);
   };
 
+  // Saves the selection as a flashcard; a second press removes it.
+  const toggleSave = async () => {
+    if (!result) return;
+    shownKey.current += "*"; // a pending vocab_has is now stale
+    setSaveError("");
+    try {
+      if (saved) {
+        await invoke("vocab_remove", { front: source, to: result.to });
+        setSaved(false);
+      } else {
+        await saveCard();
+        setSaved(true);
+      }
+    } catch (error) {
+      setSaveError(String(error));
+    }
+  };
+
+  const saveCard = async () => {
+    if (!result) return;
+    const senses = [...result.dict, ...result.definitions];
+    const detail = [result.phonetic ?? "", ...senses.map((d) => `${d.pos}: ${d.terms.join(", ")}`)]
+      .filter(Boolean)
+      .join("\n");
+    await invoke("vocab_add", { card: { at: 0, front: source, back: result.text, detail, from: result.from, to: result.to } });
+  };
+
   const togglePin = () => {
     invoke("popup_pin", { pinned: !pinned });
     setPinned(!pinned);
@@ -156,6 +198,9 @@ export default function Popup() {
             <>
               <button className="tool" onClick={() => speak(source, result.from)} title="Đọc văn bản gốc">
                 <Icon d={ICONS.speak} />
+              </button>
+              <button className={saved ? "tool on" : "tool"} onClick={toggleSave} title={saved ? "Bỏ khỏi bộ từ vựng" : "Lưu vào bộ từ vựng"}>
+                <Icon d={ICONS.save} />
               </button>
               <button className="tool" onClick={copy} title="Sao chép bản dịch">
                 <Icon d={copied ? ICONS.check : ICONS.copy} />
@@ -225,6 +270,7 @@ export default function Popup() {
             </button>
           )}
           {result.note && <p className="note">{result.note}</p>}
+          {saveError && <p className="note">Không lưu được từ: {saveError}</p>}
         </>
       )}
     </div>

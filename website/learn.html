@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Học từ vựng – Quick Translate</title>
+  <meta name="description" content="Học lại các từ đã lưu trong Quick Translate bằng flashcard và lặp lại ngắt quãng, ngay trên điện thoại.">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#1f4fd8">
+  <link rel="manifest" href="learn.webmanifest">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/icon-256.png">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/site.css">
+  <link rel="stylesheet" href="assets/learn.css">
+</head>
+<body class="learn">
+  <header class="lbar">
+    <a class="brand" href="./"><img src="assets/icon.svg" alt="" width="24" height="24"><span>Học từ vựng</span></a>
+    <span class="streak" id="streak" title="Số ngày học liên tiếp"></span>
+  </header>
+
+  <main class="lmain">
+    <!-- Home -->
+    <section id="home">
+      <p class="toast" id="toast" hidden></p>
+      <div class="stats">
+        <div><b id="s-due">0</b><span>Cần ôn</span></div>
+        <div><b id="s-new">0</b><span>Thẻ mới</span></div>
+        <div><b id="s-total">0</b><span>Tổng số thẻ</span></div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="start-study">Học thẻ</button>
+        <button class="btn ghost" id="start-quiz">Trắc nghiệm</button>
+      </div>
+      <div class="empty" id="empty" hidden>
+        <p><b>Chưa có thẻ nào.</b></p>
+        <p>Trên máy tính: bấm nút đánh dấu trên popup dịch để lưu từ, rồi vào Cài đặt → Từ vựng → <i>Học trên điện thoại</i> và quét mã QR bằng camera.</p>
+      </div>
+      <details class="list" id="list-box">
+        <summary>Danh sách thẻ</summary>
+        <input type="search" id="search" placeholder="Tìm từ">
+        <ul id="list"></ul>
+      </details>
+      <details class="list">
+        <summary>Sao lưu</summary>
+        <p class="fine">Tiến độ học lưu trong trình duyệt này. Thêm trang vào màn hình chính để mở như một ứng dụng và học cả khi không có mạng.</p>
+        <div class="actions">
+          <button class="btn ghost small" id="export">Xuất tệp</button>
+          <label class="btn ghost small">Nhập tệp<input type="file" id="import" accept="application/json,.json" hidden></label>
+          <button class="btn ghost small" id="reverse"></button>
+        </div>
+      </details>
+    </section>
+
+    <!-- Flashcards -->
+    <section id="study" hidden>
+      <p class="progress"><button class="back" data-home>← Xong</button><span id="study-left"></span></p>
+      <button class="flash" id="flash" aria-live="polite">
+        <span class="face" id="face-front"></span>
+        <span class="face answer" id="face-back" hidden></span>
+      </button>
+      <button class="speak" id="speak" aria-label="Đọc">🔊</button>
+      <p class="hint" id="hint">Chạm vào thẻ để lật</p>
+      <div class="grades" id="grades" hidden>
+        <button data-grade="0">Quên<small id="g0"></small></button>
+        <button data-grade="1">Khó<small id="g1"></small></button>
+        <button data-grade="2">Nhớ<small id="g2"></small></button>
+        <button data-grade="3">Dễ<small id="g3"></small></button>
+      </div>
+    </section>
+
+    <!-- Quiz -->
+    <section id="quiz" hidden>
+      <p class="progress"><button class="back" data-home>← Xong</button><span id="quiz-score"></span></p>
+      <div class="flash static"><span class="face" id="quiz-q"></span></div>
+      <div class="choices" id="choices"></div>
+      <button class="btn" id="quiz-next" hidden>Câu tiếp</button>
+    </section>
+
+    <!-- Done -->
+    <section id="done" hidden>
+      <p class="done-big">🎉</p>
+      <p id="done-text"></p>
+      <button class="btn" data-home>Về trang chính</button>
+    </section>
+  </main>
+
+  <script src="assets/learn.js" defer></script>
+</body>
+</html>

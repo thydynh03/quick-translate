@@ -6,8 +6,9 @@ import { disable, enable, isEnabled } from "@tauri-apps/plugin-autostart";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ENGINE_NAMES, HistoryEntry, LANGUAGES, Profile, Settings as Config, Translation, langName } from "./types";
 import OfflineModels from "./OfflineModels";
+import Vocab from "./Vocab";
 
-type Tab = "general" | "engine" | "history" | "about";
+type Tab = "general" | "engine" | "vocab" | "history" | "about";
 
 const SITE = "https://thydynh03.github.io/quick-translate/";
 const REPO = "https://github.com/thydynh03/quick-translate";
@@ -77,6 +78,7 @@ export default function Settings() {
   const [sampleError, setSampleError] = useState("");
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [historyQuery, setHistoryQuery] = useState("");
 
   const load = () => invoke<Config>("get_settings").then(setConfig);
 
@@ -94,6 +96,9 @@ export default function Settings() {
   }, [tab]);
 
   if (!config) return null;
+
+  const historyNeedle = historyQuery.trim().toLowerCase();
+  const filteredHistory = history.filter((entry) => `${entry.source}\n${entry.text}`.toLowerCase().includes(historyNeedle));
 
   const update = async (patch: Partial<Config>) => {
     const next = { ...config, ...patch };
@@ -136,6 +141,7 @@ export default function Settings() {
           [
             ["general", "Chung"],
             ["engine", "Engine dịch"],
+            ["vocab", "Từ vựng"],
             ["history", "Lịch sử"],
             ["about", "Giới thiệu"],
           ] as [Tab, string][]
@@ -474,8 +480,16 @@ export default function Settings() {
                 >
                   Xoá toàn bộ lịch sử
                 </button>
+                <input
+                  className="search"
+                  type="search"
+                  placeholder="Tìm trong lịch sử"
+                  value={historyQuery}
+                  onChange={(e) => setHistoryQuery(e.target.value)}
+                />
+                {filteredHistory.length === 0 && <p className="help">Không có mục nào khớp.</p>}
                 <ul className="history">
-                  {history.map((entry) => (
+                  {filteredHistory.map((entry) => (
                     <li key={`${entry.at}-${entry.source}`}>
                       <small>
                         {new Date(entry.at * 1000).toLocaleString("vi-VN")} · {entry.from.toUpperCase()} → {entry.to.toUpperCase()} ·{" "}
@@ -490,6 +504,8 @@ export default function Settings() {
             )}
           </section>
         )}
+
+        {tab === "vocab" && <Vocab />}
 
         {tab === "about" && <About />}
       </main>

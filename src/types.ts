@@ -92,3 +92,12 @@ export function langName(code: string): string {
   const base = code.toLowerCase().split("-")[0];
   return LANGUAGES.find(([c]) => c === base)?.[1] ?? code.toUpperCase();
 }
+
+export type Card = {
+  at: number;
+  front: string;
+  back: string;
+  detail: string;
+  from: string;
+  to: string;
+};
