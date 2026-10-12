@@ -1,5 +1,5 @@
 // Địa chỉ máy chủ thống kê (server/README.md). Để trống thì web không gửi gì và dashboard chỉ hiện lượt tải.
-window.QT_STATS_URL = "";
+window.QT_STATS_URL = "https://quick-translate-stats.request-desk.workers.dev";
 
 // Đếm lượt truy cập: mỗi trình duyệt một mã ngẫu nhiên, gửi tối đa một lần mỗi ngày.
 (() => {

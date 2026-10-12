@@ -12,6 +12,29 @@ const clip = (value) => String(value ?? "").replace(/[^\w.+-]/g, "").slice(0, 24
 // Một văn phòng hay quán cà phê dùng chung địa chỉ vẫn nằm trong mức này.
 const DAILY_NEW_IDS = 30;
 const MAX_BODY = 1024;
+const PER_MINUTE = 10;
+
+// Đếm tại chỗ số lần gọi mỗi phút của từng địa chỉ. Chỉ nằm trong bộ nhớ của worker đang chạy,
+// nên là lớp chặn thêm bên cạnh PING_LIMITER (bộ đếm của Cloudflare không chặn chặt khi thử thật).
+const recent = new Map();
+
+/** Một mạng IPv6 có vô số địa chỉ, nên tính theo 64 bit đầu; IPv4 giữ nguyên. */
+function network(address) {
+  if (!address.includes(":")) return address;
+  const groups = address.split("::")[0].split(":");
+  while (groups.length < 4) groups.push("0");
+  return groups.slice(0, 4).join(":");
+}
+function tooFast(address, now) {
+  const slot = recent.get(address);
+  if (!slot || now - slot.start >= 60000) {
+    if (recent.size > 5000) recent.clear();
+    recent.set(address, { start: now, count: 1 });
+    return false;
+  }
+  slot.count += 1;
+  return slot.count > PER_MINUTE;
+}
 
 // Muối của ngày hôm nay, giữ trong bộ nhớ của worker để khỏi đọc lại mỗi lần.
 let salt = { day: "", value: "" };
@@ -42,8 +65,9 @@ export default {
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
 
     if (url.pathname === "/ping" && request.method === "POST") {
-      const address = request.headers.get("cf-connecting-ip") || "unknown";
+      const address = network(request.headers.get("cf-connecting-ip") || "unknown");
       // Chặn gửi dồn dập trước khi đụng tới cơ sở dữ liệu.
+      if (tooFast(address, Date.now())) return json({ error: "too many requests" }, 429);
       if (env.PING_LIMITER && !(await env.PING_LIMITER.limit({ key: address })).success) {
         return json({ error: "too many requests" }, 429);
       }
@@ -63,16 +87,22 @@ export default {
       if (known) return json({ ok: true });
 
       const from = await sender(env, day, address);
-      const used = await env.DB.prepare(
-        "INSERT INTO senders (day, sender, n) VALUES (?, ?, 1) ON CONFLICT (day, sender) DO UPDATE SET n = n + 1 RETURNING n",
-      )
-        .bind(day, from)
-        .first();
-      if (used.n > DAILY_NEW_IDS) return json({ error: "too many requests" }, 429);
+      // Đọc trước khi ghi: địa chỉ đã hết lượt thì không tốn lượt ghi nào của cơ sở dữ liệu.
+      const used = await env.DB.prepare("SELECT n FROM senders WHERE day = ? AND sender = ?").bind(day, from).first();
+      if (used && used.n >= DAILY_NEW_IDS) return json({ error: "too many requests" }, 429);
 
-      await env.DB.prepare("INSERT OR IGNORE INTO hits (day, kind, id, version, os) VALUES (?, ?, ?, ?, ?)")
-        .bind(day, body.kind, body.id, clip(body.version), clip(body.os))
-        .run();
+      await env.DB.batch([
+        env.DB.prepare(
+          "INSERT INTO senders (day, sender, n) VALUES (?, ?, 1) ON CONFLICT (day, sender) DO UPDATE SET n = n + 1",
+        ).bind(day, from),
+        env.DB.prepare("INSERT OR IGNORE INTO hits (day, kind, id, version, os) VALUES (?, ?, ?, ?, ?)").bind(
+          day,
+          body.kind,
+          body.id,
+          clip(body.version),
+          clip(body.os),
+        ),
+      ]);
       return json({ ok: true });
     }
 
