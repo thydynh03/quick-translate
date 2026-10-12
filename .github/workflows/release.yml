@@ -53,6 +53,8 @@ jobs:
           workspaces: src-tauri
       - run: pnpm install --frozen-lockfile
       - run: pnpm tauri build ${{ matrix.args }}
+        env:
+          QT_STATS_URL: ${{ vars.QT_STATS_URL }}
       - name: Rename installer
         shell: bash
         run: |

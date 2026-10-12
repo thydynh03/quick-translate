@@ -69,3 +69,5 @@ Xem `DECISIONS.md`. Cambridge không có API công khai → chỉ mở link. Oxf
 - Sửa `%APPDATA%\com.quicktranslate.app\settings.json` bằng PowerShell phải ghi KHÔNG BOM.
 - Kiểm tra kiểu macos.rs từ Windows: crate tạm chỉ gồm core-graphics/core-foundation/accessibility-sys + stub `tauri`/`arboard`, `cargo check --target aarch64-apple-darwin` (check cả app không được vì objc2 cần trình biên dịch của Apple).
 - Script test tay: `scripts/mouse.ps1`, `scripts/shot.ps1`. Log app: `%TEMP%\quick-translate.log`. Dữ liệu app: `%APPDATA%\com.quicktranslate.app\` (đang có model en-vi, vi-en).
+
+- Dashboard thống kê (2026-10-12, chưa phát hành): `website/stats.html` hiện lượt tải theo phiên bản/hệ điều hành (GitHub Releases API, chạy ngay) và người dùng app/khách web theo ngày (cần máy chủ `server/`: Cloudflare Worker + D1, CHƯA triển khai). App: `telemetry.rs` ping ẩn danh mỗi ngày nếu build có `QT_STATS_URL` (biến Actions `vars.QT_STATS_URL`) và `usage_stats` bật (mặc định bật, tắt trong Cài đặt → Chung). Web: `assets/stats-config.js` (điền `window.QT_STATS_URL`). Rust CHƯA build được ở môi trường Linux này — kiểm chứng qua workflow `build`.
