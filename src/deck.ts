@@ -8,6 +8,7 @@ export const LEARN_URL = "https://thydynh03.github.io/quick-translate/learn.html
 const QR_LIMIT = 1600;
 
 async function pack(cards: Card[]): Promise<string> {
+  if (typeof CompressionStream === "undefined") throw new Error("hệ điều hành quá cũ để tạo liên kết (cần macOS 13.3+ hoặc Windows 10+)");
   const rows = cards.map((c) => [c.front, c.back, c.detail, c.from, c.to]);
   const stream = new Blob([JSON.stringify([1, rows])]).stream().pipeThrough(new CompressionStream("deflate-raw"));
   const bytes = new Uint8Array(await new Response(stream).arrayBuffer());

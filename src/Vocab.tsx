@@ -11,7 +11,10 @@ export default function Vocab() {
   const [qr, setQr] = useState<{ count: number; svg: string } | null>(null);
   const [note, setNote] = useState("");
 
-  const load = () => invoke<Card[]>("vocab_list").then(setCards);
+  const load = () =>
+    invoke<Card[]>("vocab_list")
+      .then(setCards)
+      .catch((error) => setNote(String(error)));
   useEffect(() => {
     load();
   }, []);
@@ -19,21 +22,27 @@ export default function Vocab() {
   const needle = query.trim().toLowerCase();
   const shown = needle ? cards.filter((c) => `${c.front}\n${c.back}`.toLowerCase().includes(needle)) : cards;
 
-  const remove = async (card: Card) => {
-    await invoke("vocab_remove", { front: card.front, to: card.to });
-    setQr(null);
-    load();
-  };
+  // Runs an action and shows its error instead of failing silently.
+  const attempt = (action: () => Promise<unknown>) => () => action().catch((error) => setNote(`Không thực hiện được: ${error}`));
 
-  const showQr = async () => {
-    const deck = await qrDeck(shown);
-    setQr(deck);
-  };
+  const remove = (card: Card) =>
+    attempt(async () => {
+      await invoke("vocab_remove", { front: card.front, to: card.to });
+      setQr(null);
+      await load();
+    })();
 
-  const copyLink = async () => {
+  const showQr = attempt(async () => {
+    setNote("");
+    setQr(await qrDeck(shown));
+  });
+
+  const copyLink = attempt(async () => {
     await invoke("copy_text", { text: await deckLink(shown) });
     setNote("Đã sao chép liên kết. Gửi sang điện thoại (Zalo, email…) rồi mở.");
-  };
+  });
+
+  const openHere = attempt(async () => openUrl(await deckLink(shown)));
 
   return (
     <section>
@@ -42,11 +51,16 @@ export default function Vocab() {
         Bấm nút đánh dấu trên popup dịch để lưu từ hoặc câu. Học trên điện thoại bằng flashcard: quét mã QR, trang học tự nhớ tiến độ và
         nhắc ôn theo lịch lặp lại ngắt quãng. Thẻ chỉ nằm trên máy bạn và trong liên kết, không gửi lên máy chủ nào.
       </p>
+      {note && <p className="help">{note}</p>}
       {cards.length === 0 ? (
         <p className="help">Chưa lưu từ nào.</p>
       ) : (
         <>
-          <input className="search" type="search" placeholder={`Tìm trong ${cards.length} thẻ`} value={query} onChange={(e) => setQuery(e.target.value)} />
+          <input className="search" type="search" placeholder={`Tìm trong ${cards.length} thẻ`} value={query} onChange={(e) => {
+              setQuery(e.target.value);
+              setQr(null);
+            }}
+          />
           <p className="row-buttons">
             <button onClick={showQr} disabled={!shown.length}>
               Học trên điện thoại (mã QR)
@@ -54,12 +68,12 @@ export default function Vocab() {
             <button onClick={copyLink} disabled={!shown.length}>
               Sao chép liên kết
             </button>
-            <button onClick={async () => openUrl(await deckLink(shown))} disabled={!shown.length}>
+            <button onClick={openHere} disabled={!shown.length}>
               Mở trên máy này
             </button>
           </p>
-          {note && <p className="help">{note}</p>}
-          {qr && (
+          {qr && qr.count === 0 && <p className="help">Thẻ mới nhất quá dài để vừa một mã QR. Dùng "Sao chép liên kết".</p>}
+          {qr && qr.count > 0 && (
             <div className="qr">
               <div dangerouslySetInnerHTML={{ __html: qr.svg }} />
               <p className="help">

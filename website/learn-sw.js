@@ -8,7 +8,7 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)))));
+  event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith("qt-learn-") && key !== CACHE).map((key) => caches.delete(key)))));
   self.clients.claim();
 });
 
@@ -19,11 +19,13 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        if (response.ok) {
-          const copy = response.clone();
-          caches.open(CACHE).then((cache) => cache.put(event.request, copy));
-        }
-        return response;
+        if (!response.ok) return response;
+        const copy = response.clone();
+        return caches
+          .open(CACHE)
+          .then((cache) => cache.put(event.request, copy))
+          .catch(() => {})
+          .then(() => response);
       })
       .catch(() => caches.match(event.request, { ignoreSearch: true })),
   );

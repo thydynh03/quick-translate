@@ -7,7 +7,7 @@
   const $ = (id) => document.getElementById(id);
 
   // ------------------------------------------------------------ storage
-  const blank = () => ({ cards: {}, days: [], reverse: false, fresh: { day: "", count: 0 } });
+  const blank = () => ({ cards: {}, removed: [], days: [], reverse: false, fresh: { day: "", count: 0 } });
   let db = blank();
   try {
     db = { ...blank(), ...JSON.parse(localStorage.getItem(KEY) || "{}") };
@@ -29,6 +29,7 @@
       if (!front) continue;
       const card = { front, back, detail, from, to };
       const key = keyOf(card);
+      if (db.removed.includes(key)) continue; // deleted on the phone; scanning again keeps it deleted
       const old = db.cards[key];
       if (!old) added++;
       db.cards[key] = { ...card, added: old?.added ?? Date.now(), srs: old?.srs ?? null };
@@ -126,6 +127,7 @@
       del.onclick = () => {
         if (!confirm(`Xoá thẻ "${card.front}"?`)) return;
         delete db.cards[keyOf(card)];
+        db.removed = [...db.removed.slice(-2000), keyOf(card)];
         save();
         home();
       };
@@ -229,7 +231,7 @@
     $("quiz-q").textContent = card[q];
     $("quiz-score").textContent = `${score.right}/${score.total}`;
     const others = all()
-      .filter((c) => c !== card && c[a] !== card[a])
+      .filter((c) => c !== card && c[a] !== card[a] && c[q] !== card[q])
       .sort(() => Math.random() - 0.5)
       .slice(0, 3);
     const options = [card, ...others].sort(() => Math.random() - 0.5);
@@ -277,6 +279,8 @@
       for (const [key, card] of Object.entries(data.cards || {})) {
         if (card?.front && !db.cards[key]) db.cards[key] = card;
       }
+      db.days = [...new Set([...db.days, ...(data.days || [])])].sort().slice(-400);
+      if (data.fresh?.day === today() && data.fresh.count > (db.fresh.day === today() ? db.fresh.count : 0)) db.fresh = data.fresh;
       save();
       home();
       toast(`Đã nhập ${Object.keys(db.cards).length - before} thẻ mới.`);
@@ -306,7 +310,7 @@
   document.querySelectorAll("[data-home]").forEach((b) => (b.onclick = home));
   document.addEventListener("keydown", (e) => {
     if ($("study").hidden) return;
-    if (e.key === " " || e.key === "Enter") {
+    if ((e.key === " " || e.key === "Enter") && !e.target.closest?.("button:not(#flash)")) {
       e.preventDefault();
       flip();
     } else if (!$("grades").hidden && "1234".includes(e.key)) grade(Number(e.key) - 1);

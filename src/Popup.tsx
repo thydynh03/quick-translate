@@ -43,6 +43,8 @@ export default function Popup() {
   const [saved, setSaved] = useState(false);
   const [trail, setTrail] = useState<string[]>([]);
   const card = useRef<HTMLDivElement>(null);
+  // The card the popup shows now; an older vocab_has answer must not change `saved`.
+  const shownKey = useRef("");
 
   useEffect(() => {
     invoke<PopupState>("popup_state").then(setState);
@@ -51,8 +53,12 @@ export default function Popup() {
       setCopied(false);
       setSaved(false);
       const next = event.payload;
+      const key = next.mode === "result" ? `${next.result.to}|${next.source}` : "";
+      shownKey.current = key;
       if (next.mode === "result") {
-        invoke<boolean>("vocab_has", { front: next.source, to: next.result.to }).then(setSaved);
+        invoke<boolean>("vocab_has", { front: next.source, to: next.result.to }).then((has) => {
+          if (shownKey.current === key) setSaved(has);
+        });
       }
       if (event.payload.mode === "hidden" || event.payload.mode === "icon") {
         setPinned(false);
@@ -136,6 +142,7 @@ export default function Popup() {
   // Saves the selection as a flashcard; a second press removes it.
   const toggleSave = async () => {
     if (!result) return;
+    shownKey.current += "*"; // a pending vocab_has is now stale
     if (saved) {
       await invoke("vocab_remove", { front: source, to: result.to });
       setSaved(false);

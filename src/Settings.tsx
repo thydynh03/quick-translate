@@ -97,6 +97,9 @@ export default function Settings() {
 
   if (!config) return null;
 
+  const historyNeedle = historyQuery.trim().toLowerCase();
+  const filteredHistory = history.filter((entry) => `${entry.source}\n${entry.text}`.toLowerCase().includes(historyNeedle));
+
   const update = async (patch: Partial<Config>) => {
     const next = { ...config, ...patch };
     setConfig(next);
@@ -479,10 +482,9 @@ export default function Settings() {
                   value={historyQuery}
                   onChange={(e) => setHistoryQuery(e.target.value)}
                 />
+                {filteredHistory.length === 0 && <p className="help">Không có mục nào khớp.</p>}
                 <ul className="history">
-                  {history
-                    .filter((entry) => `${entry.source}\n${entry.text}`.toLowerCase().includes(historyQuery.trim().toLowerCase()))
-                    .map((entry) => (
+                  {filteredHistory.map((entry) => (
                     <li key={`${entry.at}-${entry.source}`}>
                       <small>
                         {new Date(entry.at * 1000).toLocaleString("vi-VN")} · {entry.from.toUpperCase()} → {entry.to.toUpperCase()} ·{" "}

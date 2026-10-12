@@ -32,11 +32,13 @@ fn path(app: &AppHandle) -> PathBuf {
     data_dir(app).join("vocab.json")
 }
 
-fn read(app: &AppHandle) -> Vec<Card> {
-    fs::read_to_string(path(app))
-        .ok()
-        .and_then(|raw| serde_json::from_str(&raw).ok())
-        .unwrap_or_default()
+/// A missing file is an empty list; a damaged one is an error, so it is never overwritten.
+fn read(app: &AppHandle) -> Result<Vec<Card>, String> {
+    match fs::read_to_string(path(app)) {
+        Ok(raw) => serde_json::from_str(&raw).map_err(|e| format!("vocab.json bị hỏng: {e}")),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Vec::new()),
+        Err(e) => Err(e.to_string()),
+    }
 }
 
 fn write(app: &AppHandle, cards: &[Card]) -> Result<(), String> {
@@ -45,7 +47,7 @@ fn write(app: &AppHandle, cards: &[Card]) -> Result<(), String> {
 }
 
 fn same(a: &Card, front: &str, to: &str) -> bool {
-    a.to == to && a.front.trim().eq_ignore_ascii_case(front.trim())
+    a.to == to && a.front.trim().to_lowercase() == front.trim().to_lowercase()
 }
 
 /// Puts `card` first, replacing an older card for the same text, and caps the list.
@@ -63,13 +65,13 @@ pub fn vocab_add(app: AppHandle, mut card: Card) -> Result<(), String> {
     }
     card.at = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
     let _guard = LOCK.lock().unwrap_or_else(|e| e.into_inner());
-    let mut cards = read(&app);
+    let mut cards = read(&app)?;
     push(&mut cards, card);
     write(&app, &cards)
 }
 
 #[tauri::command]
-pub fn vocab_list(app: AppHandle) -> Vec<Card> {
+pub fn vocab_list(app: AppHandle) -> Result<Vec<Card>, String> {
     let _guard = LOCK.lock().unwrap_or_else(|e| e.into_inner());
     read(&app)
 }
@@ -77,7 +79,7 @@ pub fn vocab_list(app: AppHandle) -> Vec<Card> {
 #[tauri::command]
 pub fn vocab_remove(app: AppHandle, front: String, to: String) -> Result<(), String> {
     let _guard = LOCK.lock().unwrap_or_else(|e| e.into_inner());
-    let mut cards = read(&app);
+    let mut cards = read(&app)?;
     cards.retain(|c| !same(c, &front, &to));
     write(&app, &cards)
 }
@@ -85,7 +87,7 @@ pub fn vocab_remove(app: AppHandle, front: String, to: String) -> Result<(), Str
 #[tauri::command]
 pub fn vocab_has(app: AppHandle, front: String, to: String) -> bool {
     let _guard = LOCK.lock().unwrap_or_else(|e| e.into_inner());
-    read(&app).iter().any(|c| same(c, &front, &to))
+    read(&app).unwrap_or_default().iter().any(|c| same(c, &front, &to))
 }
 
 #[cfg(test)]
@@ -102,7 +104,9 @@ mod tests {
         push(&mut list, card("Attend", 1));
         push(&mut list, card("meeting", 2));
         push(&mut list, card("attend ", 3));
-        assert_eq!(list.iter().map(|c| c.at).collect::<Vec<_>>(), [3, 2]);
+        push(&mut list, card("Áo", 4));
+        push(&mut list, card("áo", 5));
+        assert_eq!(list.iter().map(|c| c.at).collect::<Vec<_>>(), [5, 3, 2]);
     }
 
     #[test]
