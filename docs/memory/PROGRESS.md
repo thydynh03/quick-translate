@@ -64,7 +64,7 @@ Xem `DECISIONS.md`. Cambridge không có API công khai → chỉ mở link. Oxf
 
 1. Chạy thử trên Mac thật; NSPanel, Vision OCR; bản Intel.
 2. Ký số (chứng chỉ Windows, Apple Developer ID + notarize) để hết cảnh báo khi cài.
-3. Tự cập nhật trong app (tauri-plugin-updater cần khoá ký).
+3. Đã có cập nhật trong app (`updater.rs`, so SHA-256). Còn lại: ký số bộ cài để cập nhật không bị cảnh báo SmartScreen/Gatekeeper.
 4. SEO: Search Console đã xác minh (tệp `website/google59c0ec488f146fc5.html`, KHÔNG xoá) và đã gửi `sitemap.xml` ngày 2026-10-12, trạng thái ban đầu "Không thể tìm nạp" — kiểm tra lại sau 1–2 ngày. Tên miền riêng nếu muốn.
 5. Từ điển offline lớn hơn; gợi ý tải model ở lần chạy đầu.
 
