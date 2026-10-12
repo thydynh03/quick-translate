@@ -29,6 +29,8 @@ Cập nhật: 2026-10-12. Plan gốc: `docs/PLAN.md`. Hướng dẫn dùng: `REA
 - Phát hành bản mới: tăng version ở 3 file (xem AGENTS.md), đẩy tag `vX.Y.Z`.
 - App: icon mới (`src-tauri/app-icon.svg`), tab Giới thiệu, giấy phép hiện trong bộ cài NSIS.
 
+- v0.1.1 (2026-10-12): khay hệ thống kiểu Unikey — bấm trái bật/tắt (icon xám khi tắt, `icons/tray-off.png`), nhấp đúp mở Cài đặt, chuột phải ra menu; lần chạy đầu tự bật khởi động cùng máy. Đã cài bản CI 0.1.1 lên máy này; CHƯA tự bấm thử icon khay (không tự động hoá được), autostart trên máy này chưa bật vì không phải lần chạy đầu.
+
 ## CHƯA kiểm chứng
 
 - macOS: build + `cargo test` qua trên GitHub Actions (macos-latest), có .dmg ký ad-hoc. CHƯA chạy trên máy Mac thật. Thiếu: OCR (Vision), hover, popup không cướp focus (NSPanel), tên app đang mở. App hỏi quyền Accessibility và chờ được cấp.
