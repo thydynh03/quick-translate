@@ -276,12 +276,13 @@
     try {
       const data = JSON.parse(await file.text());
       const list = (value) => (Array.isArray(value) ? value.filter((item) => typeof item === "string") : []);
-      if (!data || typeof data.cards !== "object") throw new Error("format");
+      if (!data?.cards || typeof data.cards !== "object" || Array.isArray(data.cards)) throw new Error("format");
       // Build the merged copy first so a bad file changes nothing.
       const next = { ...db, cards: { ...db.cards } };
       const before = Object.keys(db.cards).length;
       for (const [key, card] of Object.entries(data.cards || {})) {
-        if (card?.front && !next.cards[key]) next.cards[key] = card;
+        const valid = typeof card?.front === "string" && card.front.trim() && typeof card.back === "string";
+        if (valid && !next.cards[key]) next.cards[key] = card;
       }
       next.days = [...new Set([...db.days, ...list(data.days)])].sort().slice(-400);
       next.removed = [...new Set([...db.removed, ...list(data.removed)])].slice(-2000);
