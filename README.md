@@ -34,7 +34,7 @@ Tra một từ tiếng Anh thì popup có thêm nghĩa theo từ loại, phiên 
 2. **Offline**: model Opus-MT chạy trên máy, không cần mạng hay key. Tải model trong Cài đặt → Engine dịch (khoảng 107 MB mỗi chiều). Khi engine chính lỗi (ví dụ mất mạng), ứng dụng tự chuyển sang offline.
 3. **Claude, DeepL, AI qua OpenAI API** (ChatGPT, Gemini, Ollama, LM Studio): chỉ dùng khi bạn cấu hình; là dự phòng sau offline.
 
-Offline dịch câu tốt. Từ đơn lẻ được tra trong danh sách từ Anh–Việt đóng gói sẵn (khoảng 7.500 mục từ Wiktionary, CC BY-SA 3.0, xem `src-tauri/data/NOTICE.md`); từ không có trong danh sách thì dịch bằng model và kém chính xác hơn.
+Offline dịch câu tốt. Từ đơn tiếng Anh được tra trong từ điển Anh–Việt đóng gói sẵn (hơn 107.000 từ từ Wiktionary, CC BY-SA, xem `src-tauri/data/NOTICE.md`; tạo lại bằng `scripts/build-dictionary.py`), kể cả dạng biến đổi như “leveraging”. Từ không có trong từ điển thì chuyển sang nguồn online khi có mạng.
 
 ## Phát triển
 
@@ -84,4 +84,4 @@ cd src-tauri && cargo test offline_end_to_end -- --ignored --nocapture
 
 ## Giấy phép
 
-MIT, © 2026 thydynh03. Xem [LICENSE](LICENSE). Danh sách từ Anh–Việt lấy từ Wiktionary (CC BY-SA 3.0), xem `src-tauri/data/NOTICE.md`.
+MIT, © 2026 thydynh03. Xem [LICENSE](LICENSE). Dữ liệu từ điển Anh–Việt lấy từ Wiktionary (CC BY-SA), xem `src-tauri/data/NOTICE.md`.

@@ -252,14 +252,16 @@ pub fn translate(root: &Path, text: &str, from: &str, to: &str) -> anyhow::Resul
         bail!("Văn bản đã ở ngôn ngữ đích");
     }
     // Bare words: the bundled word list beats the sentence model.
-    if let Some(senses) = super::wordbook::lookup(text, &from, to) {
-        if let Some(first) = senses.first().and_then(|sense| sense.terms.first()) {
+    if let Some(found) = super::wordbook::find(text, &from, to) {
+        if let Some(first) = found.senses.first().and_then(|sense| sense.terms.first()) {
             return Ok(Translation {
                 text: first.clone(),
                 from,
                 to: to.to_string(),
                 engine: "offline".into(),
-                dict: senses,
+                phonetic: found.phonetic,
+                note: found.stem.map(|stem| format!("Nghĩa của từ gốc “{stem}”.")),
+                dict: found.senses,
                 ..Default::default()
             });
         }
@@ -482,7 +484,7 @@ mod tests {
             ("book", "en", "vi"),
         ];
         // A word outside the bundled list is refused, so an online engine can take over.
-        assert!(translate(&root, "institution", "en", "vi").is_err());
+        assert!(translate(&root, "qzxv", "en", "vi").is_err());
         for (text, from, to) in cases {
             let started = std::time::Instant::now();
             let result = translate(&root, text, from, to).unwrap();

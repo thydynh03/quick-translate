@@ -181,7 +181,8 @@ mod tests {
         assert!(runtime.block_on(translate(&no_fallback, &models, "Hello there.")).is_err());
     }
 
-    /// With the offline engine chosen, a word outside the bundled list is
+    /// With the offline engine chosen, the bundled lists answer the words they
+    /// know, and a word outside them is
     /// answered by Google instead of the sentence model. Needs a network and
     /// QT_MODELS pointing at a folder with the en-vi model.
     /// Run with: cargo test bare_word_goes_online -- --ignored --nocapture
@@ -191,7 +192,12 @@ mod tests {
         let models = std::path::PathBuf::from(std::env::var("QT_MODELS").unwrap());
         let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
         let settings = Settings { engine: "offline".into(), ..Settings::default() };
-        let word = runtime.block_on(translate_text(&settings, &models, "institution")).unwrap();
+        for known in ["institution", "leveraging", "operates"] {
+            let found = runtime.block_on(translate_text(&settings, &models, known)).unwrap();
+            println!("{known}: {} | {} | {:?} | {:?} | {:?}", found.text, found.engine, found.phonetic, found.note, found.dict);
+            assert_eq!(found.engine, "offline");
+        }
+        let word = runtime.block_on(translate_text(&settings, &models, "serverless")).unwrap();
         println!("{} | {} | {:?}", word.text, word.engine, word.note);
         assert_eq!(word.engine, "google");
         let sentence = runtime.block_on(translate_text(&settings, &models, "A large financial institution operates a data center.")).unwrap();
