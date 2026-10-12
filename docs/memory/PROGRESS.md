@@ -41,6 +41,8 @@ Cập nhật: 2026-10-12. Plan gốc: `docs/PLAN.md`. Hướng dẫn dùng: `REA
 
 - v0.1.6 (2026-10-12): macOS có OCR + dịch cửa sổ + dịch thời gian thực (`platform/macos.rs`): chụp bằng `CGWindowListCreateImage` (live: `OnScreenBelowWindow` với số cửa sổ overlay để không chụp bản dịch), đọc chữ bằng Vision `VNRecognizeTextRequest` qua `objc2::msg_send!`, cửa sổ phía trước bằng `CGWindowListCopyWindowInfo` (cũng cấp `foreground_app` = tên app viết thường cho hồ sơ), quyền Screen Recording qua `CGPreflight/RequestScreenCaptureAccess`, hiện overlay bằng `orderFrontRegardless`. CHỈ mới biên dịch + test trên CI macOS, CHƯA chạy trên máy Mac thật.
 
+- v0.1.6: thêm cài đặt `instant_translate` ("Bôi đen là dịch ngay"): trong `trigger::on_selection_gesture`, khi accessibility đọc được vùng bôi đen thì gọi thẳng `popup::translate_text`; khi phải dùng Ctrl+C thì vẫn hiện biểu tượng (cố ý, tránh tự gửi Ctrl+C). CHƯA test bằng tay.
+
 ## CHƯA kiểm chứng
 
 - macOS: build + `cargo test` qua trên GitHub Actions (macos-latest), có .dmg ký ad-hoc. CHƯA chạy trên máy Mac thật. Thiếu: OCR (Vision), hover, popup không cướp focus (NSPanel), tên app đang mở. App hỏi quyền Accessibility và chờ được cấp.

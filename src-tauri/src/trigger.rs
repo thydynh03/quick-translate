@@ -117,11 +117,13 @@ fn inside_popup(app: &AppHandle, x: i32, y: i32) -> bool {
 
 fn on_selection_gesture(app: &AppHandle, x: i32, y: i32) {
     let state = app.state::<AppState>();
+    let instant;
     {
         let settings = state.settings.read();
         if !settings.auto_trigger {
             return;
         }
+        instant = settings.instant_translate;
         if let Some(name) = platform::foreground_app() {
             if name == own_exe() || settings.excluded_apps.iter().any(|e| e.eq_ignore_ascii_case(&name)) {
                 return;
@@ -141,7 +143,14 @@ fn on_selection_gesture(app: &AppHandle, x: i32, y: i32) {
         match platform::selection_via_accessibility() {
             Some(selection) => {
                 log(format!("gesture: accessibility text={:?} rect={:?}", popup::preview(&selection.text), selection.rect));
-                popup::show_icon(&app, Pending::Text(selection.text), x, y, selection.rect);
+                if instant {
+                    // Straight to the translation, placed like the shortcut does.
+                    log("gesture: translating at once");
+                    let pointer = platform::Rect { left: x, top: y - 10, right: x, bottom: y + 12 };
+                    popup::translate_text(&app, selection.text, Some(selection.rect.unwrap_or(pointer)));
+                } else {
+                    popup::show_icon(&app, Pending::Text(selection.text), x, y, selection.rect);
+                }
             }
             // No accessibility data: only offer the icon where the pointer
             // says "text", so dragging windows or files stays quiet.

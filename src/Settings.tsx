@@ -193,6 +193,15 @@ export default function Settings() {
                 <input type="checkbox" checked={config.auto_trigger} onChange={(e) => update({ auto_trigger: e.target.checked })} />
               </label>
               <label className="row">
+                <span>Bôi đen là dịch ngay, không cần bấm biểu tượng hay phím tắt</span>
+                <input
+                  type="checkbox"
+                  checked={config.instant_translate}
+                  disabled={!config.auto_trigger}
+                  onChange={(e) => update({ instant_translate: e.target.checked })}
+                />
+              </label>
+              <label className="row">
                 <span>Giữ Ctrl và rê chuột lên một từ để dịch (thử nghiệm, chỉ ở ứng dụng hỗ trợ)</span>
                 <input type="checkbox" checked={config.hover_translate} onChange={(e) => update({ hover_translate: e.target.checked })} />
               </label>

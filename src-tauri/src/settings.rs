@@ -48,6 +48,8 @@ pub struct Settings {
     /// Global shortcut that translates every text block of the active window in place.
     pub window_hotkey: String,
     pub live_hotkey: String,
+    /// Translate as soon as text is selected, without showing the icon first.
+    pub instant_translate: bool,
     /// Popup text size in CSS pixels.
     pub popup_font_size: u32,
     /// Popup background opacity in percent.
@@ -100,6 +102,7 @@ impl Default for Settings {
             oxford_app_key: String::new(),
             window_hotkey: "Alt+E".into(),
             live_hotkey: "Alt+R".into(),
+            instant_translate: false,
             popup_font_size: 14,
             popup_opacity: 100,
             openai_base: String::new(),
