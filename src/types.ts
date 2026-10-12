@@ -37,6 +37,7 @@ export type Settings = {
   oxford_app_id: string;
   oxford_app_key: string;
   window_hotkey: string;
+  live_hotkey: string;
   popup_font_size: number;
   popup_opacity: number;
   openai_base: string;

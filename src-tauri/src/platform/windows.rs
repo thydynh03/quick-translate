@@ -425,6 +425,26 @@ pub fn ocr_lines(rect: Rect, vietnamese: Option<&std::path::Path>) -> anyhow::Re
     Ok(lines)
 }
 
+/// A cheap summary of what a screen rectangle shows, to tell whether it changed.
+pub fn fingerprint(rect: Rect) -> Option<u64> {
+    use std::hash::{Hash, Hasher};
+    let (pixels, _, _) = grab(rect).ok()?;
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    pixels.hash(&mut hasher);
+    Some(hasher.finish())
+}
+
+/// Leaves a window out of screen captures (or puts it back), so the screen
+/// under it can still be read.
+pub fn exclude_from_capture(window: &tauri::WebviewWindow, exclude: bool) {
+    use windows::Win32::UI::WindowsAndMessaging::{SetWindowDisplayAffinity, WDA_EXCLUDEFROMCAPTURE, WDA_NONE};
+    if let Some(hwnd) = hwnd_of(window) {
+        unsafe {
+            let _ = SetWindowDisplayAffinity(hwnd, if exclude { WDA_EXCLUDEFROMCAPTURE } else { WDA_NONE });
+        }
+    }
+}
+
 /// Bounds of the window the user is working in.
 pub fn foreground_rect() -> Option<Rect> {
     use windows::Win32::Foundation::RECT;

@@ -247,6 +247,12 @@ pub fn foreground_rect() -> Option<Rect> {
     None
 }
 
+pub fn fingerprint(_rect: Rect) -> Option<u64> {
+    None
+}
+
+pub fn exclude_from_capture(_window: &tauri::WebviewWindow, _exclude: bool) {}
+
 pub fn word_at(_x: i32, _y: i32) -> Option<Selection> {
     None
 }

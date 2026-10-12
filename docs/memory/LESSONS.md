@@ -18,3 +18,4 @@
 - Heredoc Python dài trong Bash tool dễ lỗi parse: ghi script ra file bằng Write rồi chạy.
 - Google (endpoint không key) trả 429 sau vài lần `Alt+E` liên tiếp khi mỗi đoạn là một yêu cầu (~16 yêu cầu/lần). Gộp thành một yêu cầu; khi test lặp lại nên dùng hồ sơ engine offline.
 - Dịch offline các mẩu chữ giao diện ngắn (nhãn, số liệu) trong `Alt+E` có thể ra chuỗi lặp vô nghĩa.
+- Overlay dịch thời gian thực đặt `WDA_EXCLUDEFROMCAPTURE`: mọi ảnh chụp màn hình (kể cả công cụ test) không thấy nó. Kiểm chứng bằng log `live: showing N of M blocks`, không bằng screenshot.

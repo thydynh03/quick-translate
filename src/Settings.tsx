@@ -209,6 +209,18 @@ export default function Settings() {
                 />
               </label>
               <label className="row">
+                <span>Phím tắt bật/tắt dịch thời gian thực</span>
+                <input
+                  readOnly
+                  value={config.live_hotkey}
+                  onKeyDown={(e) => {
+                    e.preventDefault();
+                    const shortcut = shortcutFrom(e);
+                    if (shortcut) update({ live_hotkey: shortcut });
+                  }}
+                />
+              </label>
+              <label className="row">
                 <span>Cỡ chữ popup ({config.popup_font_size}px)</span>
                 <input
                   type="range"

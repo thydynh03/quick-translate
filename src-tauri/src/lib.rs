@@ -119,6 +119,19 @@ fn register_hotkeys(app: &AppHandle) -> Vec<String> {
             failed.push(window_hotkey);
         }
     }
+
+    let live_hotkey = app.state::<AppState>().settings.read().live_hotkey.clone();
+    if !live_hotkey.trim().is_empty() {
+        let result = shortcuts.on_shortcut(live_hotkey.as_str(), |app, _shortcut, event| {
+            if event.state() == ShortcutState::Pressed {
+                capture::toggle_live(app);
+            }
+        });
+        if let Err(error) = result {
+            log(format!("hotkey {live_hotkey}: {error}"));
+            failed.push(live_hotkey);
+        }
+    }
     failed
 }
 
@@ -186,12 +199,13 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     let settings = app.state::<AppState>().settings.read().clone();
     let translate = MenuItemBuilder::with_id("translate", format!("Dịch vùng bôi đen ({})", settings.hotkey)).build(app)?;
     let ocr = MenuItemBuilder::with_id("ocr", format!("Dịch vùng màn hình ({})", settings.ocr_hotkey)).build(app)?;
+    let live = MenuItemBuilder::with_id("live", format!("Bật/tắt dịch thời gian thực ({})", settings.live_hotkey)).build(app)?;
     let auto = CheckMenuItemBuilder::with_id("auto", "Tự hiện khi bôi đen")
         .checked(settings.auto_trigger)
         .build(app)?;
     let open = MenuItemBuilder::with_id("settings", "Cài đặt…").build(app)?;
     let quit = MenuItemBuilder::with_id("quit", "Thoát").build(app)?;
-    let menu = MenuBuilder::new(app).items(&[&translate, &ocr, &auto]).separator().items(&[&open, &quit]).build()?;
+    let menu = MenuBuilder::new(app).items(&[&translate, &ocr, &live, &auto]).separator().items(&[&open, &quit]).build()?;
     app.manage(TrayItems { auto });
 
     let mut tray = TrayIconBuilder::with_id("main")
@@ -209,6 +223,7 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
             "translate" => popup::translate_selection(app),
             "auto" => toggle_auto(app),
             "ocr" => capture::start(app),
+            "live" => capture::toggle_live(app),
             "settings" => show_settings(app),
             "quit" => app.exit(0),
             _ => {}

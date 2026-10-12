@@ -37,6 +37,8 @@ Cập nhật: 2026-10-12. Plan gốc: `docs/PLAN.md`. Hướng dẫn dùng: `REA
 
 - v0.1.4 (2026-10-12): hồ sơ theo ứng dụng (`Settings.profiles`, `Settings::for_app`, `crate::effective`): nguồn dịch + ngôn ngữ đích riêng theo tên file chạy; sửa trong Cài đặt → Chung. Đã test thật: hồ sơ notepad.exe → offline, log `window: ... engine offline into vi`. `Alt+E` với Google nay gộp cả cửa sổ vào 1 yêu cầu (tách theo dòng, không khớp số dòng thì dịch từng đoạn) — CHƯA kiểm chứng được vì Google đang trả 429 sau nhiều lần test; lúc đó app rơi về offline đúng thiết kế.
 
+- v0.1.5 (2026-10-12): dịch thời gian thực `Alt+R` (`capture::toggle_live`, cài đặt `live_hotkey`, mục ở menu khay). Vòng lặp ~0,9 s: `platform::fingerprint` bỏ qua khi ảnh không đổi; OCR → đoạn nào xuất hiện 2 lần đọc liên tiếp mới dịch; cache theo chữ nguồn; phát `live-frame` (cả danh sách) khi khác lần trước. Overlay xuyên chuột (`set_ignore_cursor_events`) và bị loại khỏi ảnh chụp (`WDA_EXCLUDEFROMCAPTURE`) để OCR không đọc lại bản dịch. Đã test thật bằng log trên bản debug: bật, 15 đoạn, gõ thêm câu trong Notepad → dịch thêm, khung hình ổn định, tắt. CHƯA nhìn được bằng mắt vì overlay không hiện trong ảnh chụp màn hình; phần vẽ dùng chung với `Alt+E`.
+
 ## CHƯA kiểm chứng
 
 - macOS: build + `cargo test` qua trên GitHub Actions (macos-latest), có .dmg ký ad-hoc. CHƯA chạy trên máy Mac thật. Thiếu: OCR (Vision), hover, popup không cướp focus (NSPanel), tên app đang mở. App hỏi quyền Accessibility và chờ được cấp.

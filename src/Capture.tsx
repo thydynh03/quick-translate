@@ -16,6 +16,9 @@ export default function Capture() {
   const [blocks, setBlocks] = useState<Block[] | null>(null);
   const [expected, setExpected] = useState(0);
   const [done, setDone] = useState(false);
+  // Live mode: the shortcut that switches it off, while it is on.
+  const [live, setLive] = useState<string | null>(null);
+  const isLive = useRef(false);
   // Where the overlay element really starts inside the window. Everything
   // drawn in it is placed relative to that, so screen pixels line up.
   const root = useRef<HTMLDivElement>(null);
@@ -32,10 +35,21 @@ export default function Capture() {
     window.addEventListener("keydown", onKey);
     const listeners = [
       listen("capture-start", () => {
+        isLive.current = false;
+        setLive(null);
         setBlocks(null);
         setBox(null);
       }),
+      listen<string>("live-start", (event) => {
+        isLive.current = true;
+        setLive(event.payload);
+        setBlocks([]);
+      }),
+      // A reading that arrives after live mode ended must not bring it back.
+      listen<Block[]>("live-frame", (event) => isLive.current && setBlocks(event.payload)),
       listen<number>("window-start", (event) => {
+        isLive.current = false;
+        setLive(null);
         setBlocks([]);
         setExpected(event.payload);
         setDone(event.payload === 0);
@@ -51,13 +65,15 @@ export default function Capture() {
 
   if (blocks) {
     const scale = window.devicePixelRatio;
-    const status = !done
+    const status = live !== null
+      ? `Đang dịch thời gian thực · nhấn ${live} để tắt`
+      : !done
       ? `Đang dịch ${blocks.length}/${expected} đoạn…`
       : blocks.length === 0
         ? "Không tìm thấy chữ cần dịch trong cửa sổ này"
         : "Bấm chuột hoặc nhấn Esc để đóng";
     return (
-      <div ref={root} className="capture result" onClick={() => invoke("capture_cancel")} onContextMenu={(e) => e.preventDefault()}>
+      <div ref={root} className={live !== null ? "capture result live" : "capture result"} onClick={() => invoke("capture_cancel")} onContextMenu={(e) => e.preventDefault()}>
         {blocks.map((block, index) => (
           <p
             key={index}
@@ -75,7 +91,9 @@ export default function Capture() {
             {block.text}
           </p>
         ))}
-        <p className="capture-hint">{status}</p>
+        <p className="capture-hint" key={status}>
+          {status}
+        </p>
       </div>
     );
   }

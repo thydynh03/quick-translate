@@ -21,6 +21,7 @@ Bộ cài chưa ký số, hệ điều hành sẽ cảnh báo khi mở lần đ�
 | `Alt+Q` | Dịch vùng bôi đen, không cần bấm biểu tượng |
 | `Alt+W` rồi kéo một hình chữ nhật | Dịch chữ trong vùng màn hình (OCR), dùng cho ảnh, PDF scan |
 | `Alt+E` | Dịch cả cửa sổ đang mở, bản dịch phủ lên từng đoạn chữ |
+| `Alt+R` | Bật/tắt dịch thời gian thực: bản dịch tự cập nhật khi nội dung cửa sổ thay đổi |
 | Bấm một từ trong phần văn bản gốc của popup | Tra riêng từ đó |
 | Giữ `Ctrl` và rê chuột lên một từ (bật trong Cài đặt) | Dịch từ dưới con trỏ, chỉ ở ứng dụng hỗ trợ |
 | Chuột phải biểu tượng ở khay hệ thống | Cài đặt, bật/tắt tự hiện biểu tượng, thoát |

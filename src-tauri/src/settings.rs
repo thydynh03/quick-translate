@@ -47,6 +47,7 @@ pub struct Settings {
     pub oxford_app_key: String,
     /// Global shortcut that translates every text block of the active window in place.
     pub window_hotkey: String,
+    pub live_hotkey: String,
     /// Popup text size in CSS pixels.
     pub popup_font_size: u32,
     /// Popup background opacity in percent.
@@ -98,6 +99,7 @@ impl Default for Settings {
             oxford_app_id: String::new(),
             oxford_app_key: String::new(),
             window_hotkey: "Alt+E".into(),
+            live_hotkey: "Alt+R".into(),
             popup_font_size: 14,
             popup_opacity: 100,
             openai_base: String::new(),
