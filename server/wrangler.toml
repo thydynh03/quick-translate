@@ -7,3 +7,13 @@ binding = "DB"
 database_name = "quick-translate-stats"
 # Thay bằng id in ra từ `wrangler d1 create quick-translate-stats`.
 database_id = "REPLACE_ME"
+
+# Mỗi địa chỉ mạng gọi /ping tối đa 10 lần mỗi phút.
+[[ratelimits]]
+name = "PING_LIMITER"
+# Số nguyên bất kỳ, miễn là không trùng với limiter khác trong cùng tài khoản Cloudflare.
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 10
+  period = 60
