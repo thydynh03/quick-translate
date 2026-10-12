@@ -85,9 +85,9 @@ pub fn vocab_remove(app: AppHandle, front: String, to: String) -> Result<(), Str
 }
 
 #[tauri::command]
-pub fn vocab_has(app: AppHandle, front: String, to: String) -> bool {
+pub fn vocab_has(app: AppHandle, front: String, to: String) -> Result<bool, String> {
     let _guard = LOCK.lock().unwrap_or_else(|e| e.into_inner());
-    read(&app).unwrap_or_default().iter().any(|c| same(c, &front, &to))
+    Ok(read(&app)?.iter().any(|c| same(c, &front, &to)))
 }
 
 #[cfg(test)]

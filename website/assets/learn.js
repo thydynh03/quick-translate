@@ -275,12 +275,18 @@
   async function importFile(file) {
     try {
       const data = JSON.parse(await file.text());
+      const list = (value) => (Array.isArray(value) ? value.filter((item) => typeof item === "string") : []);
+      if (!data || typeof data.cards !== "object") throw new Error("format");
+      // Build the merged copy first so a bad file changes nothing.
+      const next = { ...db, cards: { ...db.cards } };
       const before = Object.keys(db.cards).length;
       for (const [key, card] of Object.entries(data.cards || {})) {
-        if (card?.front && !db.cards[key]) db.cards[key] = card;
+        if (card?.front && !next.cards[key]) next.cards[key] = card;
       }
-      db.days = [...new Set([...db.days, ...(data.days || [])])].sort().slice(-400);
-      if (data.fresh?.day === today() && data.fresh.count > (db.fresh.day === today() ? db.fresh.count : 0)) db.fresh = data.fresh;
+      next.days = [...new Set([...db.days, ...list(data.days)])].sort().slice(-400);
+      next.removed = [...new Set([...db.removed, ...list(data.removed)])].slice(-2000);
+      if (data.fresh?.day === today() && data.fresh.count > (db.fresh.day === today() ? db.fresh.count : 0)) next.fresh = data.fresh;
+      db = next;
       save();
       home();
       toast(`Đã nhập ${Object.keys(db.cards).length - before} thẻ mới.`);

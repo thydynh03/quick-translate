@@ -41,6 +41,7 @@ export default function Popup() {
   const [pinned, setPinned] = useState(false);
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [trail, setTrail] = useState<string[]>([]);
   const card = useRef<HTMLDivElement>(null);
   // The card the popup shows now; an older vocab_has answer must not change `saved`.
@@ -52,13 +53,14 @@ export default function Popup() {
       setState(event.payload);
       setCopied(false);
       setSaved(false);
+      setSaveError("");
       const next = event.payload;
       const key = next.mode === "result" ? `${next.result.to}|${next.source}` : "";
       shownKey.current = key;
       if (next.mode === "result") {
         invoke<boolean>("vocab_has", { front: next.source, to: next.result.to }).then((has) => {
           if (shownKey.current === key) setSaved(has);
-        });
+        }, (error) => setSaveError(String(error)));
       }
       if (event.payload.mode === "hidden" || event.payload.mode === "icon") {
         setPinned(false);
@@ -143,16 +145,27 @@ export default function Popup() {
   const toggleSave = async () => {
     if (!result) return;
     shownKey.current += "*"; // a pending vocab_has is now stale
-    if (saved) {
-      await invoke("vocab_remove", { front: source, to: result.to });
-      setSaved(false);
-      return;
+    setSaveError("");
+    try {
+      if (saved) {
+        await invoke("vocab_remove", { front: source, to: result.to });
+        setSaved(false);
+      } else {
+        await saveCard();
+        setSaved(true);
+      }
+    } catch (error) {
+      setSaveError(String(error));
     }
-    const detail = [result.phonetic ?? "", ...result.dict.map((d) => `${d.pos}: ${d.terms.join(", ")}`)]
+  };
+
+  const saveCard = async () => {
+    if (!result) return;
+    const senses = [...result.dict, ...result.definitions];
+    const detail = [result.phonetic ?? "", ...senses.map((d) => `${d.pos}: ${d.terms.join(", ")}`)]
       .filter(Boolean)
       .join("\n");
     await invoke("vocab_add", { card: { at: 0, front: source, back: result.text, detail, from: result.from, to: result.to } });
-    setSaved(true);
   };
 
   const togglePin = () => {
@@ -257,6 +270,7 @@ export default function Popup() {
             </button>
           )}
           {result.note && <p className="note">{result.note}</p>}
+          {saveError && <p className="note">Không lưu được từ: {saveError}</p>}
         </>
       )}
     </div>
