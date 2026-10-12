@@ -245,6 +245,11 @@ export default function Settings() {
                 <span>Khởi động cùng máy</span>
                 <input type="checkbox" checked={autostart} onChange={(e) => toggleAutostart(e.target.checked)} />
               </label>
+              <label className="row">
+                <span>Gửi thống kê ẩn danh (đếm số người dùng)</span>
+                <input type="checkbox" checked={config.usage_stats} onChange={(e) => update({ usage_stats: e.target.checked })} />
+              </label>
+              <p className="help">Mỗi ngày một lần: mã ngẫu nhiên của máy, phiên bản, hệ điều hành. Không gửi nội dung dịch.</p>
             </section>
 
             <section>
