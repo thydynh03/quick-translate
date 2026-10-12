@@ -9,6 +9,14 @@ export type Translation = {
   dict: DictEntry[];
   definitions: DictEntry[];
   note: string | null;
+  context?: TranslationContext | null;
+};
+
+export type TranslationContext = {
+  sentence: string;
+  translation: string;
+  meaning: string | null;
+  engine: string;
 };
 
 export type PopupState =
@@ -40,12 +48,24 @@ export type Settings = {
   window_hotkey: string;
   live_hotkey: string;
   instant_translate: boolean;
+  hover_sentence: boolean;
+  explain_in_context: boolean;
+  check_updates: boolean;
   popup_font_size: number;
   popup_opacity: number;
   openai_base: string;
   openai_key: string;
   openai_model: string;
   profiles: Profile[];
+};
+
+export type UpdateInfo = {
+  current: string;
+  latest: string;
+  available: boolean;
+  notes: string;
+  published: string;
+  page: string;
 };
 
 export type HistoryEntry = {

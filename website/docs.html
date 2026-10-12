@@ -111,7 +111,7 @@
           <tr><td><kbd>Alt</kbd><kbd>E</kbd></td><td>Dịch cả cửa sổ đang mở: bản dịch phủ lên từng đoạn chữ. Bấm chuột hoặc <kbd>Esc</kbd> để đóng</td></tr>
           <tr><td><kbd>Alt</kbd><kbd>R</kbd></td><td>Bật hoặc tắt dịch thời gian thực cho cửa sổ đang mở</td></tr>
           <tr><td>Bấm một từ trong câu gốc của popup</td><td>Tra riêng từ đó</td></tr>
-          <tr><td>Giữ <kbd>Ctrl</kbd> và để chuột trên một từ</td><td>Dịch từ dưới con trỏ (Windows, bật trong Cài đặt)</td></tr>
+          <tr><td>Giữ <kbd>Ctrl</kbd> và để chuột trên văn bản</td><td>Dịch cả câu dưới con trỏ, từ đầu câu đến dấu chấm; tuỳ chọn chỉ dịch một từ (Windows, bật trong Cài đặt)</td></tr>
           <tr><td>Bấm biểu tượng ở khay hệ thống</td><td>Bật hoặc tắt nhanh; biểu tượng chuyển xám khi tắt. Phím tắt vẫn dùng được lúc tắt</td></tr>
           <tr><td>Nhấp đúp biểu tượng ở khay</td><td>Mở Cài đặt</td></tr>
           <tr><td>Chuột phải vào biểu tượng ở khay</td><td>Trình đơn: dịch, quét vùng, Cài đặt, thoát</td></tr>
@@ -159,6 +159,12 @@
       <h2 id="tu-dien">Từ điển</h2>
       <p>Khi bạn tra một từ tiếng Anh và đang có mạng, popup hiện nghĩa tiếng Việt theo từ loại, phiên âm và định nghĩa tiếng Anh lấy từ Free Dictionary API. Hai nút Cambridge và Oxford mở mục từ tương ứng trong trình duyệt.</p>
       <p>Nếu bạn có tài khoản Oxford Dictionaries API, nhập <code>app_id</code> và <code>app_key</code> trong Cài đặt để lấy định nghĩa từ Oxford. Cambridge không cung cấp API công khai nên ứng dụng chỉ mở trang web của họ.</p>
+
+      <h2 id="ngu-canh">Nghĩa của từ theo ngữ cảnh</h2>
+      <p>Bôi đen một từ hoặc cụm ngắn (tối đa 4 từ) nằm trong một câu, popup hiện thêm mục <strong>Nghĩa trong câu này</strong>: câu gốc với từ được đánh dấu, bản dịch của câu và lời giải thích từ đó nghĩa là gì trong chính câu ấy. Phần giải thích cần Claude hoặc một API tương thích OpenAI đã cài trong tab Engine dịch; không có thì app chỉ dịch cả câu để bạn tự thấy ngữ cảnh. Bấm vào một từ trong popup cũng dùng câu đang hiển thị làm ngữ cảnh. Tắt ở Cài đặt → Chung. Hiện chỉ có trên Windows, ở ứng dụng cho đọc vùng bôi đen qua trợ năng (Notepad, Word, trình duyệt…).</p>
+
+      <h2 id="cap-nhat">Cập nhật</h2>
+      <p>App tự kiểm tra bản mới khi mở và mỗi ngày một lần. Khi có bản mới, mục <strong>Cập nhật lên bản …</strong> hiện trong menu khay; Cài đặt → Giới thiệu có ghi chú phát hành và nút <strong>Cập nhật ngay</strong>. App tải bộ cài từ GitHub, so mã SHA-256 với tệp <code>SHA256SUMS.txt</code> của bản phát hành rồi mới chạy. Trên Windows app tự đóng, cài bản mới rồi mở lại. Trên macOS app mở tệp <code>.dmg</code>, bạn kéo Quick Translate vào Applications để thay bản cũ. Tắt tự kiểm tra ở Cài đặt → Giới thiệu.</p>
 
       <h2 id="flashcard">Từ vựng và flashcard</h2>
       <p>Bấm nút đánh dấu trên thanh công cụ của popup để lưu từ hoặc câu vừa dịch vào bộ từ vựng; bấm lần nữa để bỏ. Với từ tiếng Anh, thẻ giữ thêm phiên âm, nghĩa theo từ loại và định nghĩa khi popup có hiển thị các thông tin này. Xem, tìm và xoá thẻ trong Cài đặt → <strong>Từ vựng</strong>. Ô tìm kiếm cũng có ở tab Lịch sử.</p>

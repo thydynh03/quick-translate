@@ -112,7 +112,7 @@ pub fn selection_via_accessibility() -> Option<Selection> {
         CFRelease(focused);
 
         let text = text?.trim().to_string();
-        (!text.is_empty()).then_some(Selection { text, rect })
+        (!text.is_empty()).then_some(Selection { text, rect, context: None })
     }
 }
 
@@ -508,6 +508,10 @@ pub fn show_passive(window: &tauri::WebviewWindow) {
 // ------------------------------------------------------- not yet supported
 
 pub fn word_at(_x: i32, _y: i32) -> Option<Selection> {
+    None
+}
+
+pub fn sentence_at(_x: i32, _y: i32) -> Option<Selection> {
     None
 }
 

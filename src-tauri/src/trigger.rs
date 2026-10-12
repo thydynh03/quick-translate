@@ -78,8 +78,9 @@ pub fn run(app: AppHandle, events: Receiver<MouseEvent>) {
     }
 }
 
-/// Hover translation: while Ctrl is held and the pointer rests on a word,
-/// translate that word. Off unless enabled in the settings.
+/// Hover translation: while Ctrl is held and the pointer rests on text,
+/// translate the sentence under it (or just the word, per the settings).
+/// Off unless enabled in the settings.
 pub fn run_hover(app: AppHandle) {
     const TICK: Duration = Duration::from_millis(120);
     const REST: Duration = Duration::from_millis(360);
@@ -88,7 +89,11 @@ pub fn run_hover(app: AppHandle) {
     let mut handled = false;
     loop {
         std::thread::sleep(TICK);
-        let enabled = app.state::<AppState>().settings.read().hover_translate;
+        let (enabled, sentence) = {
+            let state = app.state::<AppState>();
+            let settings = state.settings.read();
+            (settings.hover_translate, settings.hover_sentence)
+        };
         if !enabled || !platform::hover_modifier_down() {
             handled = false;
             continue;
@@ -104,9 +109,14 @@ pub fn run_hover(app: AppHandle) {
             continue;
         }
         handled = true;
-        if let Some(word) = platform::word_at(position.0, position.1) {
-            log(format!("hover: {:?} rect={:?}", word.text, word.rect));
-            popup::translate_text(&app, word.text, word.rect);
+        let found = if sentence {
+            platform::sentence_at(position.0, position.1).or_else(|| platform::word_at(position.0, position.1))
+        } else {
+            platform::word_at(position.0, position.1)
+        };
+        if let Some(found) = found {
+            log(format!("hover: {:?} rect={:?}", popup::preview(&found.text), found.rect));
+            popup::translate_text(&app, found.text, found.rect);
         }
     }
 }
@@ -147,9 +157,9 @@ fn on_selection_gesture(app: &AppHandle, x: i32, y: i32) {
                     // Straight to the translation, placed like the shortcut does.
                     log("gesture: translating at once");
                     let pointer = platform::Rect { left: x, top: y - 10, right: x, bottom: y + 12 };
-                    popup::translate_text(&app, selection.text, Some(selection.rect.unwrap_or(pointer)));
+                    popup::translate_in_context(&app, selection.text, selection.context, Some(selection.rect.unwrap_or(pointer)));
                 } else {
-                    popup::show_icon(&app, Pending::Text(selection.text), x, y, selection.rect);
+                    popup::show_icon(&app, Pending::Text(selection.text, selection.context), x, y, selection.rect);
                 }
             }
             // No accessibility data: only offer the icon where the pointer

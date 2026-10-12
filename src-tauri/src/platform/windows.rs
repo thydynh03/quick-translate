@@ -18,7 +18,9 @@ use windows::Win32::System::Ole::{
 use windows::Win32::System::Threading::{
     OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION,
 };
-use windows::Win32::UI::Accessibility::IUIAutomationTextRange;
+use windows::Win32::UI::Accessibility::{
+    IUIAutomationTextRange, TextPatternRangeEndpoint_End, TextPatternRangeEndpoint_Start, TextUnit_Line, TextUnit_Paragraph,
+};
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     GetAsyncKeyState, GetDoubleClickTime, SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYBD_EVENT_FLAGS,
     KEYEVENTF_KEYUP, VIRTUAL_KEY, VK_C, VK_CONTROL, VK_LWIN, VK_MENU, VK_RWIN, VK_SHIFT,
@@ -64,6 +66,7 @@ fn read_text_pattern(pattern: &UITextPattern) -> Option<Selection> {
     let ranges = pattern.get_selection().ok()?;
     let mut text = String::new();
     let mut rect: Option<Rect> = None;
+    let mut context = None;
     for range in &ranges {
         let part = range.get_text(MAX_SELECTION_CHARS).unwrap_or_default();
         if part.trim().is_empty() {
@@ -74,6 +77,10 @@ fn read_text_pattern(pattern: &UITextPattern) -> Option<Selection> {
         }
         text.push_str(&part);
         let raw: &IUIAutomationTextRange = range.as_ref();
+        // A word or short phrase: also read the sentence it sits in.
+        if ranges.len() == 1 && part.split_whitespace().count() <= 4 {
+            context = unsafe { sentence_of(raw) }.filter(|sentence| sentence.trim() != part.trim());
+        }
         if let Some(r) = unsafe { bounding_rect(raw) } {
             rect = Some(rect.map_or(r, |acc| acc.union(&r)));
         }
@@ -82,8 +89,20 @@ fn read_text_pattern(pattern: &UITextPattern) -> Option<Selection> {
     if text.is_empty() {
         None
     } else {
-        Some(Selection { text, rect })
+        Some(Selection { text, rect, context })
     }
+}
+
+/// The sentence that contains `range`: the enclosing paragraph (or line, when
+/// the app has no paragraphs) cut at the sentence ends around the range start.
+unsafe fn sentence_of(range: &IUIAutomationTextRange) -> Option<String> {
+    let paragraph = range.Clone().ok()?;
+    paragraph.ExpandToEnclosingUnit(TextUnit_Paragraph).ok()?;
+    let text = paragraph.GetText(MAX_SELECTION_CHARS).ok()?.to_string();
+    let before = paragraph.Clone().ok()?;
+    before.MoveEndpointByRange(TextPatternRangeEndpoint_End, range, TextPatternRangeEndpoint_Start).ok()?;
+    let offset = before.GetText(MAX_SELECTION_CHARS).ok()?.to_string().chars().count();
+    crate::sentence::around(&text, offset)
 }
 
 /// Union of the per-line rectangles of a text range.
@@ -503,7 +522,39 @@ pub fn word_at(x: i32, y: i32) -> Option<Selection> {
             let text = found.0.trim().trim_matches(|c: char| !c.is_alphanumeric()).to_string();
             // The range snaps to the nearest word even over blank space.
             let over_word = found.1.is_some_and(|r| r.contains(x, y));
-            return (over_word && !text.is_empty()).then_some(Selection { text, rect: found.1 });
+            return (over_word && !text.is_empty()).then_some(Selection { text, rect: found.1, context: None });
+        }
+        element = walker.get_parent(&element).ok()?;
+    }
+    None
+}
+
+/// The whole sentence under a screen point, from its start to its full stop.
+/// The rectangle is the line under the pointer, so the card opens below it.
+pub fn sentence_at(x: i32, y: i32) -> Option<Selection> {
+    use windows::Win32::UI::Accessibility::{IUIAutomationTextPattern, TextUnit_Word};
+
+    let automation = UIAutomation::new().ok()?;
+    let walker = automation.get_control_view_walker().ok()?;
+    let mut element = automation.element_from_point(uiautomation::types::Point::new(x, y)).ok()?;
+    if element.is_password().unwrap_or(false) {
+        return None;
+    }
+    for _ in 0..4 {
+        if let Ok(pattern) = element.get_pattern::<UITextPattern>() {
+            let raw: &IUIAutomationTextPattern = pattern.as_ref();
+            return unsafe {
+                let word = raw.RangeFromPoint(POINT { x, y }).ok()?;
+                word.ExpandToEnclosingUnit(TextUnit_Word).ok()?;
+                // Same check as word_at: the pointer must be over text, not blank space.
+                if !bounding_rect(&word).is_some_and(|r| r.contains(x, y)) {
+                    return None;
+                }
+                let line = word.Clone().ok()?;
+                line.ExpandToEnclosingUnit(TextUnit_Line).ok()?;
+                let text = sentence_of(&word)?.trim().to_string();
+                (!text.is_empty()).then(|| Selection { text, rect: bounding_rect(&line).or(bounding_rect(&word)), context: None })
+            };
         }
         element = walker.get_parent(&element).ok()?;
     }

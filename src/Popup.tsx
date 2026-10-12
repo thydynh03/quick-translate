@@ -36,6 +36,18 @@ const ICONS = {
   save: "M6 3h12v18l-6-4-6 4z",
 };
 
+/** The sentence with every occurrence of the word marked. */
+function Highlight({ text, word }: { text: string; word: string }) {
+  if (!word) return <>{text}</>;
+  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = text.split(new RegExp(`(${escaped})`, "giu"));
+  return (
+    <>
+      {parts.map((part, i) => (part.toLowerCase() === word.toLowerCase() ? <mark key={i}>{part}</mark> : part))}
+    </>
+  );
+}
+
 export default function Popup() {
   const [state, setState] = useState<PopupState>({ mode: "hidden" });
   const [pinned, setPinned] = useState(false);
@@ -126,13 +138,14 @@ export default function Popup() {
     const clean = word.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
     if (!clean) return;
     setTrail((t) => [...t, source]);
-    invoke("popup_lookup", { text: clean });
+    // The sentence the word was clicked in gives it context.
+    invoke("popup_lookup", { text: clean, context: source.length <= 600 ? source : null });
   };
 
   const back = () => {
     const previous = trail[trail.length - 1];
     setTrail((t) => t.slice(0, -1));
-    invoke("popup_lookup", { text: previous });
+    invoke("popup_lookup", { text: previous, context: null });
   };
 
   const copy = async () => {
@@ -239,6 +252,16 @@ export default function Popup() {
       {result && (
         <>
           <p className="result">{result.text}</p>
+          {result.context && (
+            <div className="context">
+              <p className="context-label">{result.context.meaning ? "Nghĩa trong câu này" : "Trong câu"}</p>
+              {result.context.meaning && <p className="context-meaning">{result.context.meaning}</p>}
+              <p className="context-sentence">
+                <Highlight text={result.context.sentence} word={source.trim()} />
+              </p>
+              <p className="context-translation">{result.context.translation}</p>
+            </div>
+          )}
           {result.dict.length > 0 && (
             <dl className="dict">
               {result.dict.map((entry) => (

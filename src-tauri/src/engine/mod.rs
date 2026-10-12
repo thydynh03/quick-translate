@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::settings::Settings;
 
 pub mod claude;
+pub mod context;
 pub mod deepl;
 pub mod dictionary;
 pub mod google;
@@ -38,6 +39,9 @@ pub struct Translation {
     pub definitions: Vec<DictEntry>,
     /// Extra information for the user, e.g. that a fallback engine answered.
     pub note: Option<String>,
+    /// The word explained through the sentence it was selected in.
+    #[serde(default)]
+    pub context: Option<context::Context>,
 }
 
 /// Source and target language for `text` under the user's language pair.

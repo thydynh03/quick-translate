@@ -24,7 +24,8 @@ pub enum Mode {
 /// What the icon will translate once it is clicked.
 #[derive(Clone, Debug)]
 pub enum Pending {
-    Text(String),
+    /// The text and, for a short selection, the sentence around it.
+    Text(String, Option<String>),
     /// The app did not expose its selection; copy it on click.
     NeedCopy,
 }
@@ -212,6 +213,12 @@ pub fn show_icon(app: &AppHandle, pending: Pending, x: i32, y: i32, rect: Option
 
 /// Opens the card in its loading state and translates `text` into it.
 pub fn translate_text(app: &AppHandle, text: String, anchor: Option<Rect>) {
+    translate_in_context(app, text, None, anchor);
+}
+
+/// Like `translate_text`; a short `text` is also explained through `context`,
+/// the sentence it was selected in.
+pub fn translate_in_context(app: &AppHandle, text: String, context: Option<String>, anchor: Option<Rect>) {
     let (generation, anchor) = {
         let mut popup = state(app).popup.lock();
         popup.mode = Mode::Card;
@@ -230,11 +237,31 @@ pub fn translate_text(app: &AppHandle, text: String, anchor: Option<Rect>) {
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
         let settings = crate::effective(&app);
-        let key = format!("{}|{}|{}|{}", settings.engine, settings.primary_lang, settings.secondary_lang, text);
+        let context = context.filter(|sentence| settings.explain_in_context && engine::context::applies(&text, sentence));
+        let key = format!(
+            "{}|{}|{}|{}|{}",
+            settings.engine,
+            settings.primary_lang,
+            settings.secondary_lang,
+            text,
+            context.as_deref().unwrap_or("")
+        );
         let cached = state(&app).cache.lock().get(&key).cloned();
+        let models = engine::offline::models_dir(&app);
         let result = match cached {
             Some(hit) => Ok(hit),
-            None => engine::translate(&settings, &engine::offline::models_dir(&app), &text).await,
+            None => match engine::translate(&settings, &models, &text).await {
+                Ok(mut translation) => {
+                    if let Some(sentence) = &context {
+                        match engine::context::explain(&settings, &models, &text, sentence, &translation.to).await {
+                            Ok(found) => translation.context = Some(found),
+                            Err(error) => log(format!("context failed: {error:#}")),
+                        }
+                    }
+                    Ok(translation)
+                }
+                Err(error) => Err(error),
+            },
         };
         let payload = match &result {
             Ok(translation) => {
@@ -284,13 +311,13 @@ pub fn translate_selection(app: &AppHandle) {
         let (x, y) = platform::cursor_pos();
         let pointer = Rect { left: x, top: y - 10, right: x, bottom: y + 12 };
         let selection = platform::selection_via_accessibility();
-        let (text, rect) = match selection {
-            Some(s) => (Some(s.text), s.rect),
-            None => (platform::selection_via_copy(), None),
+        let (text, rect, context) = match selection {
+            Some(s) => (Some(s.text), s.rect, s.context),
+            None => (platform::selection_via_copy(), None, None),
         };
         log(format!("hotkey: text={:?} rect={:?}", text.as_deref().map(preview), rect));
         match text {
-            Some(text) => translate_text(&app, text, Some(rect.unwrap_or(pointer))),
+            Some(text) => translate_in_context(&app, text, context, Some(rect.unwrap_or(pointer))),
             None => show_error(&app, "KhĂ´ng tĂ¬m tháº¥y vÄƒn báº£n Ä‘ang bĂ´i Ä‘en.", Some(pointer)),
         }
     });
@@ -312,7 +339,7 @@ pub fn popup_state(app: AppHandle) -> Value {
 pub fn popup_activate(app: AppHandle) {
     let pending = state(&app).popup.lock().pending.take();
     match pending {
-        Some(Pending::Text(text)) => translate_text(&app, text, None),
+        Some(Pending::Text(text, context)) => translate_in_context(&app, text, context, None),
         Some(Pending::NeedCopy) => {
             std::thread::spawn(move || match platform::selection_via_copy() {
                 Some(text) => translate_text(&app, text, None),
@@ -348,10 +375,10 @@ pub fn popup_pin(app: AppHandle, pinned: bool) {
 
 /// Translates a word or phrase picked inside the card, in the same card.
 #[tauri::command]
-pub fn popup_lookup(app: AppHandle, text: String) {
+pub fn popup_lookup(app: AppHandle, text: String, context: Option<String>) {
     let text = text.trim().to_string();
     if !text.is_empty() {
-        translate_text(&app, text, None);
+        translate_in_context(&app, text, context, None);
     }
 }
 

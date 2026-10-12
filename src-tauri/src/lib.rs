@@ -13,9 +13,11 @@ mod engine;
 mod history;
 mod platform;
 mod popup;
+mod sentence;
 mod settings;
 mod telemetry;
 mod trigger;
+mod updater;
 mod vocab;
 
 use settings::Settings;
@@ -166,6 +168,14 @@ async fn translate_now(app: AppHandle, text: String) -> Result<engine::Translati
 /// The tray menu's check item, kept so a left click on the icon can update it.
 struct TrayItems {
     auto: tauri::menu::CheckMenuItem<tauri::Wry>,
+    update: tauri::menu::MenuItem<tauri::Wry>,
+}
+
+/// Renames the tray's update item once a newer release is found.
+pub fn show_update_in_tray(app: &AppHandle, latest: &str) {
+    if let Some(items) = app.try_state::<TrayItems>() {
+        let _ = items.update.set_text(format!("Cập nhật lên bản {latest}…"));
+    }
 }
 
 /// Makes the tray icon, tooltip and menu reflect whether the app is on.
@@ -206,9 +216,10 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
         .checked(settings.auto_trigger)
         .build(app)?;
     let open = MenuItemBuilder::with_id("settings", "Cài đặt…").build(app)?;
+    let update = MenuItemBuilder::with_id("update", "Kiểm tra cập nhật…").build(app)?;
     let quit = MenuItemBuilder::with_id("quit", "Thoát").build(app)?;
-    let menu = MenuBuilder::new(app).items(&[&translate, &ocr, &live, &auto]).separator().items(&[&open, &quit]).build()?;
-    app.manage(TrayItems { auto });
+    let menu = MenuBuilder::new(app).items(&[&translate, &ocr, &live, &auto]).separator().items(&[&open, &update, &quit]).build()?;
+    app.manage(TrayItems { auto, update });
 
     let mut tray = TrayIconBuilder::with_id("main")
         .menu(&menu)
@@ -227,6 +238,11 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
             "ocr" => capture::start(app),
             "live" => capture::toggle_live(app),
             "settings" => show_settings(app),
+            "update" => {
+                // The About tab shows the version check and the install button.
+                show_settings(app);
+                let _ = app.emit("show-update", ());
+            }
             "quit" => app.exit(0),
             _ => {}
         });
@@ -265,6 +281,8 @@ pub fn run() {
             capture::capture_cancel,
             history::history_list,
             history::history_clear,
+            updater::update_check,
+            updater::update_install,
             vocab::vocab_add,
             vocab::vocab_list,
             vocab::vocab_remove,
@@ -299,6 +317,8 @@ pub fn run() {
             build_tray(&handle)?;
             register_hotkeys(&handle);
             telemetry::start(handle.clone());
+            app.manage(updater::UpdateState(Mutex::new(None)));
+            updater::start(handle.clone());
 
             let (tx, rx) = std::sync::mpsc::channel();
             platform::start_mouse_hook(tx);

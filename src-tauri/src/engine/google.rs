@@ -79,6 +79,7 @@ pub(crate) fn parse(json: &Value, from: &str, to: &str) -> anyhow::Result<Transl
         dict,
         definitions: Vec::new(),
         note: None,
+        context: None,
     })
 }
 
