@@ -1,4 +1,4 @@
-.viz-root {
+.viz-root, .tip {
   --surface-1: var(--card);
   --line: color-mix(in srgb, var(--ink) 10%, transparent);
   --grid: color-mix(in srgb, var(--ink) 7%, transparent);
@@ -8,7 +8,7 @@
   --series-3: #1baf7a;
 }
 @media (prefers-color-scheme: dark) {
-  .viz-root {
+  .viz-root, .tip {
     --series-1: #3987e5;
     --series-2: #d95926;
     --series-3: #199e70;

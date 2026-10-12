@@ -113,6 +113,7 @@
       svg("text", { x: m.left - 8, y: y(v) + 4, "text-anchor": "end" }, root).textContent = fmt(v);
     }
 
+    const hits = [];
     items.forEach((d, i) => {
       const cx = m.left + slot * i + slot / 2;
       const band = svg("rect", { class: "band", x: cx - slot / 2 + 2, y: m.top, width: slot - 4, height: ih, rx: 6, fill: "transparent" }, root);
@@ -129,8 +130,13 @@
       label.textContent = d.tag;
       if (dated) svg("text", { x: cx, y: H - m.bottom + 33, "text-anchor": "middle", "font-size": 11 }, root).textContent = d.date;
 
-      const hit = svg("rect", { class: "hit", x: cx - slot / 2, y: m.top, width: slot, height: ih + m.bottom }, root);
+      hits.push({ cx, band, html: null, total });
       const html = `<b>${esc(d.tag)}</b> · ${esc(d.date)}<div class="row"><i class="sw s1"></i>Windows <b>${fmt(d.win)}</b></div><div class="row"><i class="sw s2"></i>macOS <b>${fmt(d.mac)}</b></div><div>Tổng <b>${fmt(total)}</b></div>`;
+      hits[hits.length - 1].html = html;
+    });
+    // Hit areas go last so labels drawn for later columns never sit on top of them.
+    for (const { cx, band, html } of hits) {
+      const hit = svg("rect", { class: "hit", x: cx - slot / 2, y: m.top, width: slot, height: ih + m.bottom }, root);
       hit.addEventListener("pointermove", (e) => {
         band.classList.add("on");
         showTip(html, e);
@@ -139,7 +145,7 @@
         band.classList.remove("on");
         hideTip();
       });
-    });
+    }
     container.replaceChildren(root);
   }
 
@@ -229,7 +235,7 @@
     $("dl-state").hidden = true;
 
     const releases = [];
-    for (let page = 1; page <= 10; page++) {
+    for (let page = 1; ; page++) {
       const response = await fetch(`https://api.github.com/repos/${REPO}/releases?per_page=100&page=${page}`, { cache: "no-store" });
       if (!response.ok) throw new Error(response.status === 403 ? "GitHub tạm giới hạn số lần truy cập, thử lại sau ít phút." : `GitHub trả lỗi ${response.status}.`);
       const batch = await response.json();
@@ -291,6 +297,7 @@
       );
       return;
     }
+    usersEmpty("Đang tải số người dùng…", "");
     const response = await fetch(`${STATS}/stats?days=30`, { cache: "no-store" });
     if (!response.ok) throw new Error(`Máy chủ thống kê trả lỗi ${response.status}.`);
     const data = await response.json();
@@ -330,13 +337,19 @@
     const button = $("refresh");
     button.disabled = true;
     const results = await Promise.allSettled([loadDownloads(), loadUsers()]);
-    if (results[0].status === "rejected") {
+    if (results[0].status === "fulfilled") {
+      $("updated").textContent = `Cập nhật lúc ${new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}.`;
+    } else {
+      // Old numbers would look current, so clear them.
+      $("dl-tiles").querySelectorAll("[data-k]").forEach((el) => (el.textContent = "–"));
+      $("dl-chart").replaceChildren();
+      $("dl-table").replaceChildren();
+      delete redraws.downloads;
       $("dl-tiles").setAttribute("aria-busy", "false");
       $("dl-state").textContent = `Không tải được lượt tải: ${results[0].reason.message}`;
       $("dl-state").hidden = false;
     }
     if (results[1].status === "rejected") usersEmpty("Không kết nối được máy chủ thống kê", results[1].reason.message);
-    $("updated").textContent = `Cập nhật lúc ${new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}.`;
     button.disabled = false;
   }
 
