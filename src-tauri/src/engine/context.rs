@@ -47,7 +47,7 @@ pub fn parse_answer(raw: &str) -> anyhow::Result<Explained> {
     let json: Value = serde_json::from_str(trimmed).map_err(|_| anyhow::anyhow!("AI trả về dữ liệu không đúng định dạng"))?;
     let field = |name: &str| json.get(name).and_then(Value::as_str).unwrap_or_default().trim().to_string();
     let explained = Explained { meaning: field("meaning"), sentence: field("sentence") };
-    anyhow::ensure!(!explained.meaning.is_empty(), "AI không trả lời");
+    anyhow::ensure!(!explained.meaning.is_empty() && !explained.sentence.is_empty(), "AI không trả lời");
     Ok(explained)
 }
 
@@ -107,6 +107,7 @@ mod tests {
             Explained { meaning: "ngân hàng".into(), sentence: "Tôi ra ngân hàng.".into() }
         );
         assert!(parse_answer("not json").is_err());
+        assert!(parse_answer("{\"meaning\": \"x\", \"sentence\": \"\"}").is_err());
     }
 
     #[test]

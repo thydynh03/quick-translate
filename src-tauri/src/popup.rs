@@ -265,7 +265,11 @@ pub fn translate_in_context(app: &AppHandle, text: String, context: Option<Strin
         };
         let payload = match &result {
             Ok(translation) => {
-                state(&app).cache.lock().insert(key, translation.clone());
+                // With a context the answer depends on an AI call that may have
+                // failed this time; only plain translations are cached.
+                if context.is_none() {
+                    state(&app).cache.lock().insert(key, translation.clone());
+                }
                 if settings.save_history {
                     history::add(&app, &text, translation);
                 }

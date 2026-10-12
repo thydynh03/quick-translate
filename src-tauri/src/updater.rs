@@ -65,6 +65,9 @@ fn client() -> reqwest::Result<reqwest::Client> {
     reqwest::Client::builder()
         .user_agent(concat!("QuickTranslate/", env!("CARGO_PKG_VERSION")))
         .connect_timeout(Duration::from_secs(15))
+        // A stalled connection must end in an error, not a stuck button.
+        .read_timeout(Duration::from_secs(60))
+        .timeout(Duration::from_secs(30 * 60))
         .build()
 }
 
@@ -135,6 +138,7 @@ async fn download(app: &AppHandle, url: &str, path: &Path) -> anyhow::Result<Str
     let mut file = tokio::fs::File::create(path).await?;
     let mut hasher = Sha256::new();
     let mut done = 0u64;
+    let mut shown = u64::MAX;
     let mut stream = response.bytes_stream();
     use tokio::io::AsyncWriteExt;
     while let Some(chunk) = stream.next().await {
@@ -142,7 +146,12 @@ async fn download(app: &AppHandle, url: &str, path: &Path) -> anyhow::Result<Str
         hasher.update(&chunk);
         file.write_all(&chunk).await?;
         done += chunk.len() as u64;
-        let _ = app.emit("update-progress", serde_json::json!({ "done": done, "total": total }));
+        // One event per percent, not per chunk.
+        let percent = if total > 0 { done * 100 / total } else { done >> 20 };
+        if percent != shown {
+            shown = percent;
+            let _ = app.emit("update-progress", serde_json::json!({ "done": done, "total": total }));
+        }
     }
     file.flush().await?;
     Ok(format!("{:x}", hasher.finalize()))
@@ -156,7 +165,9 @@ pub async fn install(app: &AppHandle) -> anyhow::Result<()> {
     };
     let url = info.installer.clone().ok_or_else(|| anyhow::anyhow!("Bản phát hành không có bộ cài cho hệ điều hành này"))?;
     let sums_url = info.checksums.clone().ok_or_else(|| anyhow::anyhow!("Bản phát hành thiếu SHA256SUMS.txt"))?;
-    let sums = client()?.get(&sums_url).send().await?.text().await?;
+    let response = client()?.get(&sums_url).send().await?;
+    anyhow::ensure!(response.status().is_success(), "Tải SHA256SUMS.txt lỗi {}", response.status());
+    let sums = response.text().await?;
     let expected = listed_digest(&sums, ASSET).ok_or_else(|| anyhow::anyhow!("SHA256SUMS.txt không có {ASSET}"))?;
 
     let dir: PathBuf = std::env::temp_dir().join("quick-translate-update");

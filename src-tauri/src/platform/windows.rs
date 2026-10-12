@@ -101,8 +101,13 @@ unsafe fn sentence_of(range: &IUIAutomationTextRange) -> Option<String> {
     let text = paragraph.GetText(MAX_SELECTION_CHARS).ok()?.to_string();
     let before = paragraph.Clone().ok()?;
     before.MoveEndpointByRange(TextPatternRangeEndpoint_End, range, TextPatternRangeEndpoint_Start).ok()?;
-    let offset = before.GetText(MAX_SELECTION_CHARS).ok()?.to_string().chars().count();
-    crate::sentence::around(&text, offset)
+    let head = before.GetText(MAX_SELECTION_CHARS).ok()?.to_string();
+    // Both reads are capped; past the cap the offset no longer matches the text.
+    let cap = MAX_SELECTION_CHARS as usize;
+    if text.chars().count() >= cap || head.chars().count() >= cap {
+        return None;
+    }
+    crate::sentence::around(&text, head.chars().count())
 }
 
 /// Union of the per-line rectangles of a text range.

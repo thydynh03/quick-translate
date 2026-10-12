@@ -52,7 +52,7 @@ function About({ checkUpdates, setCheckUpdates }: { checkUpdates: boolean; setCh
 
   useEffect(() => {
     getVersion().then(setVersion);
-    check();
+    if (checkUpdates) check();
     const progressed = listen<{ done: number; total: number }>("update-progress", (event) => {
       const { done, total } = event.payload;
       setProgress(total ? Math.round((done / total) * 100) : null);

@@ -40,7 +40,8 @@ const ICONS = {
 function Highlight({ text, word }: { text: string; word: string }) {
   if (!word) return <>{text}</>;
   const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const parts = text.split(new RegExp(`(${escaped})`, "giu"));
+  // Whole words only: "he" must not light up inside "the".
+  const parts = text.split(new RegExp(`(?<![\\p{L}\\p{N}])(${escaped})(?![\\p{L}\\p{N}])`, "giu"));
   return (
     <>
       {parts.map((part, i) => (part.toLowerCase() === word.toLowerCase() ? <mark key={i}>{part}</mark> : part))}
