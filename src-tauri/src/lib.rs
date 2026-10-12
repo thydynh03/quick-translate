@@ -4,7 +4,7 @@ use std::sync::atomic::AtomicU64;
 
 use parking_lot::{Mutex, RwLock};
 use tauri::menu::{CheckMenuItemBuilder, MenuBuilder, MenuItemBuilder};
-use tauri::tray::TrayIconBuilder;
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{AppHandle, Emitter, Manager, WindowEvent};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
@@ -93,6 +93,7 @@ fn save_settings(app: AppHandle, settings: Settings) -> Result<Vec<String>, Stri
     *app.state::<AppState>().settings.write() = settings;
     app.state::<AppState>().cache.lock().clear();
     let failed = register_hotkeys(&app);
+    sync_tray(&app);
     let _ = app.emit("settings-changed", ());
     Ok(failed)
 }
@@ -106,6 +107,40 @@ async fn translate_now(app: AppHandle, text: String) -> Result<engine::Translati
         .map_err(|e| e.to_string())
 }
 
+/// The tray menu's check item, kept so a left click on the icon can update it.
+struct TrayItems {
+    auto: tauri::menu::CheckMenuItem<tauri::Wry>,
+}
+
+/// Makes the tray icon, tooltip and menu reflect whether the app is on.
+fn sync_tray(app: &AppHandle) {
+    let on = app.state::<AppState>().settings.read().auto_trigger;
+    if let Some(items) = app.try_state::<TrayItems>() {
+        let _ = items.auto.set_checked(on);
+    }
+    let Some(tray) = app.tray_by_id("main") else { return };
+    let icon = if on { app.default_window_icon().cloned() } else { Some(tauri::include_image!("icons/tray-off.png")) };
+    let _ = tray.set_icon(icon);
+    let state = if on { "đang bật" } else { "đang tắt" };
+    let _ = tray.set_tooltip(Some(format!("Quick Translate: {state} (bấm để đổi)")));
+}
+
+/// Turns the selection icon on or off, like the E/V switch of an input method.
+fn toggle_auto(app: &AppHandle) {
+    let updated = {
+        let state = app.state::<AppState>();
+        let mut settings = state.settings.write();
+        settings.auto_trigger = !settings.auto_trigger;
+        settings.clone()
+    };
+    if !updated.auto_trigger {
+        popup::dismiss(app);
+    }
+    let _ = settings::save(app, &updated);
+    let _ = app.emit("settings-changed", ());
+    sync_tray(app);
+}
+
 fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     let settings = app.state::<AppState>().settings.read().clone();
     let translate = MenuItemBuilder::with_id("translate", format!("Dịch vùng bôi đen ({})", settings.hotkey)).build(app)?;
@@ -116,22 +151,22 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     let open = MenuItemBuilder::with_id("settings", "Cài đặt…").build(app)?;
     let quit = MenuItemBuilder::with_id("quit", "Thoát").build(app)?;
     let menu = MenuBuilder::new(app).items(&[&translate, &ocr, &auto]).separator().items(&[&open, &quit]).build()?;
+    app.manage(TrayItems { auto });
 
     let mut tray = TrayIconBuilder::with_id("main")
-        .tooltip("Quick Translate")
         .menu(&menu)
+        // Left click switches on/off, double click opens the settings, right click shows the menu.
+        .show_menu_on_left_click(false)
+        .on_tray_icon_event(|tray, event| match event {
+            TrayIconEvent::Click { button: MouseButton::Left, button_state: MouseButtonState::Up, .. } => {
+                toggle_auto(tray.app_handle())
+            }
+            TrayIconEvent::DoubleClick { button: MouseButton::Left, .. } => show_settings(tray.app_handle()),
+            _ => {}
+        })
         .on_menu_event(move |app, event| match event.id().as_ref() {
             "translate" => popup::translate_selection(app),
-            "auto" => {
-                let state = app.state::<AppState>();
-                let updated = {
-                    let mut settings = state.settings.write();
-                    settings.auto_trigger = !settings.auto_trigger;
-                    settings.clone()
-                };
-                let _ = settings::save(app, &updated);
-                let _ = app.emit("settings-changed", ());
-            }
+            "auto" => toggle_auto(app),
             "ocr" => capture::start(app),
             "settings" => show_settings(app),
             "quit" => app.exit(0),
@@ -141,6 +176,7 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
         tray = tray.icon(icon.clone());
     }
     tray.build(app)?;
+    sync_tray(app);
     Ok(())
 }
 
@@ -180,6 +216,11 @@ pub fn run() {
             let loaded = settings::load(&handle);
             if first_run {
                 let _ = settings::save(&handle, &loaded);
+                // Runs in the background from sign-in by default; the settings can turn it off.
+                if !cfg!(debug_assertions) {
+                    use tauri_plugin_autostart::ManagerExt;
+                    let _ = handle.autolaunch().enable();
+                }
             }
             app.manage(AppState {
                 settings: RwLock::new(loaded),
