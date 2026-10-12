@@ -119,6 +119,7 @@ pub async fn translate_text(settings: &Settings, models: &Path, text: &str) -> a
         Err(error) if !settings.fallback_offline => return Err(error),
         Err(error) => error,
     };
+    crate::log(format!("engine {} failed: {first_error:#}", settings.engine));
     for name in fallbacks(settings) {
         if let Ok(mut translation) = run_engine(name, settings, models, text, &from, &to).await {
             translation.note = Some("Engine chính không phản hồi; đã dùng engine dự phòng.".to_string());
