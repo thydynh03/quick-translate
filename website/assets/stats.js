@@ -59,6 +59,8 @@
       }
       const max = Math.max(1, ...days.map((d) => byDay[d].app + byDay[d].web));
       const chart = $("chart");
+      chart.setAttribute("role", "list");
+      chart.setAttribute("aria-label", "Số người dùng app và web theo ngày");
       for (const day of days) {
         const col = document.createElement("div");
         col.title = `${day}: app ${byDay[day].app}, web ${byDay[day].web}`;
