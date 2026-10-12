@@ -250,6 +250,10 @@ pub fn show_overlay(window: &tauri::WebviewWindow) {
     let _ = window.show();
 }
 
+pub fn hide_overlay(window: &tauri::WebviewWindow) {
+    let _ = window.hide();
+}
+
 // ------------------------------------------------------------------ screen
 
 #[repr(C)]

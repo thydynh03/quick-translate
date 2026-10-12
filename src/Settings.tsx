@@ -214,6 +214,7 @@ export default function Settings() {
               <label className="row">
                 <span>Phím tắt dịch cả cửa sổ đang mở</span>
                 <input
+                  className="hotkey"
                   readOnly
                   value={config.window_hotkey}
                   onKeyDown={(e) => {
@@ -226,6 +227,7 @@ export default function Settings() {
               <label className="row">
                 <span>Phím tắt bật/tắt dịch thời gian thực</span>
                 <input
+                  className="hotkey"
                   readOnly
                   value={config.live_hotkey}
                   onKeyDown={(e) => {
