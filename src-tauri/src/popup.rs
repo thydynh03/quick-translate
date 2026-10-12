@@ -238,15 +238,10 @@ pub fn translate_in_context(app: &AppHandle, text: String, context: Option<Strin
     tauri::async_runtime::spawn(async move {
         let settings = crate::effective(&app);
         let context = context.filter(|sentence| settings.explain_in_context && engine::context::applies(&text, sentence));
-        let key = format!(
-            "{}|{}|{}|{}|{}",
-            settings.engine,
-            settings.primary_lang,
-            settings.secondary_lang,
-            text,
-            context.as_deref().unwrap_or("")
-        );
-        let cached = state(&app).cache.lock().get(&key).cloned();
+        // JSON keeps the fields apart even when the text contains "|".
+        let key = serde_json::json!([settings.engine, settings.primary_lang, settings.secondary_lang, text]).to_string();
+        // Contextual answers are never cached, so a cached plain translation must not stand in for one.
+        let cached = if context.is_none() { state(&app).cache.lock().get(&key).cloned() } else { None };
         let models = engine::offline::models_dir(&app);
         let result = match cached {
             Some(hit) => Ok(hit),

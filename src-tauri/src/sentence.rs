@@ -23,8 +23,14 @@ fn sentences(text: &str) -> Vec<(usize, usize)> {
                 j += 1;
             }
             // "3.5", "e.g.x" or a URL: a period followed by a letter or digit is not an end.
-            let next_is_space = j == chars.len() || chars[j].1.is_whitespace();
-            if next_is_space && !is_abbreviation(&text[start..at], c) {
+            // CJK full stops end a sentence even with no space after them.
+            let next_is_space = j == chars.len() || chars[j].1.is_whitespace() || c == '。';
+            let next_starts_upper = text[if j == chars.len() { text.len() } else { chars[j].0 }..]
+                .trim_start()
+                .chars()
+                .next()
+                .is_some_and(char::is_uppercase);
+            if next_is_space && !is_abbreviation(&text[start..at], c, next_starts_upper) {
                 i = j - 1;
                 Some(if j == chars.len() { text.len() } else { chars[j].0 })
             } else {
@@ -53,14 +59,18 @@ fn push_trimmed(text: &str, start: usize, end: usize, out: &mut Vec<(usize, usiz
 }
 
 /// "Mr." / "Dr." / "e.g." / a single initial: a period that does not end the sentence.
-fn is_abbreviation(before: &str, end: char) -> bool {
+fn is_abbreviation(before: &str, end: char, next_starts_upper: bool) -> bool {
     if end != '.' {
         return false;
     }
     let last = before.split_whitespace().last().unwrap_or("").to_lowercase();
-    const SHORT: [&str; 14] = ["mr", "mrs", "ms", "dr", "prof", "sr", "jr", "st", "vs", "etc", "e.g", "i.e", "no", "fig"];
+    // Titles never end a sentence; "etc." does when a capital follows.
+    const TITLES: [&str; 8] = ["mr", "mrs", "ms", "dr", "prof", "sr", "jr", "st"];
+    const MID: [&str; 4] = ["vs", "etc", "e.g", "i.e"];
     let original = before.split_whitespace().last().unwrap_or("");
-    SHORT.contains(&last.as_str()) || (original.chars().count() == 1 && original.chars().all(char::is_uppercase))
+    TITLES.contains(&last.as_str())
+        || (MID.contains(&last.as_str()) && !next_starts_upper)
+        || (original.chars().count() == 1 && original.chars().all(char::is_uppercase))
 }
 
 /// The sentence of `paragraph` that contains the character at `char_offset`.
@@ -93,6 +103,13 @@ mod tests {
     fn decimals_and_abbreviations_do_not_split() {
         let text = "Mr. Smith paid 3.5 dollars, e.g. for tea. Then he left.";
         assert_eq!(around(text, 5).unwrap(), "Mr. Smith paid 3.5 dollars, e.g. for tea.");
+    }
+
+    #[test]
+    fn no_etc_and_cjk() {
+        assert_eq!(around("He said no. Then he ran.", 15).unwrap(), "Then he ran.");
+        assert_eq!(around("Tea, coffee, etc. Then we left.", 20).unwrap(), "Then we left.");
+        assert_eq!(around("今日は晴れ。散歩しよう。", 7).unwrap(), "散歩しよう。");
     }
 
     #[test]

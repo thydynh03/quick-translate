@@ -134,10 +134,23 @@ const MAX_VALUE_CHARS: usize = 200_000;
 
 /// The element's whole text (AXValue), when it is a string of sensible size.
 unsafe fn value_text(element: AXUIElementRef) -> Option<String> {
+    // Never read password fields.
+    if let Some(subrole) = copy_attribute(element, "AXSubrole") {
+        let secure = CFGetTypeID(subrole) == CFString::type_id()
+            && CFString::wrap_under_get_rule(subrole as CFStringRef).to_string() == "AXSecureTextField";
+        CFRelease(subrole);
+        if secure {
+            return None;
+        }
+    }
     let value = copy_attribute(element, kAXValueAttribute)?;
-    let text = (CFGetTypeID(value) == CFString::type_id()).then(|| CFString::wrap_under_get_rule(value as CFStringRef).to_string());
+    let text = (CFGetTypeID(value) == CFString::type_id())
+        .then(|| CFString::wrap_under_get_rule(value as CFStringRef))
+        // Check the size before copying the text out.
+        .filter(|s| (s.char_len() as usize) <= MAX_VALUE_CHARS)
+        .map(|s| s.to_string());
     CFRelease(value);
-    text.filter(|t| t.len() <= MAX_VALUE_CHARS * 4)
+    text
 }
 
 /// Accessibility ranges count UTF-16 units; the sentence code counts chars.
@@ -154,8 +167,11 @@ fn utf16_to_char_offset(text: &str, utf16: usize) -> usize {
 
 /// The sentence of the element's text around a UTF-16 position.
 unsafe fn sentence_in_value(element: AXUIElementRef, location: isize) -> Option<String> {
-    let text = value_text(element)?;
-    let offset = utf16_to_char_offset(&text, location.max(0) as usize);
+    sentence_in_text(&value_text(element)?, location)
+}
+
+fn sentence_in_text(text: &str, location: isize) -> Option<String> {
+    let offset = utf16_to_char_offset(text, location.max(0) as usize);
     let paragraph_start = text.chars().take(offset).collect::<Vec<_>>().iter().rposition(|c| *c == '\n').map_or(0, |i| i + 1);
     let paragraph: String = text.chars().skip(paragraph_start).take_while(|c| *c != '\n').collect();
     crate::sentence::around(&paragraph, offset - paragraph_start)
@@ -231,7 +247,7 @@ fn read_at(x: i32, y: i32, sentence: bool) -> Option<Selection> {
             .and_then(|text| {
                 let offset = utf16_to_char_offset(&text, range.location.max(0) as usize);
                 if sentence {
-                    sentence_in_value(element, range.location)
+                    sentence_in_text(&text, range.location)
                 } else {
                     word_around(&text, offset)
                 }

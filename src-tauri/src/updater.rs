@@ -83,7 +83,8 @@ pub fn info_from_release(release: &Value, current: &str) -> UpdateInfo {
     let installer = if ASSET.is_empty() { None } else { asset_url(release, ASSET) };
     UpdateInfo {
         current: current.to_string(),
-        available: !latest.is_empty() && is_newer(&latest, current),
+        // Only offer what this system can install.
+        available: !latest.is_empty() && is_newer(&latest, current) && installer.is_some(),
         latest,
         notes: field("body"),
         published: field("published_at"),
@@ -250,7 +251,7 @@ mod tests {
             ]
         });
         let info = info_from_release(&release, "0.1.10");
-        assert!(info.available);
+        assert_eq!(info.available, !ASSET.is_empty());
         assert_eq!(info.latest, "9.0.0");
         assert_eq!(info.checksums.as_deref(), Some("https://d/sums"));
         if !ASSET.is_empty() {
