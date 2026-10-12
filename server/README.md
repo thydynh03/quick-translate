@@ -29,7 +29,7 @@ Chạy ngay trong worker, nên dùng được cả ở địa chỉ `workers.dev
 - Mỗi địa chỉ mạng gọi `/ping` tối đa 10 lần mỗi phút (`[[ratelimits]]` trong `wrangler.toml`).
 - Mỗi địa chỉ mạng chỉ thêm được 30 mã mới mỗi ngày (`DAILY_NEW_IDS` trong `src/index.js`). Mã đã được tính trong ngày thì gửi lại không tốn lượt.
 - Vượt mức thì nhận mã 429. App tự thử lại sau một giờ.
-- Bảng `senders` giữ mã băm SHA-256 của địa chỉ trộn với muối ngẫu nhiên của ngày; muối và các dòng này bị xoá khi sang ngày mới. Địa chỉ IP không được ghi lại.
+- Bảng `senders` giữ mã băm SHA-256 của địa chỉ trộn với muối ngẫu nhiên của ngày; muối và các dòng này bị xoá khi worker nhận lượt gửi đầu tiên của ngày sau. Địa chỉ IP không được ghi lại.
 - Không chặn được người có rất nhiều địa chỉ mạng khác nhau; khi đó cần tên miền riêng và WAF.
 
 Đã triển khai bản cũ thì chạy lại `npx wrangler d1 execute quick-translate-stats --remote --file schema.sql` rồi `npx wrangler deploy`.

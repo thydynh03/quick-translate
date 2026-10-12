@@ -51,7 +51,7 @@ export default {
       const text = await request.text();
       let body = null;
       try {
-        body = text.length <= MAX_BODY ? JSON.parse(text) : null;
+        body = new TextEncoder().encode(text).length <= MAX_BODY ? JSON.parse(text) : null;
       } catch {}
       if (!body || !KINDS.has(body.kind) || !ID.test(body.id ?? "")) return json({ error: "bad request" }, 400);
       const day = new Date().toISOString().slice(0, 10);
