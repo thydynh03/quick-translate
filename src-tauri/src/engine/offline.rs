@@ -306,10 +306,20 @@ pub fn offline_models(app: AppHandle) -> Vec<ModelInfo> {
             size_mb: APPROX_SIZE_MB,
             installed: installed(&root, from, to),
         })
+        .chain(std::iter::once(ModelInfo {
+            id: super::ocr_vi::ID.to_string(),
+            from: "ocr".to_string(),
+            to: "vi".to_string(),
+            size_mb: super::ocr_vi::APPROX_SIZE_MB,
+            installed: super::ocr_vi::installed(&root),
+        }))
         .collect()
 }
 
 fn pair_of(id: &str) -> Result<(&'static str, &'static str), String> {
+    if id == super::ocr_vi::ID {
+        return Ok(("ocr", "vi"));
+    }
     PAIRS
         .iter()
         .copied()
@@ -318,12 +328,22 @@ fn pair_of(id: &str) -> Result<(&'static str, &'static str), String> {
 }
 
 /// Downloads one model's files into `dir`, reporting progress in permille.
-pub async fn download(dir: &Path, from: &str, to: &str, mut progress: impl FnMut(u64)) -> anyhow::Result<()> {
+pub async fn download(dir: &Path, from: &str, to: &str, progress: impl FnMut(u64)) -> anyhow::Result<()> {
+    download_files(dir, &format!("https://huggingface.co/Xenova/opus-mt-{from}-{to}/resolve/main"), FILES, progress).await
+}
+
+/// Downloads `files` (name, share of the total size) from `base` into `dir`.
+pub async fn download_files(
+    dir: &Path,
+    base_url: &str,
+    files: &[(&str, f64)],
+    mut progress: impl FnMut(u64),
+) -> anyhow::Result<()> {
     fs::create_dir_all(dir)?;
     let client = reqwest::Client::builder().connect_timeout(std::time::Duration::from_secs(20)).build()?;
     let mut base = 0.0;
-    for (file, share) in FILES {
-        let url = format!("https://huggingface.co/Xenova/opus-mt-{from}-{to}/resolve/main/{file}");
+    for (file, share) in files {
+        let url = format!("{base_url}/{file}");
         let response = client.get(&url).send().await?;
         if !response.status().is_success() {
             bail!("Tải {file} lỗi {}", response.status());
@@ -362,13 +382,17 @@ pub fn offline_download(app: AppHandle, id: String) -> Result<(), String> {
             let _ = app.emit("offline-progress", Progress { id: id.clone(), done, total: 1000, error, finished });
         };
         let mut last = 0;
-        let result = download(&dir, from, to, |permille| {
+        let report = |permille| {
             if permille != last {
                 last = permille;
                 emit(permille, None, false);
             }
-        })
-        .await;
+        };
+        let result = if from == "ocr" {
+            download_files(&dir, super::ocr_vi::BASE_URL, super::ocr_vi::FILES, report).await
+        } else {
+            download(&dir, from, to, report).await
+        };
         match result {
             Ok(()) => emit(1000, None, true),
             Err(error) => {
@@ -385,6 +409,7 @@ pub fn offline_remove(app: AppHandle, id: String) -> Result<(), String> {
     let (from, to) = pair_of(&id)?;
     let dir = model_dir(&models_dir(&app), from, to);
     loaded().lock().remove(&dir);
+    super::ocr_vi::unload();
     if dir.exists() {
         fs::remove_dir_all(&dir).map_err(|e| e.to_string())?;
     }

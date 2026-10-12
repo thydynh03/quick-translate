@@ -65,7 +65,9 @@ pub fn capture_region(app: AppHandle, x: i32, y: i32, width: i32, height: i32) {
     std::thread::spawn(move || {
         // Let the overlay disappear from the screen before grabbing pixels.
         std::thread::sleep(std::time::Duration::from_millis(180));
-        match platform::ocr_region(rect) {
+        let models = crate::engine::offline::models_dir(&app);
+        let vietnamese = crate::engine::ocr_vi::installed(&models).then_some(models.as_path());
+        match platform::ocr_region(rect, vietnamese) {
             Ok(text) if !text.trim().is_empty() => {
                 log(format!("ocr: {:?}", popup::preview(&text)));
                 popup::translate_text(&app, text, Some(rect));

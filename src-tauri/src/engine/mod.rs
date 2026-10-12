@@ -12,6 +12,7 @@ pub mod deepl;
 pub mod dictionary;
 pub mod google;
 pub mod lang;
+pub mod ocr_vi;
 pub mod offline;
 pub mod wordbook;
 

@@ -47,7 +47,7 @@ export default function OfflineModels() {
   return (
     <section>
       <h2>Model offline</h2>
-      <p className="help">Mỗi model dịch một chiều. Tải một lần, sau đó dịch không cần mạng.</p>
+      <p className="help">Mỗi model dịch một chiều. Tải một lần, sau đó dịch không cần mạng. Windows không đọc được dấu tiếng Việt trên ảnh; tải model cuối danh sách để quét vùng màn hình có chữ tiếng Việt.</p>
       <ul className="models">
         {models.map((model) => {
           const p = progress[model.id];
@@ -55,7 +55,7 @@ export default function OfflineModels() {
           return (
             <li key={model.id}>
               <span>
-                {langName(model.from)} → {langName(model.to)}
+                {model.from === "ocr" ? "Đọc chữ tiếng Việt khi quét vùng màn hình" : `${langName(model.from)} → ${langName(model.to)}`}
                 <small>khoảng {model.size_mb} MB</small>
               </span>
               {running ? (

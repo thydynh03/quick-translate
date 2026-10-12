@@ -10,4 +10,6 @@
 - Kéo chọn vùng OCR phải dùng pointer events + `setPointerCapture`, nếu không sẽ kẹt khi lớp phủ chưa có focus.
 - Bash tool không có cargo trong PATH; `pnpm tauri build` báo "cargo metadata: program not found".
 - `preview_start` có thể nhặt `launch.json` của thư mục cha; kiểm tra tên server trả về.
-- Windows.Media.Ocr không có tiếng Việt (máy này chỉ có en-US, ja). Quét chữ Việt bằng Alt+W ra chữ mất dấu → dịch sai. Muốn OCR tiếng Việt phải tự kèm engine khác (ví dụ PaddleOCR ONNX qua `ort`).
+- Windows.Media.Ocr không có tiếng Việt (máy này chỉ có en-US, ja). Quét chữ Việt bằng Alt+W ra chữ mất dấu → dịch sai. Đã giải quyết ở v0.1.2 bằng VietOCR ONNX (`engine/ocr_vi.rs`): Windows OCR chỉ định vị từ, VietOCR đọc chữ. Model latin của PaddleOCR v5 KHÔNG dùng được (từ điển thiếu 50 ký tự tiếng Việt).
+- `vemines/vietocr-onnx` là bản vgg_transformer: encoder ra `memory` [T,1,256]; decoder nhận `tgt` [len,1] + `memory`, ra [1,len,233]; token 1=bắt đầu, 2=kết thúc, ký tự từ chỉ số 4. Ảnh cao 32, rộng ≤512 nên dòng dài phải cắt theo từ.
+- ort rc.13: `session.inputs()` và `outlet.name()` là hàm, không phải field.

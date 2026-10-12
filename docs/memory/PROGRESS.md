@@ -31,6 +31,8 @@ Cập nhật: 2026-10-12. Plan gốc: `docs/PLAN.md`. Hướng dẫn dùng: `REA
 
 - v0.1.1 (2026-10-12): khay hệ thống kiểu Unikey — bấm trái bật/tắt (icon xám khi tắt, `icons/tray-off.png`), nhấp đúp mở Cài đặt, chuột phải ra menu; lần chạy đầu tự bật khởi động cùng máy. Đã cài bản CI 0.1.1 lên máy này; CHƯA tự bấm thử icon khay (không tự động hoá được), autostart trên máy này chưa bật vì không phải lần chạy đầu.
 
+- v0.1.2 (2026-10-12): Alt+W đọc được tiếng Việt khi đã tải model `ocr-vi` (VietOCR ONNX, ~147 MB, nút tải nằm cuối danh sách model offline). Đã test thật: chữ tiếng Việt trong Notepad, Windows OCR ra mất dấu còn VietOCR ra đủ dấu (`cargo test reads_the_screen -- --ignored`, cần biến môi trường ghi trong file test). Sai lặt vặt còn lại: đôi khi mất dấu chấm cuối đoạn, sai hoa/thường.
+
 ## CHƯA kiểm chứng
 
 - macOS: build + `cargo test` qua trên GitHub Actions (macos-latest), có .dmg ký ad-hoc. CHƯA chạy trên máy Mac thật. Thiếu: OCR (Vision), hover, popup không cướp focus (NSPanel), tên app đang mở. App hỏi quyền Accessibility và chờ được cấp.
