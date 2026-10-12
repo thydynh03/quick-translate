@@ -165,6 +165,12 @@ impl Model {
             if next == self.eos_token {
                 break;
             }
+            // The same token three times in a row is the model stuck in a loop:
+            // keep one and stop instead of filling the answer with it.
+            if output.len() >= 3 && output[output.len() - 2..] == [next, next] {
+                output.pop();
+                break;
+            }
             output.push(next);
         }
 
@@ -257,6 +263,12 @@ pub fn translate(root: &Path, text: &str, from: &str, to: &str) -> anyhow::Resul
                 ..Default::default()
             });
         }
+    }
+    // The sentence models turn a lone word into nonsense ("institution" came
+    // out as one word repeated twenty times). Failing here lets an online
+    // engine answer when there is a network.
+    if lang::is_single_word(text) && [from.as_str(), to].iter().all(|code| ["en", "vi"].contains(code)) {
+        bail!("Từ này không có trong từ điển offline; cần mạng để tra");
     }
     let steps = route(root, &from, to)
         .ok_or_else(|| anyhow!("Chưa tải model offline {} → {}", from.to_uppercase(), to.to_uppercase()))?;
@@ -469,6 +481,8 @@ mod tests {
             ("Tôi đang học lập trình để xây dựng phần mềm dịch.", "vi", "en"),
             ("book", "en", "vi"),
         ];
+        // A word outside the bundled list is refused, so an online engine can take over.
+        assert!(translate(&root, "institution", "en", "vi").is_err());
         for (text, from, to) in cases {
             let started = std::time::Instant::now();
             let result = translate(&root, text, from, to).unwrap();
