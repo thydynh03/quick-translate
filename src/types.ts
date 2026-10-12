@@ -18,6 +18,8 @@ export type PopupState =
   | { mode: "result"; source: string; result: Translation }
   | { mode: "error"; source: string; message: string };
 
+export type Profile = { app: string; engine: string; primary_lang: string };
+
 export type Settings = {
   hotkey: string;
   ocr_hotkey: string;
@@ -40,6 +42,7 @@ export type Settings = {
   openai_base: string;
   openai_key: string;
   openai_model: string;
+  profiles: Profile[];
 };
 
 export type HistoryEntry = {

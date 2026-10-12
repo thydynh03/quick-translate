@@ -494,3 +494,10 @@ html[data-window="capture"] body {
   gap: 8px;
   margin-top: 16px;
 }
+
+.profile {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr auto;
+  gap: 8px;
+  margin-bottom: 8px;
+}

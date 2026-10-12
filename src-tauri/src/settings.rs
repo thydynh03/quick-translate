@@ -4,6 +4,18 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 
+/// Overrides used while a given application is in front.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Profile {
+    /// Executable name, lower-case, for example "chrome.exe".
+    pub app: String,
+    /// Engine to use there; empty keeps the general one.
+    pub engine: String,
+    /// Language to translate into there; empty keeps the general one.
+    pub primary_lang: String,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
@@ -43,6 +55,28 @@ pub struct Settings {
     pub openai_base: String,
     pub openai_key: String,
     pub openai_model: String,
+    pub profiles: Vec<Profile>,
+}
+
+impl Settings {
+    /// These settings with the profile of `app` applied, if it has one.
+    pub fn for_app(&self, app: Option<&str>) -> Settings {
+        let mut settings = self.clone();
+        let profile = app.and_then(|name| self.profiles.iter().find(|p| p.app.trim().eq_ignore_ascii_case(name)));
+        if let Some(profile) = profile {
+            if !profile.engine.is_empty() {
+                settings.engine = profile.engine.clone();
+            }
+            if !profile.primary_lang.is_empty() {
+                // Keep the two languages different so text in the target still has somewhere to go.
+                if profile.primary_lang == settings.secondary_lang {
+                    settings.secondary_lang = settings.primary_lang.clone();
+                }
+                settings.primary_lang = profile.primary_lang.clone();
+            }
+        }
+        settings
+    }
 }
 
 impl Default for Settings {
@@ -69,6 +103,7 @@ impl Default for Settings {
             openai_base: String::new(),
             openai_key: String::new(),
             openai_model: String::new(),
+            profiles: Vec::new(),
         }
     }
 }
@@ -96,4 +131,29 @@ pub fn load(app: &AppHandle) -> Settings {
 pub fn save(app: &AppHandle, settings: &Settings) -> anyhow::Result<()> {
     fs::write(path(app), serde_json::to_string_pretty(settings)?)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn with_profile() -> Settings {
+        let profile = Profile { app: "game.exe".into(), engine: "offline".into(), primary_lang: "en".into() };
+        Settings { profiles: vec![profile], ..Default::default() }
+    }
+
+    #[test]
+    fn profile_overrides_engine_and_language() {
+        let settings = with_profile().for_app(Some("Game.exe"));
+        assert_eq!(settings.engine, "offline");
+        assert_eq!(settings.primary_lang, "en");
+        assert_eq!(settings.secondary_lang, "vi");
+    }
+
+    #[test]
+    fn other_apps_keep_the_general_settings() {
+        let settings = with_profile();
+        assert_eq!(settings.for_app(Some("notepad.exe")).engine, "google");
+        assert_eq!(settings.for_app(None).primary_lang, "vi");
+    }
 }

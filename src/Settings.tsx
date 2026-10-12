@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { disable, enable, isEnabled } from "@tauri-apps/plugin-autostart";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { ENGINE_NAMES, HistoryEntry, LANGUAGES, Settings as Config, Translation, langName } from "./types";
+import { ENGINE_NAMES, HistoryEntry, LANGUAGES, Profile, Settings as Config, Translation, langName } from "./types";
 import OfflineModels from "./OfflineModels";
 
 type Tab = "general" | "engine" | "history" | "about";
@@ -274,6 +274,59 @@ export default function Settings() {
                   })
                 }
               />
+            </section>
+
+            <section>
+              <h2>Hồ sơ theo ứng dụng</h2>
+              <p className="help">
+                Dùng nguồn dịch hoặc ngôn ngữ đích khác khi một ứng dụng đang mở, ví dụ dịch offline trong game. Nhập tên file chạy
+                như chrome.exe; ô nào để “Mặc định” thì theo cài đặt chung.
+              </p>
+              {config.profiles.map((profile, index) => {
+                const change = (patch: Partial<Profile>) =>
+                  update({ profiles: config.profiles.map((item, at) => (at === index ? { ...item, ...patch } : item)) });
+                return (
+                  <div className="profile" key={index}>
+                    <input
+                      aria-label="Tên file chạy"
+                      placeholder="chrome.exe"
+                      defaultValue={profile.app}
+                      onBlur={(e) => change({ app: e.target.value.trim().toLowerCase() })}
+                    />
+                    <select aria-label="Nguồn dịch" value={profile.engine} onChange={(e) => change({ engine: e.target.value })}>
+                      <option value="">Nguồn dịch: mặc định</option>
+                      {Object.entries(ENGINE_NAMES).map(([id, name]) => (
+                        <option key={id} value={id}>
+                          {name}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      aria-label="Dịch sang"
+                      value={profile.primary_lang}
+                      onChange={(e) => change({ primary_lang: e.target.value })}
+                    >
+                      <option value="">Dịch sang: mặc định</option>
+                      {LANGUAGES.map(([code, name]) => (
+                        <option key={code} value={code}>
+                          {name}
+                        </option>
+                      ))}
+                    </select>
+                    <button onClick={() => update({ profiles: config.profiles.filter((_, at) => at !== index) })}>Xoá</button>
+                  </div>
+                );
+              })}
+              <button
+                onClick={async () => {
+                  // Start from the application the user was just in, when known.
+                  const app = (await invoke<string | null>("last_app")) ?? "";
+                  const known = config.profiles.some((profile) => profile.app === app);
+                  update({ profiles: [...config.profiles, { app: known ? "" : app, engine: "", primary_lang: "" }] });
+                }}
+              >
+                Thêm hồ sơ
+              </button>
             </section>
           </>
         )}

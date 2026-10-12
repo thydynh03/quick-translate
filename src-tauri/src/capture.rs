@@ -9,7 +9,7 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, WebviewWindow};
 
 use crate::platform::{self, Rect};
-use crate::{log, popup, AppState};
+use crate::{log, popup};
 
 pub const LABEL: &str = "capture";
 
@@ -31,6 +31,7 @@ pub fn create_window(app: &AppHandle) -> tauri::Result<WebviewWindow> {
 
 /// Covers the monitor under the pointer with the selection overlay.
 pub fn start(app: &AppHandle) {
+    crate::remember_app();
     let Some(window) = app.get_webview_window(LABEL) else { return };
     popup::hide(app);
     let (x, y) = platform::cursor_pos();
@@ -169,7 +170,7 @@ pub fn start_window(app: &AppHandle) {
     let session = SESSION.fetch_add(1, Ordering::SeqCst) + 1;
     let app = app.clone();
     std::thread::spawn(move || {
-        let settings = app.state::<AppState>().settings.read().clone();
+        let settings = crate::effective(&app);
         let models = crate::engine::offline::models_dir(&app);
         let vietnamese = crate::engine::ocr_vi::installed(&models).then_some(models.as_path());
         let lines = match platform::ocr_lines(target, vietnamese) {
@@ -186,7 +187,7 @@ pub fn start_window(app: &AppHandle) {
             .filter(|block| block.text.chars().filter(|c| c.is_alphabetic()).count() >= 2)
             .filter(|block| crate::engine::lang::guess(&block.text).as_deref() != Some(settings.primary_lang.as_str()))
             .collect();
-        log(format!("window: {} blocks in {target:?}", blocks.len()));
+        log(format!("window: {} blocks in {target:?}, engine {} into {}", blocks.len(), settings.engine, settings.primary_lang));
 
         *ORIGIN.lock() = (screen.left, screen.top);
         let _ = window.set_position(PhysicalPosition::new(screen.left, screen.top));
@@ -196,7 +197,36 @@ pub fn start_window(app: &AppHandle) {
         let _ = window.set_focus();
 
         let (dx, dy) = (target.left - screen.left, target.top - screen.top);
+        let show = |block: &Block, text: &str| {
+            if text.trim().is_empty() || text.trim().eq_ignore_ascii_case(block.text.trim()) {
+                return;
+            }
+            let payload = Translated {
+                x: block.rect.left + dx,
+                y: block.rect.top + dy,
+                width: block.rect.right - block.rect.left,
+                height: block.rect.bottom - block.rect.top,
+                line_height: block.line_height,
+                text: text.trim().to_string(),
+            };
+            let _ = app.emit_to(LABEL, "window-block", payload);
+        };
         tauri::async_runtime::block_on(async {
+            // One request for the whole window keeps an online service from
+            // rate-limiting us; it only counts if every block comes back.
+            if settings.engine == "google" && blocks.len() > 1 {
+                let joined = blocks.iter().map(|block| block.text.as_str()).collect::<Vec<_>>().join("\n");
+                let to = settings.primary_lang.as_str();
+                if let Ok(all) = crate::engine::google::translate(&joined, "auto", to).await {
+                    let parts: Vec<&str> = all.text.split('\n').collect();
+                    if parts.len() == blocks.len() && SESSION.load(Ordering::SeqCst) == session {
+                        for (block, part) in blocks.iter().zip(parts) {
+                            show(block, part);
+                        }
+                        return;
+                    }
+                }
+            }
             let mut pending = futures_util::stream::iter(blocks.into_iter().map(|block| {
                 let (settings, models) = (&settings, &models);
                 async move {
@@ -209,19 +239,9 @@ pub fn start_window(app: &AppHandle) {
                 if SESSION.load(Ordering::SeqCst) != session {
                     return;
                 }
-                let Ok(translated) = translated else { continue };
-                if translated.text.trim().is_empty() || translated.text.trim().eq_ignore_ascii_case(block.text.trim()) {
-                    continue;
+                if let Ok(translated) = translated {
+                    show(&block, &translated.text);
                 }
-                let payload = Translated {
-                    x: block.rect.left + dx,
-                    y: block.rect.top + dy,
-                    width: block.rect.right - block.rect.left,
-                    height: block.rect.bottom - block.rect.top,
-                    line_height: block.line_height,
-                    text: translated.text,
-                };
-                let _ = app.emit_to(LABEL, "window-block", payload);
             }
         });
         if SESSION.load(Ordering::SeqCst) == session {

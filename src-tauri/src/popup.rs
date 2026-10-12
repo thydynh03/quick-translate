@@ -229,7 +229,7 @@ pub fn translate_text(app: &AppHandle, text: String, anchor: Option<Rect>) {
 
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
-        let settings = state(&app).settings.read().clone();
+        let settings = crate::effective(&app);
         let key = format!("{}|{}|{}|{}", settings.engine, settings.primary_lang, settings.secondary_lang, text);
         let cached = state(&app).cache.lock().get(&key).cloned();
         let result = match cached {

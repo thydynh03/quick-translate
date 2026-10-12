@@ -38,7 +38,35 @@ pub fn log(message: impl AsRef<str>) {
     }
 }
 
+/// The application the user last worked in, other than this one.
+static LAST_APP: Mutex<Option<String>> = Mutex::new(None);
+
+/// Notes which application is in front. Call before a window of ours takes the focus.
+pub fn remember_app() -> Option<String> {
+    let own = std::env::current_exe()
+        .ok()
+        .and_then(|path| path.file_name().map(|name| name.to_string_lossy().to_lowercase()));
+    let mut last = LAST_APP.lock();
+    if let Some(name) = platform::foreground_app().filter(|name| Some(name) != own.as_ref()) {
+        *last = Some(name);
+    }
+    last.clone()
+}
+
+/// The settings for the application in front: the general ones plus its profile.
+pub fn effective(app: &AppHandle) -> Settings {
+    let name = remember_app();
+    app.state::<AppState>().settings.read().for_app(name.as_deref())
+}
+
+/// Lets the settings window offer the last used application for a new profile.
+#[tauri::command]
+fn last_app() -> Option<String> {
+    LAST_APP.lock().clone()
+}
+
 fn show_settings(app: &AppHandle) {
+    remember_app();
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.show();
         let _ = window.unminimize();
@@ -208,6 +236,7 @@ pub fn run() {
             get_settings,
             save_settings,
             translate_now,
+            last_app,
             popup::popup_state,
             popup::popup_activate,
             popup::popup_resize,

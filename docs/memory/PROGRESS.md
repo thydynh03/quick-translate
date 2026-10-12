@@ -35,6 +35,8 @@ Cập nhật: 2026-10-12. Plan gốc: `docs/PLAN.md`. Hướng dẫn dùng: `REA
 
 - v0.1.3 (2026-10-12): (1) `Alt+E` dịch cả cửa sổ đang mở (`capture::start_window`): OCR theo dòng, gộp đoạn, dịch 4 luồng, vẽ đè bản dịch; đã test thật với Notepad, vị trí khớp. (2) Cài đặt: cỡ chữ + độ đậm nền popup. (3) Engine `openai` cho mọi API tương thích OpenAI (ChatGPT/Gemini/Ollama/LM Studio) — chỉ có unit test, CHƯA gọi thật. Chưa làm: hồ sơ theo từng ứng dụng, dịch thời gian thực, Microsoft Store.
 
+- v0.1.4 (2026-10-12): hồ sơ theo ứng dụng (`Settings.profiles`, `Settings::for_app`, `crate::effective`): nguồn dịch + ngôn ngữ đích riêng theo tên file chạy; sửa trong Cài đặt → Chung. Đã test thật: hồ sơ notepad.exe → offline, log `window: ... engine offline into vi`. `Alt+E` với Google nay gộp cả cửa sổ vào 1 yêu cầu (tách theo dòng, không khớp số dòng thì dịch từng đoạn) — CHƯA kiểm chứng được vì Google đang trả 429 sau nhiều lần test; lúc đó app rơi về offline đúng thiết kế.
+
 ## CHƯA kiểm chứng
 
 - macOS: build + `cargo test` qua trên GitHub Actions (macos-latest), có .dmg ký ad-hoc. CHƯA chạy trên máy Mac thật. Thiếu: OCR (Vision), hover, popup không cướp focus (NSPanel), tên app đang mở. App hỏi quyền Accessibility và chờ được cấp.

@@ -16,3 +16,5 @@
 - Lớp phủ `.capture` (position fixed, inset 0) thực tế bắt đầu ở y=8px CSS trong cửa sổ capture, chưa rõ nguyên nhân. `Capture.tsx` đo `getBoundingClientRect()` của phần tử gốc và trừ đi khi đặt vị trí; đừng bỏ phần bù này.
 - Tiêu đề cửa sổ Tauri bị `<title>` của index.html ghi đè, nên `FindWindow` theo title đặt trong builder không tìm thấy.
 - Heredoc Python dài trong Bash tool dễ lỗi parse: ghi script ra file bằng Write rồi chạy.
+- Google (endpoint không key) trả 429 sau vài lần `Alt+E` liên tiếp khi mỗi đoạn là một yêu cầu (~16 yêu cầu/lần). Gộp thành một yêu cầu; khi test lặp lại nên dùng hồ sơ engine offline.
+- Dịch offline các mẩu chữ giao diện ngắn (nhãn, số liệu) trong `Alt+E` có thể ra chuỗi lặp vô nghĩa.
