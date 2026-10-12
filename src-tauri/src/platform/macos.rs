@@ -646,7 +646,7 @@ pub fn sentence_at(x: i32, y: i32) -> Option<Selection> {
 }
 
 #[link(name = "CoreGraphics", kind = "framework")]
-extern "C" {
+unsafe extern "C" {
     fn CGEventSourceFlagsState(state: i32) -> u64;
 }
 
