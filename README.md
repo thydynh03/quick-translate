@@ -76,7 +76,7 @@ cd src-tauri && cargo test offline_end_to_end -- --ignored --nocapture
 
 ## Giới hạn hiện tại
 
-- Mới chạy thử thật trên Windows. Bản macOS build và qua test trên GitHub Actions nhưng chưa được chạy thử trên máy Mac thật; chưa có OCR và hover trên macOS.
+- Mới chạy thử thật trên Windows. Bản macOS build và qua test trên GitHub Actions nhưng chưa được chạy thử trên máy Mac thật. Trên macOS, OCR (`Alt+W`, `Alt+E`, `Alt+R`) dùng Vision và cần quyền Screen Recording; chưa có hover.
 - Trong app Electron/Chromium, popup đặt theo con trỏ chứ không theo toạ độ chính xác của vùng bôi đen.
 - Không hoạt động trên cửa sổ chạy quyền admin trừ khi Quick Translate cũng chạy quyền admin.
 - OCR dùng các gói ngôn ngữ OCR đã cài trong Windows.

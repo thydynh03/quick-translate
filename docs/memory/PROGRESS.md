@@ -39,6 +39,8 @@ Cập nhật: 2026-10-12. Plan gốc: `docs/PLAN.md`. Hướng dẫn dùng: `REA
 
 - v0.1.5 (2026-10-12): dịch thời gian thực `Alt+R` (`capture::toggle_live`, cài đặt `live_hotkey`, mục ở menu khay). Vòng lặp ~0,9 s: `platform::fingerprint` bỏ qua khi ảnh không đổi; OCR → đoạn nào xuất hiện 2 lần đọc liên tiếp mới dịch; cache theo chữ nguồn; phát `live-frame` (cả danh sách) khi khác lần trước. Overlay xuyên chuột (`set_ignore_cursor_events`) và bị loại khỏi ảnh chụp (`WDA_EXCLUDEFROMCAPTURE`) để OCR không đọc lại bản dịch. Đã test thật bằng log trên bản debug: bật, 15 đoạn, gõ thêm câu trong Notepad → dịch thêm, khung hình ổn định, tắt. CHƯA nhìn được bằng mắt vì overlay không hiện trong ảnh chụp màn hình; phần vẽ dùng chung với `Alt+E`.
 
+- v0.1.6 (2026-10-12): macOS có OCR + dịch cửa sổ + dịch thời gian thực (`platform/macos.rs`): chụp bằng `CGWindowListCreateImage` (live: `OnScreenBelowWindow` với số cửa sổ overlay để không chụp bản dịch), đọc chữ bằng Vision `VNRecognizeTextRequest` qua `objc2::msg_send!`, cửa sổ phía trước bằng `CGWindowListCopyWindowInfo` (cũng cấp `foreground_app` = tên app viết thường cho hồ sơ), quyền Screen Recording qua `CGPreflight/RequestScreenCaptureAccess`, hiện overlay bằng `orderFrontRegardless`. CHỈ mới biên dịch + test trên CI macOS, CHƯA chạy trên máy Mac thật.
+
 ## CHƯA kiểm chứng
 
 - macOS: build + `cargo test` qua trên GitHub Actions (macos-latest), có .dmg ký ad-hoc. CHƯA chạy trên máy Mac thật. Thiếu: OCR (Vision), hover, popup không cướp focus (NSPanel), tên app đang mở. App hỏi quyền Accessibility và chờ được cấp.

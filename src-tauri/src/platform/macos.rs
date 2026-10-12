@@ -348,6 +348,15 @@ pub fn ocr_lines(rect: Rect, _vietnamese: Option<&std::path::Path>) -> anyhow::R
     let (width, height) = ((rect.right - rect.left) as f64, (rect.bottom - rect.top) as f64);
     unsafe {
         let image = screenshot(rect)?;
+        let lines = recognise(image, width, height);
+        CGImageRelease(image);
+        lines
+    }
+}
+
+/// Reads the lines of text in a picture. Boxes are scaled to `width` × `height`.
+unsafe fn recognise(image: *mut CGImageOpaque, width: f64, height: f64) -> anyhow::Result<Vec<(Rect, String)>> {
+    {
         let lines = autoreleasepool(|_| {
             let options: *mut AnyObject = msg_send![class!(NSDictionary), dictionary];
             let handler: *mut AnyObject = msg_send![class!(VNImageRequestHandler), alloc];
@@ -396,7 +405,6 @@ pub fn ocr_lines(rect: Rect, _vietnamese: Option<&std::path::Path>) -> anyhow::R
             let _: () = msg_send![handler, release];
             done.then_some(lines)
         });
-        CGImageRelease(image);
         let mut lines = lines.ok_or_else(|| anyhow::anyhow!("Vision không đọc được ảnh"))?;
         lines.sort_by_key(|(line, _)| (line.top, line.left));
         Ok(lines)
@@ -501,4 +509,38 @@ pub fn word_at(_x: i32, _y: i32) -> Option<Selection> {
 
 pub fn hover_modifier_down() -> bool {
     false
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[link(name = "ImageIO", kind = "framework")]
+    unsafe extern "C" {
+        fn CGImageSourceCreateWithData(data: CFDataRef, options: CFDictionaryRef) -> *mut c_void;
+        fn CGImageSourceCreateImageAtIndex(source: *mut c_void, index: usize, options: CFDictionaryRef) -> *mut CGImageOpaque;
+    }
+
+    /// Runs the real Vision recogniser on a picture with one English and one
+    /// Vietnamese line, the way a screenshot would be read.
+    #[test]
+    fn vision_reads_both_lines_of_a_picture() {
+        let png = core_foundation::data::CFData::from_buffer(include_bytes!("../../tests/data/ocr-sample.png"));
+        let lines = unsafe {
+            let source = CGImageSourceCreateWithData(png.as_concrete_TypeRef(), ptr::null());
+            assert!(!source.is_null());
+            let image = CGImageSourceCreateImageAtIndex(source, 0, ptr::null());
+            assert!(!image.is_null());
+            let lines = recognise(image, 900.0, 160.0).expect("vision");
+            CGImageRelease(image);
+            CFRelease(source as CFTypeRef);
+            lines
+        };
+        println!("vision read: {lines:?}");
+        assert_eq!(lines.len(), 2, "{lines:?}");
+        assert_eq!(lines[0].1, "The meeting has been moved to Thursday.");
+        assert!(lines[0].0.top < lines[1].0.top && lines[0].0.left < 60 && lines[0].0.bottom < 90, "{lines:?}");
+        // Vietnamese needs macOS 13 or later; without it the accents are lost.
+        assert!(lines[1].1.contains("họp") && lines[1].1.contains("thứ"), "{lines:?}");
+    }
 }
