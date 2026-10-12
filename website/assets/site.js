@@ -58,7 +58,7 @@
   const demo = document.getElementById("demo");
   if (!demo) return;
 
-  const NOTE = "Engine chính không phản hồi; đã dùng engine dự phòng.";
+  const NOTE = "Nguồn dịch chính không dịch được; đã dùng nguồn dự phòng.";
   const SCENES = {
     select: {
       title: "Thư khách hàng",
