@@ -68,7 +68,7 @@ Xem `DECISIONS.md`. Cambridge không có API công khai → chỉ mở link. Oxf
 
 1. Chạy thử trên Mac thật; NSPanel, Vision OCR; bản Intel.
 2. Ký số (chứng chỉ Windows, Apple Developer ID + notarize) để hết cảnh báo khi cài.
-3. Tự cập nhật trong app (tauri-plugin-updater cần khoá ký).
+3. Đã có cập nhật trong app (`updater.rs`, so SHA-256). Còn lại: ký số bộ cài để cập nhật không bị cảnh báo SmartScreen/Gatekeeper.
 4. SEO: Search Console đã xác minh (tệp `website/google59c0ec488f146fc5.html`, KHÔNG xoá) và đã gửi `sitemap.xml` ngày 2026-10-12, trạng thái ban đầu "Không thể tìm nạp" — kiểm tra lại sau 1–2 ngày. Tên miền riêng nếu muốn.
 5. Từ điển offline lớn hơn; gợi ý tải model ở lần chạy đầu.
 
@@ -86,3 +86,5 @@ Xem `DECISIONS.md`. Cambridge không có API công khai → chỉ mở link. Oxf
 - Dashboard thống kê (2026-10-12): `website/stats.html` hiện lượt tải theo phiên bản/hệ điều hành (GitHub Releases API, chạy ngay) và người dùng app/khách web theo ngày (cần máy chủ `server/`: Cloudflare Worker + D1, CHƯA triển khai). App: `telemetry.rs` ping ẩn danh mỗi ngày nếu build có `QT_STATS_URL` (biến Actions `vars.QT_STATS_URL`) và `usage_stats` bật (mặc định bật, tắt trong Cài đặt → Chung). Web: `assets/stats-config.js` (điền `window.QT_STATS_URL`). Rust CHƯA build được ở môi trường Linux này — kiểm chứng qua workflow `build`.
 
 - Từ vựng + flashcard (2026-10-12): nút đánh dấu trên popup lưu thẻ (`vocab.rs`, `vocab.json`, tối đa 5000); Cài đặt → Từ vựng: tìm, xoá, mã QR / sao chép liên kết (`src/deck.ts`: JSON → deflate-raw → base64url trong `#d=`). Điện thoại: `website/learn.html` (PWA, `learn-sw.js` cho offline) — học thẻ SM-2 rút gọn, 20 thẻ mới/ngày, trắc nghiệm, đọc to, chuỗi ngày, xuất/nhập. Lịch sử có ô tìm. Đã test trang học bằng Chromium khổ 390px (nhập link, học, trắc nghiệm, quét lại không trùng). CHƯA build Rust ở đây; CHƯA thử quét QR bằng điện thoại thật. Tham khảo HotLingo (hotlingo.vn): có sẵn ở ta gần hết (bôi đen, OCR, nhiều engine, lịch sử); khác biệt chính là lưu từ → đã làm ở đây.
+
+- v0.1.13: (1) rê chuột + Ctrl dịch cả câu (`platform::sentence_at`, `sentence.rs` tách câu theo dấu chấm, bỏ qua số thập phân/viết tắt), cài đặt `hover_sentence`; (2) bôi đen ≤4 từ → `Selection.context` (câu chứa từ, qua UIA ExpandToEnclosingUnit Paragraph + MoveEndpointByRange), `engine::context::explain`: Claude/OpenAI giải thích nghĩa theo ngữ cảnh, không có thì dịch cả câu; cài đặt `explain_in_context`; (3) `updater.rs`: kiểm tra releases/latest (khi mở sau 30 s và mỗi ngày, `check_updates`), tải bộ cài, so SHA256SUMS.txt, Windows chạy `/P` rồi mở lại app; macOS mở .dmg. macOS: `word_at`/`sentence_at` qua AXRangeForPosition + AXValue (UTF-16 → char), ngữ cảnh vùng chọn từ AXSelectedTextRange, phím Control (CGEventSourceFlagsState) — chỉ kiểm qua CI macOS, CHƯA chạy trên Mac thật. Đã `cargo check --target x86_64-pc-windows-msvc --tests` (biến `ORT_SKIP_DOWNLOAD=1`) sạch; CHƯA chạy thật trên Windows.

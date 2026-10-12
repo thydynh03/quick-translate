@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { disable, enable, isEnabled } from "@tauri-apps/plugin-autostart";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { ENGINE_NAMES, HistoryEntry, LANGUAGES, Profile, Settings as Config, Translation, langName } from "./types";
+import { ENGINE_NAMES, HistoryEntry, UpdateInfo, LANGUAGES, Profile, Settings as Config, Translation, langName } from "./types";
 import OfflineModels from "./OfflineModels";
 import Vocab from "./Vocab";
 
@@ -13,15 +13,90 @@ type Tab = "general" | "engine" | "vocab" | "history" | "about";
 const SITE = "https://thydynh03.github.io/quick-translate/";
 const REPO = "https://github.com/thydynh03/quick-translate";
 
-function About() {
+function About({ checkUpdates, setCheckUpdates }: { checkUpdates: boolean; setCheckUpdates: (on: boolean) => void }) {
   const [version, setVersion] = useState("");
+  const [update, setUpdate] = useState<UpdateInfo | null>(null);
+  const [status, setStatus] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<number | null>(null);
+
+  const check = async () => {
+    setBusy(true);
+    setStatus("Đang kiểm tra…");
+    try {
+      const info = await invoke<UpdateInfo>("update_check");
+      setUpdate(info);
+      setStatus(info.available ? "" : `Bạn đang dùng bản mới nhất (${info.current}).`);
+    } catch (error) {
+      setStatus(`Không kiểm tra được: ${error}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const install = async () => {
+    setBusy(true);
+    setProgress(0);
+    setStatus("Đang tải bộ cài…");
+    try {
+      await invoke("update_install");
+      // Windows quits here to run the installer; macOS opens the disk image.
+      setStatus("Đã mở bộ cài. Kéo Quick Translate vào Applications để thay bản cũ, rồi mở lại app.");
+    } catch (error) {
+      setStatus(`Không cập nhật được: ${error}`);
+    } finally {
+      setBusy(false);
+      setProgress(null);
+    }
+  };
+
   useEffect(() => {
     getVersion().then(setVersion);
+    if (checkUpdates) check();
+    const progressed = listen<{ done: number; total: number }>("update-progress", (event) => {
+      const { done, total } = event.payload;
+      setProgress(total ? Math.round((done / total) * 100) : null);
+    });
+    return () => {
+      progressed.then((off) => off());
+    };
   }, []);
+
   return (
     <section>
       <h2>Giới thiệu</h2>
       <p>Quick Translate {version && `phiên bản ${version}`}</p>
+
+      <div className="update">
+        {update?.available ? (
+          <>
+            <p>
+              <strong>Có bản mới {update.latest}</strong>
+              {update.published && <small> · {new Date(update.published).toLocaleDateString("vi-VN")}</small>}
+            </p>
+            {update.notes && <pre className="notes">{update.notes}</pre>}
+            <div className="actions">
+              <button className="primary" onClick={install} disabled={busy}>
+                {progress !== null ? `Đang tải ${progress}%` : "Cập nhật ngay"}
+              </button>
+              <button onClick={() => openUrl(update.page)}>Xem trên GitHub</button>
+            </div>
+            <p className="help">Bộ cài được kiểm tra mã SHA-256 trước khi chạy. Trên Windows app tự đóng, cài bản mới rồi mở lại.</p>
+          </>
+        ) : (
+          <div className="actions">
+            <button onClick={check} disabled={busy}>
+              Kiểm tra cập nhật
+            </button>
+          </div>
+        )}
+        {status && <p className="help">{status}</p>}
+        <label className="row">
+          <span>Tự kiểm tra bản mới khi mở app và mỗi ngày</span>
+          <input type="checkbox" checked={checkUpdates} onChange={(e) => setCheckUpdates(e.target.checked)} />
+        </label>
+      </div>
+
       <p className="help">
         Bản quyền © 2026 thydynh03. Phần mềm phát hành theo giấy phép MIT: bạn được dùng, sao chép và sửa đổi miễn phí, kèm
         theo thông báo bản quyền. Phần mềm được cung cấp nguyên trạng, không có bảo hành.
@@ -33,7 +108,6 @@ function About() {
       <div className="actions">
         <button onClick={() => openUrl(`${SITE}docs.html`)}>Hướng dẫn sử dụng</button>
         <button onClick={() => openUrl(`${SITE}license.html`)}>Giấy phép</button>
-        <button onClick={() => openUrl(`${REPO}/releases/latest`)}>Kiểm tra bản mới</button>
         <button onClick={() => openUrl(`${REPO}/issues`)}>Báo lỗi</button>
       </div>
     </section>
@@ -81,6 +155,13 @@ export default function Settings() {
   const [historyQuery, setHistoryQuery] = useState("");
 
   const load = () => invoke<Config>("get_settings").then(setConfig);
+
+  useEffect(() => {
+    const opened = listen("show-update", () => setTab("about"));
+    return () => {
+      opened.then((off) => off());
+    };
+  }, []);
 
   useEffect(() => {
     load();
@@ -208,9 +289,26 @@ export default function Settings() {
                 />
               </label>
               <label className="row">
-                <span>Giữ Ctrl và rê chuột lên một từ để dịch (thử nghiệm, chỉ ở ứng dụng hỗ trợ)</span>
+                <span>Giữ Ctrl và rê chuột lên văn bản để dịch (thử nghiệm, chỉ ở ứng dụng hỗ trợ)</span>
                 <input type="checkbox" checked={config.hover_translate} onChange={(e) => update({ hover_translate: e.target.checked })} />
               </label>
+              <label className="row">
+                <span>Khi rê chuột: dịch cả câu (từ đầu câu đến dấu chấm) thay vì một từ</span>
+                <input
+                  type="checkbox"
+                  checked={config.hover_sentence}
+                  disabled={!config.hover_translate}
+                  onChange={(e) => update({ hover_sentence: e.target.checked })}
+                />
+              </label>
+              <label className="row">
+                <span>Bôi đen 1–4 từ: giải thích nghĩa theo ngữ cảnh câu chứa chúng</span>
+                <input type="checkbox" checked={config.explain_in_context} onChange={(e) => update({ explain_in_context: e.target.checked })} />
+              </label>
+              <p className="help">
+                Có Claude hoặc API tương thích OpenAI (tab Engine dịch) thì app giải thích nghĩa của từ trong câu đó. Không có thì app
+                dịch cả câu để bạn thấy ngữ cảnh.
+              </p>
               <label className="row">
                 <span>Phím tắt dịch cả cửa sổ đang mở</span>
                 <input
@@ -511,7 +609,7 @@ export default function Settings() {
 
         {tab === "vocab" && <Vocab />}
 
-        {tab === "about" && <About />}
+        {tab === "about" && <About checkUpdates={config.check_updates} setCheckUpdates={(on) => update({ check_updates: on })} />}
       </main>
     </div>
   );

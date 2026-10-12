@@ -46,6 +46,8 @@ pub struct Selection {
     pub text: String,
     /// Bounding box of the selected text, when the app exposes it.
     pub rect: Option<Rect>,
+    /// The sentence around a short selection, for explaining a word in context.
+    pub context: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug)]

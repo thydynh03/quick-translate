@@ -18,7 +18,7 @@ pub fn configured(settings: &Settings) -> bool {
     !base.is_empty() && !settings.openai_model.trim().is_empty() && (is_local(base) || !settings.openai_key.trim().is_empty())
 }
 
-fn language(code: &str) -> &str {
+pub(crate) fn language(code: &str) -> &str {
     match code {
         "vi" => "Vietnamese",
         "en" => "English",
@@ -75,6 +75,29 @@ pub async fn translate(base: &str, key: &str, model: &str, text: &str, from: &st
         engine: "openai".into(),
         ..Default::default()
     })
+}
+
+/// Meaning of `word` inside `sentence` and the sentence's translation, both in `to`.
+pub async fn explain(settings: &Settings, word: &str, sentence: &str, to: &str) -> anyhow::Result<super::context::Explained> {
+    let base = settings.openai_base.trim().trim_end_matches('/');
+    let system = super::context::prompt(language(to));
+    let body = json!({
+        "model": settings.openai_model.trim(),
+        "messages": [
+            { "role": "system", "content": system },
+            { "role": "user", "content": super::context::question(word, sentence) }
+        ],
+    });
+    let timeout = Duration::from_secs(if is_local(base) { 90 } else { 30 });
+    let client = reqwest::Client::builder().timeout(timeout).build()?;
+    let mut request = client.post(format!("{base}/chat/completions")).json(&body);
+    let key = settings.openai_key.trim();
+    if !key.is_empty() {
+        request = request.bearer_auth(key);
+    }
+    let response = request.send().await?;
+    anyhow::ensure!(response.status().is_success(), "API trả về lỗi {}", response.status());
+    super::context::parse_answer(&parse(&response.json().await?)?)
 }
 
 #[cfg(test)]

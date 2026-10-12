@@ -36,13 +36,26 @@ const ICONS = {
   save: "M6 3h12v18l-6-4-6 4z",
 };
 
+/** The sentence with every occurrence of the word marked. */
+function Highlight({ text, word }: { text: string; word: string }) {
+  if (!word) return <>{text}</>;
+  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // Whole words only: "he" must not light up inside "the".
+  const parts = text.split(new RegExp(`(?<![\\p{L}\\p{N}])(${escaped})(?![\\p{L}\\p{N}])`, "giu"));
+  return (
+    <>
+      {parts.map((part, i) => (part.toLowerCase() === word.toLowerCase() ? <mark key={i}>{part}</mark> : part))}
+    </>
+  );
+}
+
 export default function Popup() {
   const [state, setState] = useState<PopupState>({ mode: "hidden" });
   const [pinned, setPinned] = useState(false);
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
-  const [trail, setTrail] = useState<string[]>([]);
+  const [trail, setTrail] = useState<{ text: string; context: string | null }[]>([]);
   const card = useRef<HTMLDivElement>(null);
   // The card the popup shows now; an older vocab_has answer must not change `saved`.
   const shownKey = useRef("");
@@ -111,6 +124,7 @@ export default function Popup() {
 
   const source = state.source;
   const result = state.mode === "result" ? state.result : null;
+  const shownContext = result?.context?.sentence ?? null;
   const words = tokens(source);
   const clickable = words.filter((w) => w.trim()).length > 1;
 
@@ -125,14 +139,16 @@ export default function Popup() {
   const lookup = (word: string) => {
     const clean = word.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
     if (!clean) return;
-    setTrail((t) => [...t, source]);
-    invoke("popup_lookup", { text: clean });
+    setTrail((t) => [...t, { text: source, context: shownContext }]);
+    // The sentence the word was clicked in gives it context.
+    const sentence = result?.context?.sentence ?? source;
+    invoke("popup_lookup", { text: clean, context: sentence.length <= 600 ? sentence : null });
   };
 
   const back = () => {
     const previous = trail[trail.length - 1];
     setTrail((t) => t.slice(0, -1));
-    invoke("popup_lookup", { text: previous });
+    invoke("popup_lookup", { text: previous.text, context: previous.context });
   };
 
   const copy = async () => {
@@ -239,6 +255,16 @@ export default function Popup() {
       {result && (
         <>
           <p className="result">{result.text}</p>
+          {result.context && (
+            <div className="context">
+              <p className="context-label">{result.context.meaning ? "Nghĩa trong câu này" : "Trong câu"}</p>
+              {result.context.meaning && <p className="context-meaning">{result.context.meaning}</p>}
+              <p className="context-sentence">
+                <Highlight text={result.context.sentence} word={source.trim()} />
+              </p>
+              <p className="context-translation">{result.context.translation}</p>
+            </div>
+          )}
           {result.dict.length > 0 && (
             <dl className="dict">
               {result.dict.map((entry) => (

@@ -50,6 +50,12 @@ pub struct Settings {
     pub live_hotkey: String,
     /// Translate as soon as text is selected, without showing the icon first.
     pub instant_translate: bool,
+    /// Hover (Ctrl) translates the whole sentence under the pointer, not just the word.
+    pub hover_sentence: bool,
+    /// A selected word is also explained through the sentence around it.
+    pub explain_in_context: bool,
+    /// Look for a new release on start and once a day.
+    pub check_updates: bool,
     /// Popup text size in CSS pixels.
     pub popup_font_size: u32,
     /// Popup background opacity in percent.
@@ -105,6 +111,9 @@ impl Default for Settings {
             window_hotkey: "Alt+E".into(),
             live_hotkey: "Alt+R".into(),
             instant_translate: false,
+            hover_sentence: true,
+            explain_in_context: true,
+            check_updates: true,
             popup_font_size: 14,
             popup_opacity: 100,
             openai_base: String::new(),

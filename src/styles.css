@@ -198,6 +198,44 @@ html[data-window="popup"] body {
   margin: 0;
 }
 
+.context {
+  margin: 10px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.context p {
+  margin: 0;
+}
+
+.context p + p {
+  margin-top: 4px;
+}
+
+.context-label {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.context-meaning {
+  font-weight: 600;
+}
+
+.context-sentence {
+  color: var(--muted);
+}
+
+.context-sentence mark {
+  background: none;
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
 .note {
   margin: 8px 0 0;
   color: var(--muted);
@@ -556,4 +594,27 @@ html[data-window="capture"] body {
   padding: 0;
   border: 0;
   background: none;
+}
+
+.update {
+  margin: 12px 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.update p {
+  margin: 0 0 6px;
+}
+
+.update .notes {
+  max-height: 160px;
+  overflow: auto;
+  margin: 6px 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--surface);
+  font: inherit;
+  font-size: 12px;
+  white-space: pre-wrap;
 }

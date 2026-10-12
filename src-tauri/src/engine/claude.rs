@@ -94,6 +94,54 @@ pub(crate) fn parse(json: &Value, from: &str, to: &str) -> anyhow::Result<Transl
     })
 }
 
+/// Meaning of `word` inside `sentence` and the sentence's translation, both in `to`.
+pub async fn explain(key: &str, word: &str, sentence: &str, to: &str) -> anyhow::Result<super::context::Explained> {
+    let body = json!({
+        "model": MODEL,
+        "max_tokens": 2000,
+        "system": super::context::prompt(super::openai::language(to)),
+        "output_config": {
+            "effort": "low",
+            "format": {
+                "type": "json_schema",
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "meaning": { "type": "string" },
+                        "sentence": { "type": "string" }
+                    },
+                    "required": ["meaning", "sentence"],
+                    "additionalProperties": false
+                }
+            }
+        },
+        "messages": [{ "role": "user", "content": super::context::question(word, sentence) }]
+    });
+    let client = reqwest::Client::builder().timeout(Duration::from_secs(30)).build()?;
+    let response = client
+        .post("https://api.anthropic.com/v1/messages")
+        .header("x-api-key", key.trim())
+        .header("anthropic-version", "2023-06-01")
+        .json(&body)
+        .send()
+        .await?;
+    let status = response.status();
+    let json: Value = response.json().await?;
+    if !status.is_success() {
+        let message = json.pointer("/error/message").and_then(Value::as_str).unwrap_or("không rõ lỗi");
+        anyhow::bail!("Claude trả về lỗi {}: {message}", status.as_u16());
+    }
+    let answer: String = json
+        .get("content")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter(|block| block.get("type").and_then(Value::as_str) == Some("text"))
+        .filter_map(|block| block.get("text").and_then(Value::as_str))
+        .collect();
+    super::context::parse_answer(&answer)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
