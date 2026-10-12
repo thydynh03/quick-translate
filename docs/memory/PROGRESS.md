@@ -43,6 +43,8 @@ Cập nhật: 2026-10-12. Plan gốc: `docs/PLAN.md`. Hướng dẫn dùng: `REA
 
 - v0.1.6: thêm cài đặt `instant_translate` ("Bôi đen là dịch ngay"): trong `trigger::on_selection_gesture`, khi accessibility đọc được vùng bôi đen thì gọi thẳng `popup::translate_text`; khi phải dùng Ctrl+C thì vẫn hiện biểu tượng (cố ý, tránh tự gửi Ctrl+C). CHƯA test bằng tay.
 
+- 2026-10-12: worker thống kê (`server/`) có chống số liệu giả ngay trong code: `[[ratelimits]]` 10 lần/phút/địa chỉ cho `/ping`, và tối đa 30 mã mới/địa chỉ/ngày qua bảng `senders` (mã băm địa chỉ + muối theo ngày trong bảng `salts`, tự xoá ngày cũ). Worker vẫn CHƯA được triển khai (cần người dùng `wrangler login`).
+
 ## CHƯA kiểm chứng
 
 - macOS: build + `cargo test` qua trên GitHub Actions (macos-latest), có .dmg ký ad-hoc. CHƯA chạy trên máy Mac thật. Thiếu: OCR (Vision), hover, popup không cướp focus (NSPanel), tên app đang mở. App hỏi quyền Accessibility và chờ được cấp.

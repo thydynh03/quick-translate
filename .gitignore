@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 .claude
+
+# wrangler local state
+server/.wrangler/
