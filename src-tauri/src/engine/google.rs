@@ -157,6 +157,19 @@ mod tests {
         assert_eq!(result.unwrap().from, "en");
     }
 
+    /// The main endpoint answers 429 (simulated), so the spare one must answer.
+    /// Run alone: cargo test survives_a_429 -- --ignored --nocapture
+    #[test]
+    #[ignore]
+    fn survives_a_429() {
+        unsafe { std::env::set_var("QT_GOOGLE_ENDPOINT", "https://httpbin.org/status/429") };
+        let result = tauri::async_runtime::block_on(translate("The meeting has been moved to Thursday.", "auto", "vi"));
+        println!("{result:?}");
+        let translation = result.unwrap();
+        assert_eq!(translation.engine, "google");
+        assert!(translation.dict.is_empty());
+    }
+
     /// Calls the real service: run with `cargo test -- --ignored google_answers`.
     #[test]
     #[ignore]
