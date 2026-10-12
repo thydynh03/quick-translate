@@ -290,7 +290,7 @@ fn end_live(app: &AppHandle) {
     if LIVE.swap(false, Ordering::SeqCst) {
         SESSION.fetch_add(1, Ordering::SeqCst);
         if let Some(window) = app.get_webview_window(LABEL) {
-            let _ = window.hide();
+            platform::hide_overlay(&window);
             let _ = window.set_ignore_cursor_events(false);
             platform::exclude_from_capture(&window, false);
         }

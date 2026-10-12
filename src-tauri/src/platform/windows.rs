@@ -333,6 +333,19 @@ pub fn show_overlay(window: &tauri::WebviewWindow) {
     }
 }
 
+/// Hides a window that `show_overlay` put on screen. The windowing library
+/// does not know about that, and its own `hide` does nothing for a window it
+/// believes is hidden: the window would stay, see-through, swallowing clicks.
+pub fn hide_overlay(window: &tauri::WebviewWindow) {
+    use windows::Win32::UI::WindowsAndMessaging::SW_HIDE;
+    if let Some(hwnd) = hwnd_of(window) {
+        unsafe {
+            let _ = ShowWindow(hwnd, SW_HIDE);
+        }
+    }
+    let _ = window.hide();
+}
+
 /// Shows a window without taking the keyboard focus.
 pub fn show_passive(window: &tauri::WebviewWindow) {
     show_overlay(window);

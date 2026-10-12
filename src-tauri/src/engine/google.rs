@@ -85,6 +85,15 @@ pub(crate) fn parse(json: &Value, from: &str, to: &str) -> anyhow::Result<Transl
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Calls the real service: run with `cargo test -- --ignored google_answers`.
+    #[test]
+    #[ignore]
+    fn google_answers() {
+        let result = tauri::async_runtime::block_on(translate("meeting", "en", "vi"));
+        println!("{result:?}");
+        assert!(result.is_ok());
+    }
     use serde_json::json;
 
     #[test]

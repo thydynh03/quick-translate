@@ -19,3 +19,5 @@
 - Google (endpoint không key) trả 429 sau vài lần `Alt+E` liên tiếp khi mỗi đoạn là một yêu cầu (~16 yêu cầu/lần). Gộp thành một yêu cầu; khi test lặp lại nên dùng hồ sơ engine offline.
 - Dịch offline các mẩu chữ giao diện ngắn (nhãn, số liệu) trong `Alt+E` có thể ra chuỗi lặp vô nghĩa.
 - Overlay dịch thời gian thực đặt `WDA_EXCLUDEFROMCAPTURE`: mọi ảnh chụp màn hình (kể cả công cụ test) không thấy nó. Kiểm chứng bằng log `live: showing N of M blocks`, không bằng screenshot.
+- Cửa sổ hiện bằng `ShowWindow` trực tiếp (`platform::show_overlay`) thì `window.hide()` của Tauri không ẩn được (thư viện tưởng nó đang ẩn): cửa sổ còn đó, trong suốt, chặn chuột. Luôn ẩn bằng `platform::hide_overlay`.
+- Test UI bằng toạ độ trên màn hình thật dễ bấm nhầm cửa sổ khác (Notepad của người dùng có nhiều tab, bản debug mở thêm cửa sổ console). Chụp màn hình xác nhận trước mỗi cú bấm; không kill Notepad.

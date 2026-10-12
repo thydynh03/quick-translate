@@ -118,7 +118,7 @@ pub fn hide(app: &AppHandle) {
         popup.payload = json!({ "mode": "hidden" });
     }
     if let Some(window) = window(app) {
-        let _ = window.hide();
+        platform::hide_overlay(&window);
     }
     emit(app);
 }
