@@ -48,6 +48,8 @@ Cập nhật: 2026-10-12. Plan gốc: `docs/PLAN.md`. Hướng dẫn dùng: `REA
 
 - v0.1.9 (2026-10-12): máy chủ thống kê ĐÃ triển khai: https://quick-translate-stats.request-desk.workers.dev (D1 `quick-translate-stats`, id trong `server/wrangler.toml`). Đã gắn vào `website/assets/stats-config.js` và biến GitHub Actions `QT_STATS_URL`; app từ 0.1.9 mới gửi ping. Đã thử trên máy chủ thật: mã mới 200, gửi lại 200, sai 400, quá 30 mã/ngày 429. Bộ giới hạn theo phút (binding của Cloudflare + bộ đếm trong bộ nhớ) KHÔNG chặn được 40 lần/20 giây khi thử thật; chỉ coi là chặn lũ lớn. IPv6 tính theo /64.
 
+- v0.1.10 (2026-10-12): engine offline từ chối từ đơn en↔vi không có trong `wordbook` (model câu cho ra chữ lặp vô nghĩa, ví dụ "institution" → "chứa gói gói…"), để chuỗi dự phòng chuyển sang Google khi có mạng; vòng giải mã dừng khi một token lặp 3 lần liên tiếp. Test `bare_word_goes_online` (ignored, cần mạng + QT_MODELS) đã chạy: "institution" → "tổ chức" qua google, câu đầy đủ vẫn offline. Từ điển kèm theo chỉ có ~7.400 mục; mở rộng nó là hướng cải thiện tiếp.
+
 ## CHƯA kiểm chứng
 
 - macOS: build + `cargo test` qua trên GitHub Actions (macos-latest), có .dmg ký ad-hoc. CHƯA chạy trên máy Mac thật. Thiếu: OCR (Vision), hover, popup không cướp focus (NSPanel), tên app đang mở. App hỏi quyền Accessibility và chờ được cấp.

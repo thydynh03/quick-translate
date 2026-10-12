@@ -1,6 +1,6 @@
 [package]
 name = "quick-translate"
-version = "0.1.9"
+version = "0.1.10"
 description = "Select-to-translate desktop app"
 authors = ["thydynh03"]
 license = "MIT"
