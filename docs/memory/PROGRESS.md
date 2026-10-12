@@ -52,6 +52,8 @@ Cập nhật: 2026-10-12. Plan gốc: `docs/PLAN.md`. Hướng dẫn dùng: `REA
 
 - v0.1.11 (2026-10-12): từ điển Anh–Việt lớn `src-tauri/data/en-vi-viwiktionary.tsv` (107.513 từ, 8,1 MB, từ Wiktionary tiếng Việt qua kaikki.org, CC BY-SA; tạo bằng `scripts/build-dictionary.py`). `wordbook::find` tìm nhị phân trên file đã sắp xếp (không nạp gì vào RAM), trả nghĩa theo từ loại + IPA; dạng biến đổi tra theo từ gốc (`stems`), ghi chú "Nghĩa của từ gốc". Test thật (`bare_word_goes_online`): institution/leveraging/operates tra offline, "serverless" (không có) sang Google. Bộ cài tăng khoảng 2–3 MB.
 
+- v0.1.12 (2026-10-12): người dùng mới báo Google lỗi 429 ngay sau khi cài. Google giới hạn cổng không key theo địa chỉ mạng, và app trước đây gửi yêu cầu không có User-Agent. Sửa: gửi User-Agent của trình duyệt; khi cổng chính trả lỗi HTTP thì thử cổng dự phòng `clients5.google.com/translate_a/t` (hạn mức riêng, chỉ trả bản dịch, không có từ điển/phiên âm) rồi mới báo lỗi. Test thật `spare_endpoint_answers` + `google_answers` qua. CHƯA tái hiện được 429 để thử đường dự phòng từ đầu đến cuối.
+
 ## CHƯA kiểm chứng
 
 - macOS: build + `cargo test` qua trên GitHub Actions (macos-latest), có .dmg ký ad-hoc. CHƯA chạy trên máy Mac thật. Thiếu: OCR (Vision), hover, popup không cướp focus (NSPanel), tên app đang mở. App hỏi quyền Accessibility và chờ được cấp.
