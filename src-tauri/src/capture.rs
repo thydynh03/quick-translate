@@ -319,7 +319,7 @@ pub fn toggle_live(app: &AppHandle) {
     platform::exclude_from_capture(&window, true);
     let hotkey = app.state::<crate::AppState>().settings.read().live_hotkey.clone();
     let _ = app.emit_to(LABEL, "live-start", hotkey);
-    platform::show_overlay(&window);
+    platform::show_passive(&window);
     log("live: on");
 
     let app = app.clone();

@@ -2,12 +2,15 @@
 //! macOS implementation. Reading the selection and the global mouse tap both
 //! need the Accessibility permission (System Settings → Privacy & Security).
 //!
-//! Not yet implemented here: OCR (Vision), hover lookup, and a non-activating
-//! panel for the popup — showing it briefly activates Quick Translate.
+//! Reading the screen (OCR through the Vision framework) needs the Screen
+//! Recording permission.
+//!
+//! Not yet implemented here: hover lookup, and a non-activating panel for
+//! the popup — showing it briefly activates Quick Translate.
 
-use std::ffi::c_void;
+use std::ffi::{c_char, c_void, CStr};
 use std::ptr;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use std::sync::mpsc::Sender;
 use std::time::{Duration, Instant};
 
@@ -17,7 +20,11 @@ use accessibility_sys::{
     AXIsProcessTrustedWithOptions, AXUIElementCopyAttributeValue, AXUIElementCopyParameterizedAttributeValue,
     AXUIElementCreateSystemWide, AXUIElementRef, AXValueGetValue, AXValueRef,
 };
-use core_foundation::base::{CFGetTypeID, CFRelease, CFTypeRef, TCFType};
+use core_foundation::array::{CFArray, CFArrayGetCount, CFArrayGetValueAtIndex, CFArrayRef};
+use core_foundation::base::{CFGetTypeID, CFRelease, CFType, CFTypeRef, TCFType};
+use core_foundation::data::{CFDataGetBytePtr, CFDataGetLength, CFDataRef};
+use core_foundation::dictionary::{CFDictionaryGetValue, CFDictionaryRef};
+use core_foundation::number::{kCFNumberSInt32Type, CFNumberGetValue, CFNumberRef};
 use core_foundation::boolean::CFBoolean;
 use core_foundation::dictionary::CFDictionary;
 use core_foundation::runloop::{kCFRunLoopCommonModes, CFRunLoop};
@@ -28,6 +35,11 @@ use core_graphics::event::{
 };
 use core_graphics::event_source::{CGEventSource, CGEventSourceStateID};
 use core_graphics::geometry::{CGPoint, CGRect, CGSize};
+
+use objc2::encode::{Encode, Encoding, RefEncode};
+use objc2::rc::autoreleasepool;
+use objc2::runtime::AnyObject;
+use objc2::{class, msg_send, sel};
 
 use super::{MouseEvent, Rect, Selection};
 
@@ -159,8 +171,9 @@ pub fn double_click_ms() -> u64 {
     500
 }
 
+/// Name of the application in front, lower-case, for example "safari".
 pub fn foreground_app() -> Option<String> {
-    None
+    front_window().map(|(name, _)| name).filter(|name| !name.is_empty())
 }
 
 // -------------------------------------------------------------- mouse hook
@@ -237,21 +250,250 @@ pub fn show_overlay(window: &tauri::WebviewWindow) {
     let _ = window.show();
 }
 
-// ------------------------------------------------------- not yet supported
+// ------------------------------------------------------------------ screen
 
-pub fn ocr_lines(_rect: Rect, _vietnamese: Option<&std::path::Path>) -> anyhow::Result<Vec<(Rect, String)>> {
-    anyhow::bail!("OCR chưa hỗ trợ trên macOS")
+#[repr(C)]
+struct CGImageOpaque {
+    _private: [u8; 0],
 }
 
+unsafe impl RefEncode for CGImageOpaque {
+    const ENCODING_REF: Encoding = Encoding::Pointer(&Encoding::Struct("CGImage", &[]));
+}
+
+/// `CGRect` as Objective-C methods return it.
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+struct VisionRect {
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+}
+
+unsafe impl Encode for VisionRect {
+    const ENCODING: Encoding = Encoding::Struct(
+        "CGRect",
+        &[
+            Encoding::Struct("CGPoint", &[Encoding::Double, Encoding::Double]),
+            Encoding::Struct("CGSize", &[Encoding::Double, Encoding::Double]),
+        ],
+    );
+}
+
+const WINDOWS_ON_SCREEN: u32 = 1 << 0;
+const WINDOWS_BELOW: u32 = 1 << 2;
+const WINDOWS_NO_DESKTOP: u32 = 1 << 4;
+
+#[link(name = "CoreGraphics", kind = "framework")]
+unsafe extern "C" {
+    fn CGWindowListCreateImage(bounds: CGRect, list: u32, window: u32, image: u32) -> *mut CGImageOpaque;
+    fn CGWindowListCopyWindowInfo(list: u32, window: u32) -> CFArrayRef;
+    fn CGImageGetWidth(image: *mut CGImageOpaque) -> usize;
+    fn CGImageGetHeight(image: *mut CGImageOpaque) -> usize;
+    fn CGImageGetBytesPerRow(image: *mut CGImageOpaque) -> usize;
+    fn CGImageGetDataProvider(image: *mut CGImageOpaque) -> *mut c_void;
+    fn CGDataProviderCopyData(provider: *mut c_void) -> CFDataRef;
+    fn CGImageRelease(image: *mut CGImageOpaque);
+    fn CGRectMakeWithDictionaryRepresentation(dictionary: CFDictionaryRef, rect: *mut CGRect) -> bool;
+    fn CGPreflightScreenCaptureAccess() -> bool;
+    fn CGRequestScreenCaptureAccess() -> bool;
+    static kCGWindowLayer: CFStringRef;
+    static kCGWindowOwnerPID: CFStringRef;
+    static kCGWindowOwnerName: CFStringRef;
+    static kCGWindowBounds: CFStringRef;
+}
+
+#[link(name = "Vision", kind = "framework")]
+unsafe extern "C" {}
+
+/// Window number of the live overlay while it must stay out of captures.
+static HIDDEN_FROM_CAPTURE: AtomicU32 = AtomicU32::new(0);
+
+/// Reading the screen needs the Screen Recording permission. The first call
+/// without it makes macOS show its dialog.
+fn screen_access() -> anyhow::Result<()> {
+    unsafe {
+        if CGPreflightScreenCaptureAccess() {
+            return Ok(());
+        }
+        CGRequestScreenCaptureAccess();
+    }
+    anyhow::bail!(
+        "hãy cấp quyền Ghi màn hình (Screen Recording) cho Quick Translate trong System Settings → Privacy & Security, rồi mở lại ứng dụng"
+    )
+}
+
+/// A picture of a screen rectangle (physical pixels). Release it with `CGImageRelease`.
+unsafe fn screenshot(rect: Rect) -> anyhow::Result<*mut CGImageOpaque> {
+    anyhow::ensure!(rect.right > rect.left && rect.bottom > rect.top, "vùng chọn rỗng");
+    screen_access()?;
+    let factor = scale();
+    let bounds = CGRect::new(
+        &CGPoint::new(rect.left as f64 / factor, rect.top as f64 / factor),
+        &CGSize::new((rect.right - rect.left) as f64 / factor, (rect.bottom - rect.top) as f64 / factor),
+    );
+    let image = match HIDDEN_FROM_CAPTURE.load(Ordering::Relaxed) {
+        0 => CGWindowListCreateImage(bounds, WINDOWS_ON_SCREEN, 0, 0),
+        overlay => CGWindowListCreateImage(bounds, WINDOWS_BELOW, overlay, 0),
+    };
+    anyhow::ensure!(!image.is_null(), "không chụp được màn hình");
+    Ok(image)
+}
+
+/// Reads the text in a screen rectangle, line by line, with each line's box
+/// relative to the rectangle. The Vision framework reads Vietnamese itself,
+/// so the separate Vietnamese recogniser is not used here.
+pub fn ocr_lines(rect: Rect, _vietnamese: Option<&std::path::Path>) -> anyhow::Result<Vec<(Rect, String)>> {
+    let (width, height) = ((rect.right - rect.left) as f64, (rect.bottom - rect.top) as f64);
+    unsafe {
+        let image = screenshot(rect)?;
+        let lines = autoreleasepool(|_| {
+            let options: *mut AnyObject = msg_send![class!(NSDictionary), dictionary];
+            let handler: *mut AnyObject = msg_send![class!(VNImageRequestHandler), alloc];
+            let handler: *mut AnyObject = msg_send![handler, initWithCGImage: image, options: options];
+            let request: *mut AnyObject = msg_send![class!(VNRecognizeTextRequest), new];
+            let _: () = msg_send![request, setUsesLanguageCorrection: true];
+            // macOS 13 and later can tell the language of the text by themselves.
+            let detects: bool = msg_send![request, respondsToSelector: sel!(setAutomaticallyDetectsLanguage:)];
+            if detects {
+                let _: () = msg_send![request, setAutomaticallyDetectsLanguage: true];
+            }
+            let requests = CFArray::from_CFTypes(&[CFType::wrap_under_get_rule(request as CFTypeRef)]);
+            let failure: *mut *mut AnyObject = ptr::null_mut();
+            let done: bool = msg_send![handler, performRequests: requests.as_concrete_TypeRef() as *mut AnyObject, error: failure];
+
+            let mut lines = Vec::new();
+            let results: *mut AnyObject = if done { msg_send![request, results] } else { ptr::null_mut() };
+            let count: usize = if results.is_null() { 0 } else { msg_send![results, count] };
+            for index in 0..count {
+                let observation: *mut AnyObject = msg_send![results, objectAtIndex: index];
+                let candidates: *mut AnyObject = msg_send![observation, topCandidates: 1usize];
+                let found: usize = if candidates.is_null() { 0 } else { msg_send![candidates, count] };
+                if found == 0 {
+                    continue;
+                }
+                let candidate: *mut AnyObject = msg_send![candidates, objectAtIndex: 0usize];
+                let string: *mut AnyObject = msg_send![candidate, string];
+                let utf8: *const c_char = if string.is_null() { ptr::null() } else { msg_send![string, UTF8String] };
+                if utf8.is_null() {
+                    continue;
+                }
+                let text = CStr::from_ptr(utf8).to_string_lossy().trim().to_string();
+                // Boxes are fractions of the picture, measured from its bottom-left corner.
+                let bounds: VisionRect = msg_send![observation, boundingBox];
+                let line = Rect {
+                    left: (bounds.x * width).floor() as i32,
+                    top: ((1.0 - bounds.y - bounds.height) * height).floor() as i32,
+                    right: ((bounds.x + bounds.width) * width).ceil() as i32,
+                    bottom: ((1.0 - bounds.y) * height).ceil() as i32,
+                };
+                if !text.is_empty() {
+                    lines.push((line, text));
+                }
+            }
+            let _: () = msg_send![request, release];
+            let _: () = msg_send![handler, release];
+            done.then_some(lines)
+        });
+        CGImageRelease(image);
+        let mut lines = lines.ok_or_else(|| anyhow::anyhow!("Vision không đọc được ảnh"))?;
+        lines.sort_by_key(|(line, _)| (line.top, line.left));
+        Ok(lines)
+    }
+}
+
+/// A cheap summary of what a screen rectangle shows, to tell whether it changed.
+pub fn fingerprint(rect: Rect) -> Option<u64> {
+    use std::hash::{Hash, Hasher};
+    unsafe {
+        let image = screenshot(rect).ok()?;
+        let data = CGDataProviderCopyData(CGImageGetDataProvider(image));
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        (CGImageGetWidth(image), CGImageGetHeight(image), CGImageGetBytesPerRow(image)).hash(&mut hasher);
+        if !data.is_null() {
+            std::slice::from_raw_parts(CFDataGetBytePtr(data), CFDataGetLength(data) as usize).hash(&mut hasher);
+            CFRelease(data as CFTypeRef);
+        }
+        CGImageRelease(image);
+        (!data.is_null()).then(|| hasher.finish())
+    }
+}
+
+/// The frontmost ordinary window of another application: its owner's name and bounds.
+fn front_window() -> Option<(String, Rect)> {
+    unsafe {
+        let windows = CGWindowListCopyWindowInfo(WINDOWS_ON_SCREEN | WINDOWS_NO_DESKTOP, 0);
+        if windows.is_null() {
+            return None;
+        }
+        let number = |window: CFDictionaryRef, key: CFStringRef| {
+            let mut value = 0i32;
+            let found = CFDictionaryGetValue(window, key as *const c_void) as CFNumberRef;
+            (!found.is_null() && CFNumberGetValue(found, kCFNumberSInt32Type, &mut value as *mut i32 as *mut c_void))
+                .then_some(value)
+        };
+        let mut front = None;
+        // The list runs from the front of the screen to the back.
+        for index in 0..CFArrayGetCount(windows) {
+            let window = CFArrayGetValueAtIndex(windows, index) as CFDictionaryRef;
+            if number(window, kCGWindowLayer) != Some(0) || number(window, kCGWindowOwnerPID) == Some(std::process::id() as i32) {
+                continue;
+            }
+            let mut bounds = CGRect::new(&CGPoint::new(0.0, 0.0), &CGSize::new(0.0, 0.0));
+            let shape = CFDictionaryGetValue(window, kCGWindowBounds as *const c_void) as CFDictionaryRef;
+            if shape.is_null() || !CGRectMakeWithDictionaryRepresentation(shape, &mut bounds) {
+                continue;
+            }
+            let owner = CFDictionaryGetValue(window, kCGWindowOwnerName as *const c_void) as CFStringRef;
+            let name = if owner.is_null() { String::new() } else { CFString::wrap_under_get_rule(owner).to_string() };
+            let rect = Rect {
+                left: to_pixels(bounds.origin.x),
+                top: to_pixels(bounds.origin.y),
+                right: to_pixels(bounds.origin.x + bounds.size.width),
+                bottom: to_pixels(bounds.origin.y + bounds.size.height),
+            };
+            front = Some((name.to_lowercase(), rect));
+            break;
+        }
+        CFRelease(windows as CFTypeRef);
+        front
+    }
+}
+
+/// Bounds of the window the user is working in.
 pub fn foreground_rect() -> Option<Rect> {
-    None
+    front_window().map(|(_, rect)| rect)
 }
 
-pub fn fingerprint(_rect: Rect) -> Option<u64> {
-    None
+/// Keeps a window out of the pictures taken here (or lets it back in), so
+/// the screen under it can still be read.
+pub fn exclude_from_capture(window: &tauri::WebviewWindow, exclude: bool) {
+    let number = match window.ns_window() {
+        Ok(handle) if exclude && !handle.is_null() => unsafe {
+            let number: isize = msg_send![handle as *mut AnyObject, windowNumber];
+            number.max(0) as u32
+        },
+        _ => 0,
+    };
+    HIDDEN_FROM_CAPTURE.store(number, Ordering::Relaxed);
 }
 
-pub fn exclude_from_capture(_window: &tauri::WebviewWindow, _exclude: bool) {}
+/// Shows a window without making Quick Translate the active application.
+pub fn show_passive(window: &tauri::WebviewWindow) {
+    let shown = window.clone();
+    let _ = window.run_on_main_thread(move || {
+        if let Ok(handle) = shown.ns_window() {
+            if !handle.is_null() {
+                unsafe {
+                    let _: () = msg_send![handle as *mut AnyObject, orderFrontRegardless];
+                }
+            }
+        }
+    });
+}
+
+// ------------------------------------------------------- not yet supported
 
 pub fn word_at(_x: i32, _y: i32) -> Option<Selection> {
     None

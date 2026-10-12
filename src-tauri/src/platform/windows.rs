@@ -333,6 +333,11 @@ pub fn show_overlay(window: &tauri::WebviewWindow) {
     }
 }
 
+/// Shows a window without taking the keyboard focus.
+pub fn show_passive(window: &tauri::WebviewWindow) {
+    show_overlay(window);
+}
+
 // --------------------------------------------------------------------- OCR
 
 /// Copies a screen rectangle as top-down BGRA pixels.

@@ -3340,6 +3340,7 @@ dependencies = [
  "core-foundation",
  "core-graphics",
  "futures-util",
+ "objc2",
  "ort",
  "parking_lot",
  "reqwest",
