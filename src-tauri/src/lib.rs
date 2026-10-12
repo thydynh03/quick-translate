@@ -15,6 +15,7 @@ mod platform;
 mod popup;
 mod settings;
 mod trigger;
+mod vocab;
 
 use settings::Settings;
 
@@ -263,6 +264,10 @@ pub fn run() {
             capture::capture_cancel,
             history::history_list,
             history::history_clear,
+            vocab::vocab_add,
+            vocab::vocab_list,
+            vocab::vocab_remove,
+            vocab::vocab_has,
             engine::offline::offline_models,
             engine::offline::offline_download,
             engine::offline::offline_remove,

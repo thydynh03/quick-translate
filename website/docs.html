@@ -59,6 +59,7 @@
       <a href="#offline">Dịch offline</a>
       <a href="#ocr">Quét chữ trên ảnh</a>
       <a href="#tu-dien">Từ điển</a>
+      <a href="#flashcard">Từ vựng và flashcard</a>
       <a href="#tuy-chinh">Tuỳ chỉnh</a>
       <a href="#du-lieu">Dữ liệu trên máy</a>
       <a href="#su-co">Khắc phục sự cố</a>
@@ -159,6 +160,16 @@
       <p>Khi bạn tra một từ tiếng Anh và đang có mạng, popup hiện nghĩa tiếng Việt theo từ loại, phiên âm và định nghĩa tiếng Anh lấy từ Free Dictionary API. Hai nút Cambridge và Oxford mở mục từ tương ứng trong trình duyệt.</p>
       <p>Nếu bạn có tài khoản Oxford Dictionaries API, nhập <code>app_id</code> và <code>app_key</code> trong Cài đặt để lấy định nghĩa từ Oxford. Cambridge không cung cấp API công khai nên ứng dụng chỉ mở trang web của họ.</p>
 
+      <h2 id="flashcard">Từ vựng và flashcard</h2>
+      <p>Bấm nút đánh dấu trên thanh công cụ của popup để lưu từ hoặc câu vừa dịch vào bộ từ vựng; bấm lần nữa để bỏ. Với một từ đơn, thẻ giữ cả phiên âm và nghĩa theo từ loại. Xem, tìm và xoá thẻ trong Cài đặt → <strong>Từ vựng</strong>. Ô tìm kiếm cũng có ở tab Lịch sử.</p>
+      <p>Để học trên điện thoại, bấm <strong>Học trên điện thoại (mã QR)</strong> rồi quét bằng camera. Trang <a href="learn.html">Học từ vựng</a> mở ra với các thẻ đó; bộ thẻ nằm trong liên kết, không đi qua máy chủ nào. Một mã QR chứa được khoảng vài chục thẻ mới nhất; bộ lớn hơn thì dùng <strong>Sao chép liên kết</strong> và gửi sang điện thoại. Quét lại khi lưu thêm từ: thẻ mới được thêm, tiến độ cũ giữ nguyên.</p>
+      <ul>
+        <li><strong>Học thẻ:</strong> chạm để lật, rồi chọn Quên / Khó / Nhớ / Dễ. Ứng dụng xếp lịch ôn theo lặp lại ngắt quãng (kiểu Anki), mỗi ngày tối đa 20 thẻ mới.</li>
+        <li><strong>Trắc nghiệm:</strong> 10 câu chọn nghĩa đúng trong 4 đáp án.</li>
+        <li>Nút loa đọc từ gốc bằng giọng đọc của điện thoại; có đổi mặt trước sang bản dịch, đếm chuỗi ngày học, xuất/nhập tệp sao lưu.</li>
+        <li>Thêm trang vào màn hình chính để mở như ứng dụng và học khi không có mạng. Tiến độ lưu trong trình duyệt của điện thoại; xoá dữ liệu trình duyệt sẽ mất tiến độ, nên thỉnh thoảng hãy xuất tệp.</li>
+      </ul>
+
       <h2 id="tuy-chinh">Tuỳ chỉnh</h2>
       <ul>
         <li><strong>Bôi đen là dịch ngay:</strong> bật ô này thì vừa bôi đen xong bản dịch hiện luôn, không cần bấm biểu tượng hay nhấn <kbd>Alt</kbd><kbd>Q</kbd>. Ở ứng dụng không cho đọc vùng bôi đen trực tiếp, biểu tượng vẫn hiện như cũ để bạn bấm.</li>
@@ -179,7 +190,7 @@
           <tr><td>macOS</td><td><code>~/Library/Application Support/com.quicktranslate.app</code></td></tr>
         </tbody>
       </table>
-      <p>Thư mục này chứa cài đặt, lịch sử dịch (tối đa 500 mục, tắt được) và model offline. API key được lưu dạng văn bản thường trong tệp cài đặt, vì vậy đừng chia sẻ thư mục này. Ứng dụng không gửi dữ liệu nào về máy chủ của tác giả.</p>
+      <p>Thư mục này chứa cài đặt, lịch sử dịch (tối đa 500 mục, tắt được), bộ từ vựng (<code>vocab.json</code>) và model offline. API key được lưu dạng văn bản thường trong tệp cài đặt, vì vậy đừng chia sẻ thư mục này. Ứng dụng không gửi dữ liệu nào về máy chủ của tác giả.</p>
 
       <h2 id="su-co">Khắc phục sự cố</h2>
       <h3>Bôi đen nhưng không thấy biểu tượng</h3>

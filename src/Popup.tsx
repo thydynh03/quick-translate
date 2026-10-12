@@ -33,12 +33,14 @@ const ICONS = {
   pin: "M9 3h6l-1 6 4 4H6l4-4-1-6zM12 13v8",
   close: "M6 6l12 12M18 6 6 18",
   back: "M15 5l-7 7 7 7",
+  save: "M6 3h12v18l-6-4-6 4z",
 };
 
 export default function Popup() {
   const [state, setState] = useState<PopupState>({ mode: "hidden" });
   const [pinned, setPinned] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [trail, setTrail] = useState<string[]>([]);
   const card = useRef<HTMLDivElement>(null);
 
@@ -47,6 +49,11 @@ export default function Popup() {
     const unlisten = listen<PopupState>("popup-state", (event) => {
       setState(event.payload);
       setCopied(false);
+      setSaved(false);
+      const next = event.payload;
+      if (next.mode === "result") {
+        invoke<boolean>("vocab_has", { front: next.source, to: next.result.to }).then(setSaved);
+      }
       if (event.payload.mode === "hidden" || event.payload.mode === "icon") {
         setPinned(false);
         setTrail([]);
@@ -126,6 +133,21 @@ export default function Popup() {
     setCopied(true);
   };
 
+  // Saves the selection as a flashcard; a second press removes it.
+  const toggleSave = async () => {
+    if (!result) return;
+    if (saved) {
+      await invoke("vocab_remove", { front: source, to: result.to });
+      setSaved(false);
+      return;
+    }
+    const detail = [result.phonetic ?? "", ...result.dict.map((d) => `${d.pos}: ${d.terms.join(", ")}`)]
+      .filter(Boolean)
+      .join("\n");
+    await invoke("vocab_add", { card: { at: 0, front: source, back: result.text, detail, from: result.from, to: result.to } });
+    setSaved(true);
+  };
+
   const togglePin = () => {
     invoke("popup_pin", { pinned: !pinned });
     setPinned(!pinned);
@@ -156,6 +178,9 @@ export default function Popup() {
             <>
               <button className="tool" onClick={() => speak(source, result.from)} title="Đọc văn bản gốc">
                 <Icon d={ICONS.speak} />
+              </button>
+              <button className={saved ? "tool on" : "tool"} onClick={toggleSave} title={saved ? "Bỏ khỏi bộ từ vựng" : "Lưu vào bộ từ vựng"}>
+                <Icon d={ICONS.save} />
               </button>
               <button className="tool" onClick={copy} title="Sao chép bản dịch">
                 <Icon d={copied ? ICONS.check : ICONS.copy} />
