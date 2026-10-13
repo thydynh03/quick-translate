@@ -52,7 +52,10 @@ impl Store {
         if text.trim().is_empty() || text.len() > MAX_BYTES {
             return false;
         }
-        if self.items.first().is_some_and(|item| item.text == text) {
+        if let Some(newest) = self.items.first_mut().filter(|item| item.text == text) {
+            // Copied once more: only where and when change.
+            newest.app = app;
+            newest.at = now();
             return false;
         }
         let pinned = match self.items.iter().position(|item| item.text == text) {
@@ -120,7 +123,9 @@ fn pinned_path(app: &AppHandle) -> std::path::PathBuf {
 fn save_pinned(app: &AppHandle) {
     let pinned = STORE.lock().pinned();
     if let Ok(json) = serde_json::to_string(&pinned) {
-        let _ = std::fs::write(pinned_path(app), json);
+        if let Err(error) = std::fs::write(pinned_path(app), json) {
+            log(format!("clipboard: pinned texts not saved: {error}"));
+        }
     }
 }
 
@@ -248,12 +253,20 @@ pub fn clipboard_list() -> Vec<Item> {
 #[tauri::command]
 pub fn clipboard_paste(app: AppHandle, id: u64) -> Result<(), String> {
     let text = STORE.lock().text(id).ok_or("Mục này không còn trong danh sách")?;
-    arboard::Clipboard::new().and_then(|mut clipboard| clipboard.set_text(text)).map_err(|error| error.to_string())?;
+    // As a copy of our own, so the list keeps its order.
+    own(|| arboard::Clipboard::new().and_then(|mut clipboard| clipboard.set_text(text))).map_err(|error| error.to_string())?;
     let target = TARGET.load(Ordering::SeqCst);
     std::thread::spawn(move || {
         // In this order: once the board is gone, the system picks the next window by itself.
         platform::activate(target);
         hide(&app);
+        std::thread::sleep(Duration::from_millis(150));
+        // The system may refuse to bring the target back; pasting would then land elsewhere.
+        // The text stays on the clipboard for the user to paste.
+        if target != 0 && platform::foreground_handle() != target {
+            log("clipboard: target not in front, paste left to the user");
+            return;
+        }
         platform::send_paste();
     });
     Ok(())

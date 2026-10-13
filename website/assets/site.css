@@ -1005,8 +1005,8 @@ details p {
 
 .s-src.a { animation: live-src 8s infinite; }
 .s-out.a { animation: live-out 8s infinite; }
-.s-src.b { animation: live-src 8s 4s infinite backwards; opacity: 0; }
-.s-out.b { animation: live-out 8s 4s infinite backwards; opacity: 0; }
+.s-src.b { animation: live-src 8s 4s infinite; opacity: 0; }
+.s-out.b { animation: live-out 8s 4s infinite; opacity: 0; }
 
 .s-scan {
   position: absolute;
@@ -1211,7 +1211,7 @@ details p {
   animation: clip-pick 6s cubic-bezier(0.3, 0.8, 0.3, 1) infinite;
 }
 
-.s-row:first-of-type {
+.s-pick + .s-row {
   margin-top: 6px;
 }
 

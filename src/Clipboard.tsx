@@ -32,6 +32,7 @@ export default function Clipboard() {
   const [active, setActive] = useState(0);
   const search = useRef<HTMLInputElement>(null);
   const list = useRef<HTMLDivElement>(null);
+  const follow = useRef<number | null>(null);
 
   const load = () => invoke<Item[]>("clipboard_list").then(setItems);
 
@@ -57,6 +58,10 @@ export default function Clipboard() {
     return [found.filter((item) => !item.pinned), found.filter((item) => item.pinned)];
   }, [items, query]);
   const shown = useMemo(() => [...recent, ...pinned], [recent, pinned]);
+  useEffect(() => {
+    const moved = shown.findIndex((item) => item.id === follow.current);
+    if (moved >= 0) setActive(moved);
+  }, [shown]);
   const index = Math.min(active, Math.max(shown.length - 1, 0));
   const current: Item | undefined = shown[index];
 
@@ -64,19 +69,31 @@ export default function Clipboard() {
     list.current?.querySelector(".board-item.active")?.scrollIntoView({ block: "nearest" });
   }, [index, shown]);
 
+  const select = (position: number) => {
+    follow.current = null;
+    setActive(position);
+  };
   const paste = (item?: Item) => item && invoke("clipboard_paste", { id: item.id });
   const translate = (item?: Item) => item && invoke("clipboard_translate", { id: item.id });
-  const pin = (item?: Item) => item && invoke("clipboard_pin", { id: item.id, pinned: !item.pinned });
+  const pin = (item?: Item) => {
+    if (!item) return;
+    // It changes group: the selection follows it.
+    follow.current = item.id;
+    invoke("clipboard_pin", { id: item.id, pinned: !item.pinned });
+  };
   const remove = (item?: Item) => item && invoke("clipboard_remove", { id: item.id });
 
   const onKeyDown = (event: KeyboardEvent) => {
     const command = MAC ? event.metaKey : event.ctrlKey;
+    const moving = event.key === "ArrowDown" || event.key === "ArrowUp";
+    // A held key acts once, and the Enter that ends a composed word is not ours.
+    if (event.isComposing || (event.repeat && !moving)) return;
     // By position on the keyboard when known, so other layouts work; by character otherwise.
     const digit = /^Digit\d$/.test(event.code) ? event.code.slice(5) : event.key;
     const letter = /^Key[A-Z]$/.test(event.code) ? event.code.slice(3).toLowerCase() : event.key.toLowerCase();
     if (event.key === "Escape") invoke("clipboard_hide");
-    else if (event.key === "ArrowDown") setActive(Math.min(index + 1, shown.length - 1));
-    else if (event.key === "ArrowUp") setActive(Math.max(index - 1, 0));
+    else if (event.key === "ArrowDown") select(Math.min(index + 1, shown.length - 1));
+    else if (event.key === "ArrowUp") select(Math.max(index - 1, 0));
     else if (event.key === "Enter") paste(current);
     else if (command && /^[1-9]$/.test(digit)) paste(shown[Number(digit) - 1]);
     else if (command && letter === "t") translate(current);
@@ -103,7 +120,7 @@ export default function Clipboard() {
     <div
       key={item.id}
       className={position === index ? "board-item active" : "board-item"}
-      onMouseMove={() => setActive(position)}
+      onMouseMove={() => select(position)}
       onClick={() => paste(item)}
     >
       <span className="board-kind">{kind(item.text)}</span>
