@@ -75,6 +75,12 @@ jobs:
         with:
           path: out
           merge-multiple: true
+      - uses: actions/checkout@v4
+        with:
+          path: src
+      - name: Pack the browser extension
+        working-directory: src/extension
+        run: zip -r ../../out/QuickTranslate-YouTube-extension.zip . -x README.md
       - name: Checksums
         working-directory: out
         run: sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt

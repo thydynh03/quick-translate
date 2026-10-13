@@ -6,9 +6,10 @@ import { disable, enable, isEnabled } from "@tauri-apps/plugin-autostart";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ENGINE_NAMES, HistoryEntry, UpdateInfo, LANGUAGES, Profile, Settings as Config, Translation, langName } from "./types";
 import OfflineModels from "./OfflineModels";
+import Subtitles from "./Subtitles";
 import Vocab from "./Vocab";
 
-type Tab = "general" | "engine" | "vocab" | "history" | "about";
+type Tab = "general" | "engine" | "subtitles" | "vocab" | "history" | "about";
 
 const SITE = "https://thydynh03.github.io/quick-translate/";
 const REPO = "https://github.com/thydynh03/quick-translate";
@@ -222,6 +223,7 @@ export default function Settings() {
           [
             ["general", "Chung"],
             ["engine", "Engine dịch"],
+            ["subtitles", "Phụ đề"],
             ["vocab", "Từ vựng"],
             ["history", "Lịch sử"],
             ["about", "Giới thiệu"],
@@ -606,6 +608,8 @@ export default function Settings() {
             )}
           </section>
         )}
+
+        {tab === "subtitles" && <Subtitles />}
 
         {tab === "vocab" && <Vocab />}
 

@@ -4,7 +4,8 @@
 
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use futures_util::StreamExt;
@@ -302,8 +303,10 @@ static CHOOSING: AtomicBool = AtomicBool::new(false);
 const LIVE_TICK: Duration = Duration::from_millis(120);
 /// A picture that keeps changing (video, scrolling) is read anyway after this long.
 const LIVE_RESTLESS: Duration = Duration::from_millis(400);
-/// Translations kept while live mode runs, so text that returns is not sent again.
-const LIVE_CACHE: usize = 2000;
+/// Translations kept while live mode runs and between sessions, so text that returns is not sent again.
+const LIVE_CACHE: usize = 5000;
+/// Translation requests that may be out at the same time.
+const LIVE_REQUESTS: usize = 2;
 
 /// Gives the overlay back its normal behaviour after live mode.
 fn end_live(app: &AppHandle) {
@@ -386,18 +389,177 @@ pub fn live_begin(app: AppHandle, region: Option<[i32; 4]>) {
     std::thread::spawn(move || follow(app, session, screen, target));
 }
 
+/// Cuts recognised speech into finished sentences and the one still being spoken.
+pub fn caption_units(text: &str) -> (Vec<String>, Option<String>) {
+    let text = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    let mut finished = Vec::new();
+    let mut current = String::new();
+    let mut chars = text.chars().peekable();
+    while let Some(c) = chars.next() {
+        current.push(c);
+        if matches!(c, '.' | '?' | '!') && chars.peek().is_none_or(|next| *next == ' ') {
+            finished.push(current.trim().to_string());
+            current.clear();
+        }
+    }
+    let open = current.trim();
+    (finished, (!open.is_empty()).then(|| open.to_string()))
+}
+
+/// The user chose to follow the sound: Windows' live captions turn speech
+/// into text, and the translation of the latest sentences is shown next to them.
+#[tauri::command]
+pub fn live_listen(app: AppHandle) {
+    if !CHOOSING.swap(false, Ordering::SeqCst) {
+        return;
+    }
+    let Some(window) = app.get_webview_window(LABEL) else { return };
+    if let Err(error) = platform::start_live_captions() {
+        let _ = window.hide();
+        popup::show_error(&app, &error.to_string(), None);
+        return;
+    }
+    let screen = *SCREEN.lock();
+    let session = SESSION.fetch_add(1, Ordering::SeqCst) + 1;
+    LIVE.store(true, Ordering::SeqCst);
+    platform::hide_overlay(&window);
+    let _ = window.set_ignore_cursor_events(true);
+    platform::exclude_from_capture(&window, true);
+    let hotkey = app.state::<crate::AppState>().settings.read().live_hotkey.clone();
+    let _ = app.emit_to(LABEL, "live-start", LiveStart { hotkey, region: None });
+    platform::show_passive(&window);
+    log("live: on, following the sound");
+    std::thread::spawn(move || listen(app, session, screen));
+}
+
+/// How often the captions are read, and how often the sentence still being
+/// spoken is translated again.
+const LISTEN_TICK: Duration = Duration::from_millis(150);
+const LISTEN_OPEN: Duration = Duration::from_millis(500);
+/// Captions that have not changed for this long are taken off the screen.
+const LISTEN_SILENCE: Duration = Duration::from_secs(6);
+
+fn listen(app: AppHandle, session: u64, screen: Rect) {
+    let models = crate::engine::offline::models_dir(&app);
+    let alive = || SESSION.load(Ordering::SeqCst) == session;
+    let mut cache: HashMap<String, String> = HashMap::new();
+    // The unfinished sentence last translated, its translation and when.
+    let mut open_source = String::new();
+    let mut open_text = String::new();
+    let mut open_at = Instant::now() - LISTEN_OPEN;
+    let mut heard = String::new();
+    let mut changed = Instant::now();
+    let mut shown: Option<Vec<Translated>> = None;
+
+    while alive() {
+        std::thread::sleep(LISTEN_TICK);
+        let Some(caption) = platform::live_captions() else { continue };
+        if caption.text != heard {
+            heard = caption.text.clone();
+            changed = Instant::now();
+        }
+        let settings = crate::effective(&app);
+        let translate = |text: &str| {
+            tauri::async_runtime::block_on(crate::engine::translate_text(&settings, &models, text))
+                .map(|found| found.text)
+                .unwrap_or_default()
+        };
+        let (finished, open) = caption_units(&caption.text);
+        // The last finished sentence gives the one being spoken its context on screen.
+        let recent: Vec<&String> = finished.iter().rev().take(if open.is_some() { 1 } else { 2 }).rev().collect();
+        for sentence in &recent {
+            if !cache.contains_key(*sentence) {
+                if cache.len() > LIVE_CACHE {
+                    cache.clear();
+                }
+                let started = Instant::now();
+                let translated = translate(sentence);
+                log(format!("listen: sentence in {} ms", started.elapsed().as_millis()));
+                cache.insert((*sentence).clone(), translated);
+            }
+        }
+        match &open {
+            Some(open) if *open != open_source && open.split(' ').count() >= 3 && open_at.elapsed() >= LISTEN_OPEN => {
+                open_text = translate(open);
+                open_source = open.clone();
+                open_at = Instant::now();
+            }
+            None => open_text.clear(),
+            _ => {}
+        }
+        let mut lines: Vec<&str> = recent.iter().filter_map(|sentence| cache.get(*sentence)).map(String::as_str).collect();
+        if open.is_some() {
+            lines.push(&open_text);
+        }
+        let text = lines.into_iter().filter(|line| !line.is_empty()).collect::<Vec<_>>().join(" ");
+
+        // Under the captions when they sit at the top of the screen, above them otherwise.
+        let rect = caption.rect;
+        let height = 44;
+        let below = (rect.top + rect.bottom) / 2 < (screen.top + screen.bottom) / 2;
+        let top = if below { rect.bottom + 6 } else { rect.top - height - 6 };
+        let frame: Vec<Translated> = if text.is_empty() || changed.elapsed() > LISTEN_SILENCE {
+            Vec::new()
+        } else {
+            vec![Translated { x: rect.left - screen.left, y: top - screen.top, width: rect.right - rect.left, height, line_height: 30, text }]
+        };
+        if alive() && shown.as_ref() != Some(&frame) {
+            let _ = app.emit_to(LABEL, "live-frame", frame.clone());
+            shown = Some(frame);
+        }
+    }
+}
+
+/// Translations of earlier live sessions, per engine and language, so text
+/// that returns (menus, items, repeated lines of a game) needs no request.
+fn memory_path(app: &AppHandle) -> Option<std::path::PathBuf> {
+    Some(app.path().app_data_dir().ok()?.join("live-memory.json"))
+}
+
+type Memory = HashMap<String, HashMap<String, String>>;
+
+fn load_memory(app: &AppHandle, scope: &str) -> HashMap<String, String> {
+    let all: Option<Memory> =
+        memory_path(app).and_then(|path| std::fs::read(path).ok()).and_then(|bytes| serde_json::from_slice(&bytes).ok());
+    all.and_then(|mut all| all.remove(scope)).unwrap_or_default()
+}
+
+fn save_memory(app: &AppHandle, scope: &str, cache: &HashMap<String, String>) {
+    let Some(path) = memory_path(app) else { return };
+    let mut all: Memory = std::fs::read(&path).ok().and_then(|bytes| serde_json::from_slice(&bytes).ok()).unwrap_or_default();
+    // Failed texts are remembered as empty only for the session.
+    let kept = cache.iter().filter(|(_, translation)| !translation.is_empty()).map(|(text, translation)| (text.clone(), translation.clone()));
+    all.insert(scope.to_string(), kept.take(LIVE_CACHE).collect());
+    if let Ok(json) = serde_json::to_vec(&all) {
+        if let Err(error) = std::fs::write(&path, json) {
+            log(format!("live: memory not saved: {error}"));
+        }
+    }
+}
+
 /// Reads `target` whenever it changes and draws the translations over it.
+/// Translating runs beside the reading, so the screen is never left unwatched
+/// while an engine answers.
 fn follow(app: AppHandle, session: u64, screen: Rect, target: Rect) {
     let models = crate::engine::offline::models_dir(&app);
-    let mut cache: HashMap<String, String> = HashMap::new();
-    // Texts of the previous reading. While the picture keeps moving, only text
-    // seen twice in a row is translated, so scrolling does not cause requests.
+    let mut settings = crate::effective(&app);
+    let scope = format!("{}|{}", settings.engine, settings.primary_lang);
+    let cache = Arc::new(Mutex::new(load_memory(&app, &scope)));
+    log(format!("live: {} translations remembered", cache.lock().len()));
+    // Texts an engine is working on, and how many requests are out.
+    let pending: Arc<Mutex<HashSet<String>>> = Arc::default();
+    let requests = Arc::new(AtomicUsize::new(0));
+
+    let mut blocks: Vec<Block> = Vec::new();
+    // Texts of the last reading, and those of them that may be translated:
+    // while the picture keeps moving, only text seen twice in a row, so
+    // scrolling does not cause requests.
     let mut previous: HashSet<String> = HashSet::new();
+    let mut wanted: HashSet<String> = HashSet::new();
     // The picture of the last reading, the last picture seen, and since when it moves.
     let mut read = None;
     let mut seen = None;
     let mut moving: Option<Instant> = None;
-    let mut settled = false;
     let mut shown: Option<Vec<Translated>> = None;
     let (dx, dy) = (target.left - screen.left, target.top - screen.top);
     let alive = || SESSION.load(Ordering::SeqCst) == session;
@@ -408,82 +570,97 @@ fn follow(app: AppHandle, session: u64, screen: Rect, target: Rect) {
 
     while alive() {
         let now = platform::fingerprint(target);
-        let mut stable = true;
+        let (mut reading, mut stable) = (true, true);
         match now {
-            Some(_) if settled && now == read => {
-                std::thread::sleep(LIVE_TICK);
-                continue;
+            Some(_) if now == read => {
+                // Unchanged since it was read: whatever is on it stays.
+                reading = false;
+                wanted.extend(previous.iter().cloned());
             }
             Some(_) if now != seen => {
                 // Still changing: give it a moment to come to rest.
                 seen = now;
                 if moving.get_or_insert_with(Instant::now).elapsed() < restless {
-                    std::thread::sleep(LIVE_TICK);
-                    continue;
+                    reading = false;
+                } else {
+                    stable = false;
                 }
-                stable = false;
             }
             Some(_) => {}
             // No way to tell whether the screen changed: read it at a slower pace.
             None => std::thread::sleep(LIVE_TICK * 4),
         }
-        moving = None;
-        read = now;
-        let started = Instant::now();
-        let settings = crate::effective(&app);
-        let blocks = match read_blocks(target, &settings, &models) {
-            Ok(blocks) => blocks,
-            Err(error) => {
-                log(format!("live ocr failed: {error:#}"));
-                popup::show_error(&app, &format!("OCR lỗi: {error}"), None);
-                end_live(&app);
-                return;
-            }
-        };
-        let read_ms = started.elapsed().as_millis();
-        let mut show = |cache: &HashMap<String, String>| {
-            let frame: Vec<Translated> =
-                blocks.iter().filter_map(|block| translated(block, cache.get(&block.text)?, dx, dy)).collect();
-            if alive() && shown.as_ref() != Some(&frame) {
-                log(format!("live: showing {} of {} blocks", frame.len(), blocks.len()));
-                let _ = app.emit_to(LABEL, "live-frame", frame.clone());
-                shown = Some(frame);
-            }
-        };
+        if reading {
+            moving = None;
+            read = now;
+            seen = now;
+            settings = crate::effective(&app);
+            blocks = match read_blocks(target, &settings, &models) {
+                Ok(blocks) => blocks,
+                Err(error) => {
+                    log(format!("live ocr failed: {error:#}"));
+                    popup::show_error(&app, &format!("OCR lỗi: {error}"), None);
+                    end_live(&app);
+                    return;
+                }
+            };
+            let texts: HashSet<String> = blocks.iter().map(|block| block.text.clone()).collect();
+            wanted = texts.iter().filter(|text| stable || eager || previous.contains(*text)).cloned().collect();
+            previous = texts;
+        }
 
         let mut fresh: Vec<String> = Vec::new();
-        for block in &blocks {
-            let wanted = stable || eager || previous.contains(&block.text);
-            if wanted && !cache.contains_key(&block.text) && !fresh.contains(&block.text) {
-                fresh.push(block.text.clone());
+        {
+            let (cache, pending) = (cache.lock(), pending.lock());
+            for block in &blocks {
+                let text = &block.text;
+                if wanted.contains(text) && !cache.contains_key(text) && !pending.contains(text) && !fresh.contains(text) {
+                    fresh.push(text.clone());
+                }
             }
         }
-        if !fresh.is_empty() {
-            // What is already known moves to its new place without waiting for the rest.
-            show(&cache);
-            if cache.len() > LIVE_CACHE {
-                cache.clear();
-            }
-            let count = fresh.len();
-            let mut results: Vec<Option<String>> = vec![None; count];
-            tauri::async_runtime::block_on(translate_each(&settings, &models, fresh.clone(), session, |index, text| {
-                results[index] = Some(text);
-            }));
-            // A failed text is remembered as empty, so it is not sent again on every reading.
-            for (text, result) in fresh.into_iter().zip(results) {
-                cache.insert(text, result.unwrap_or_default());
-            }
-            log(format!(
-                "live: {count} new blocks by {} in {} ms (reading {read_ms} ms)",
-                settings.engine,
-                started.elapsed().as_millis()
-            ));
+        // Two requests at a time: text that appears meanwhile need not wait
+        // for the first answer, and a service is not flooded.
+        if !fresh.is_empty() && requests.load(Ordering::SeqCst) < LIVE_REQUESTS {
+            requests.fetch_add(1, Ordering::SeqCst);
+            pending.lock().extend(fresh.iter().cloned());
+            let (cache, pending, requests) = (cache.clone(), pending.clone(), requests.clone());
+            let (settings, models) = (settings.clone(), models.clone());
+            tauri::async_runtime::spawn(async move {
+                let started = Instant::now();
+                let mut results: Vec<Option<String>> = vec![None; fresh.len()];
+                translate_each(&settings, &models, fresh.clone(), session, |index, text| results[index] = Some(text)).await;
+                log(format!("live: {} new blocks by {} in {} ms", fresh.len(), settings.engine, started.elapsed().as_millis()));
+                {
+                    let mut cache = cache.lock();
+                    if cache.len() > LIVE_CACHE {
+                        cache.clear();
+                    }
+                    // A failed text is remembered as empty, so it is not sent again on every reading.
+                    for (text, result) in fresh.iter().zip(results) {
+                        cache.insert(text.clone(), result.unwrap_or_default());
+                    }
+                }
+                let mut pending = pending.lock();
+                for text in &fresh {
+                    pending.remove(text);
+                }
+                requests.fetch_sub(1, Ordering::SeqCst);
+            });
         }
-        settled = blocks.iter().all(|block| cache.contains_key(&block.text));
-        previous = blocks.iter().map(|block| block.text.clone()).collect();
-        show(&cache);
+
+        let frame: Vec<Translated> = {
+            let cache = cache.lock();
+            blocks.iter().filter_map(|block| translated(block, cache.get(&block.text)?, dx, dy)).collect()
+        };
+        if alive() && shown.as_ref() != Some(&frame) {
+            log(format!("live: showing {} of {} blocks", frame.len(), blocks.len()));
+            let _ = app.emit_to(LABEL, "live-frame", frame.clone());
+            shown = Some(frame);
+        }
         std::thread::sleep(LIVE_TICK);
     }
+    save_memory(&app, &scope, &cache.lock());
 }
 
 #[cfg(test)]
@@ -500,6 +677,17 @@ mod tests {
         assert_eq!(blocks.len(), 1);
         assert_eq!(blocks[0].text, "The meeting has been moved to Thursday.");
         assert_eq!(blocks[0].rect, Rect { left: 10, top: 10, right: 310, bottom: 54 });
+    }
+
+    #[test]
+    fn speech_is_cut_into_sentences() {
+        let (finished, open) = caption_units("The meeting was moved to Thursday.\nPlease send me the report before you");
+        assert_eq!(finished, vec!["The meeting was moved to Thursday."]);
+        assert_eq!(open.as_deref(), Some("Please send me the report before you"));
+        let (finished, open) = caption_units("It costs 3.50 dollars. Really? Yes!");
+        assert_eq!(finished, vec!["It costs 3.50 dollars.", "Really?", "Yes!"]);
+        assert!(open.is_none());
+        assert_eq!(caption_units(""), (vec![], None));
     }
 
     #[test]

@@ -15,6 +15,7 @@ mod platform;
 mod popup;
 mod sentence;
 mod settings;
+mod subtitles;
 mod telemetry;
 mod trigger;
 mod updater;
@@ -61,6 +62,15 @@ pub fn remember_app() -> Option<String> {
 pub fn effective(app: &AppHandle) -> Settings {
     let name = remember_app();
     app.state::<AppState>().settings.read().for_app(name.as_deref())
+}
+
+/// Translates a subtitle file; answers with the path of the translated file.
+#[tauri::command]
+async fn subtitle_translate(app: AppHandle, path: String) -> Result<String, String> {
+    subtitles::translate_file(&app, std::path::Path::new(&path))
+        .await
+        .map(|output| output.display().to_string())
+        .map_err(|error| format!("{error:#}"))
 }
 
 /// Lets the settings window offer the last used application for a new profile.
@@ -280,6 +290,8 @@ pub fn run() {
             capture::capture_region,
             capture::capture_cancel,
             capture::live_begin,
+            capture::live_listen,
+            subtitle_translate,
             history::history_list,
             history::history_clear,
             updater::update_check,
