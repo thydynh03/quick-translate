@@ -244,6 +244,7 @@ pub fn translate_in_context(app: &AppHandle, text: String, context: Option<Strin
         let cached = if context.is_none() { state(&app).cache.lock().get(&key).cloned() } else { None };
         let models = engine::offline::models_dir(&app);
         let started = std::time::Instant::now();
+        let mut preview = None;
         // A word the bundled dictionary knows is on screen before the engine answers.
         if cached.is_none() && settings.engine != "offline" {
             let (from, to) = engine::direction(&settings, &text);
@@ -254,6 +255,7 @@ pub fn translate_in_context(app: &AppHandle, text: String, context: Option<Strin
                 if !publish(&app, generation, first) {
                     return;
                 }
+                preview = Some(found);
             }
         }
         let result = match cached {
@@ -278,7 +280,14 @@ pub fn translate_in_context(app: &AppHandle, text: String, context: Option<Strin
                     }
                     Ok(translation)
                 }
-                Err(error) => Err(error),
+                // The dictionary's answer is already on screen: better than an error.
+                Err(error) => match preview {
+                    Some(found) => {
+                        log(format!("translate failed, keeping the dictionary's answer: {error:#}"));
+                        Ok(found)
+                    }
+                    None => Err(error),
+                },
             },
         };
         let payload = match &result {

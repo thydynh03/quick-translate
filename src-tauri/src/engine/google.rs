@@ -26,7 +26,6 @@ pub async fn translate(text: &str, from: &str, to: &str) -> anyhow::Result<Trans
     let body = format!("q={}", urlencoding::encode(text));
 
     let client = super::http();
-    super::google_used();
     let response = client
         .post(url)
         .timeout(Duration::from_secs(12))
@@ -35,6 +34,7 @@ pub async fn translate(text: &str, from: &str, to: &str) -> anyhow::Result<Trans
         .body(body.clone())
         .send()
         .await?;
+    super::google_used();
     if !response.status().is_success() {
         // Usually 429: this network address has used up its share. The spare
         // endpoint counts separately, so try it before giving up.

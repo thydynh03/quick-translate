@@ -134,13 +134,13 @@ fn on_selection_gesture(app: &AppHandle, x: i32, y: i32) {
             return;
         }
         instant = settings.instant_translate;
-        // The handshake with the engine runs while the selection is being read.
-        crate::engine::warm(&settings);
         if let Some(name) = platform::foreground_app() {
             if name == own_exe() || settings.excluded_apps.iter().any(|e| e.eq_ignore_ascii_case(&name)) {
                 return;
             }
         }
+        // The handshake with the engine runs while the selection is being read.
+        crate::engine::warm(&settings);
     }
     let text_cursor = platform::cursor_is_text();
     let gesture_id = state.gesture.load(Ordering::SeqCst);

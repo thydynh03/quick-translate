@@ -52,12 +52,15 @@ pub fn warm(settings: &Settings) {
         return;
     }
     let (now, last) = (uptime() + 1, GOOGLE_USED.load(Ordering::Relaxed));
-    if last != 0 && now - last < IDLE {
+    if last != 0 && now.saturating_sub(last) < IDLE {
         return;
     }
     google_used();
     tauri::async_runtime::spawn(async {
-        let _ = http().head(google::HOST).timeout(Duration::from_secs(5)).send().await;
+        // A failed attempt opened nothing: let the next selection try again.
+        if http().head(google::HOST).timeout(Duration::from_secs(5)).send().await.is_err() {
+            GOOGLE_USED.store(0, Ordering::Relaxed);
+        }
     });
 }
 
