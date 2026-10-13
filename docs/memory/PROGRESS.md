@@ -56,6 +56,8 @@ Cập nhật: 2026-10-12. Plan gốc: `docs/PLAN.md`. Hướng dẫn dùng: `REA
 
 - 2026-10-13: bản 0.1.14 (nhánh `fast-popup`): dịch nhanh hơn. Từ đơn có trong từ điển kèm app hiện ngay (`offline::from_wordbook`, payload `partial: true`) rồi kết quả của engine thay vào. `engine::http()` là một client dùng chung nên Google và từ điển tái dùng kết nối (đo bằng test `times_a_cold_and_a_warm_request`: lần đầu 440–740 ms, các lần sau 140–210 ms); `engine::warm` mở sẵn kết nối lúc khởi động và lúc vừa bôi đen nếu đã nghỉ hơn 2 phút; popup hiện bản dịch trước, định nghĩa tiếng Anh và nghĩa theo ngữ cảnh điền vào sau (`engine::define`, `popup::publish`, payload có `partial: true`); `SETTLE` giảm 140 → 80 ms; log thêm dòng `translated by … in N ms`. Chưa thử trên popup thật.
 
+- 2026-10-13: bản 0.1.15: sửa nút "Cập nhật ngay" trên Windows. Bản 0.1.13/0.1.14 gọi bộ cài qua `cmd /C start "" …`, Rust thoát dấu nháy thành `\"` nên Windows báo không tìm thấy `\` và app thoát mà không cài. Giờ chạy thẳng bộ cài với `/P /R` (đã thử tay: cài xong tự mở lại app). Người dùng 0.1.13/0.1.14 phải tải bộ cài thủ công một lần.
+
 ## CHƯA kiểm chứng
 
 - macOS: build + `cargo test` qua trên GitHub Actions (macos-latest), có .dmg ký ad-hoc. CHƯA chạy trên máy Mac thật. Thiếu: OCR (Vision), hover, popup không cướp focus (NSPanel), tên app đang mở. App hỏi quyền Accessibility và chờ được cấp.
