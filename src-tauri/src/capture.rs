@@ -421,6 +421,35 @@ pub fn caption_units(text: &str) -> (Vec<String>, Option<String>) {
     (finished, (!open.is_empty()).then(|| open.to_string()))
 }
 
+/// The words at the end of a sentence still being spoken that are kept back:
+/// they are the ones whose meaning the next word changes ("the green" → "the green door").
+const LISTEN_HOLD: usize = 3;
+/// Words a part of a sentence cannot end on: what they belong to has not been said yet.
+const HANGING: [&str; 40] = [
+    "a", "an", "the", "this", "that", "these", "those", "my", "your", "his", "her", "its", "our", "their", "of", "to", "in", "on", "at",
+    "for", "with", "from", "by", "and", "or", "but", "is", "are", "was", "were", "be", "will", "would", "can", "could", "not", "very", "i",
+    "we", "you",
+];
+
+/// What of the last sentence the captions show can be translated now, given
+/// how long it has stayed unchanged: all of it once it has settled, otherwise
+/// what was said so far without its last words, so the translation follows
+/// the speech closely without changing meaning at every word.
+pub fn sayable(spoken: &str, ended: bool, quiet: Duration) -> Option<String> {
+    let words: Vec<&str> = spoken.split(' ').filter(|word| !word.is_empty()).collect();
+    if words.is_empty() {
+        None
+    } else if (ended && quiet >= LISTEN_SETTLE) || (quiet >= LISTEN_PAUSE && words.len() >= 3) {
+        Some(spoken.to_string())
+    } else {
+        let mut part = &words[..words.len().saturating_sub(LISTEN_HOLD)];
+        while part.last().is_some_and(|word| HANGING.contains(&word.trim_matches(',').to_lowercase().as_str())) {
+            part = &part[..part.len() - 1];
+        }
+        (part.len() >= 2).then(|| part.join(" "))
+    }
+}
+
 /// The user chose to follow the sound: Windows' live captions turn speech
 /// into text, and the translation of the latest sentences is shown next to them.
 #[tauri::command]
@@ -456,10 +485,11 @@ pub fn live_listen(app: AppHandle) {
 
 /// How often the captions are read.
 const LISTEN_TICK: Duration = Duration::from_millis(150);
-/// A sentence is translated once it is finished. One still being spoken is
-/// only translated after the speaker has paused this long: translating it
-/// word by word gave lines that changed meaning as the sentence grew.
-const LISTEN_PAUSE: Duration = Duration::from_millis(900);
+/// A sentence without its ending is translated to its last word only after
+/// this much silence, when nothing more is coming.
+const LISTEN_PAUSE: Duration = Duration::from_millis(2500);
+/// The last sentence the captions show must stay unchanged this long before it counts as said.
+const LISTEN_SETTLE: Duration = Duration::from_millis(800);
 /// Captions that have not changed for this long are taken off the screen.
 const LISTEN_SILENCE: Duration = Duration::from_secs(6);
 
@@ -499,6 +529,9 @@ fn listen(app: AppHandle, session: u64, screen: Rect) {
         if caption.text != heard {
             heard = caption.text.clone();
             changed = Instant::now();
+            if std::env::var_os("QT_LISTEN_TRACE").is_some() {
+                log(format!("listen: heard {:?}", heard.chars().rev().take(70).collect::<Vec<_>>().into_iter().rev().collect::<String>()));
+            }
         }
         let settings = crate::effective(&app);
         let translate = |text: &str| {
@@ -506,7 +539,13 @@ fn listen(app: AppHandle, session: u64, screen: Rect) {
                 .map(|found| found.text)
                 .unwrap_or_default()
         };
-        let (finished, open) = caption_units(&caption.text);
+        let (mut finished, open) = caption_units(&caption.text);
+        // The captions put a full stop of their own after whatever they have heard so far
+        // ("Please open the."), so the last sentence is not final until more follows it.
+        let (spoken, ended) = match open {
+            Some(open) => (open, false),
+            None => (finished.pop().unwrap_or_default(), true),
+        };
         // Two sentences at most, as on a film.
         let recent: Vec<&String> = finished.iter().rev().take(2).rev().collect();
         for sentence in &recent {
@@ -516,23 +555,28 @@ fn listen(app: AppHandle, session: u64, screen: Rect) {
                 }
                 let started = Instant::now();
                 let translated = translate(sentence);
-                log(format!("listen: sentence in {} ms", started.elapsed().as_millis()));
+                log(format!("listen: {:?} in {} ms", popup::preview(sentence), started.elapsed().as_millis()));
                 cache.insert((*sentence).clone(), translated);
             }
         }
-        let spoken = open.clone().unwrap_or_default();
         if spoken != open_heard {
             open_heard = spoken.clone();
             open_since = Instant::now();
         }
-        if spoken != open_source {
-            // What was translated is no longer what is being said.
+        if !spoken.starts_with(open_source.trim_end_matches(['.', '?', '!'])) {
+            // Another sentence has begun.
             open_source.clear();
             open_text.clear();
-            if spoken.split(' ').count() >= 3 && open_since.elapsed() >= LISTEN_PAUSE {
-                open_text = translate(&spoken);
-                open_source = spoken;
+        }
+        if let Some(part) = sayable(&spoken, ended, open_since.elapsed()).filter(|part| *part != open_source) {
+            let started = Instant::now();
+            open_text = translate(&part);
+            log(format!("listen: so far {:?} in {} ms", popup::preview(&part), started.elapsed().as_millis()));
+            // More is coming after a part that was cut short.
+            if part.len() < spoken.len() && !open_text.is_empty() {
+                open_text.push_str(" …");
             }
+            open_source = part;
         }
         let mut lines: Vec<&str> = recent.iter().filter_map(|sentence| cache.get(*sentence)).map(String::as_str).collect();
         if !open_text.is_empty() {
@@ -563,6 +607,9 @@ fn listen(app: AppHandle, session: u64, screen: Rect) {
             vec![Translated { x: rect.left - screen.left, y: top - screen.top, width: rect.right - rect.left, height, line_height: 30, text, subtitle: true }]
         };
         if alive() && shown.as_ref() != Some(&frame) {
+            if std::env::var_os("QT_LISTEN_TRACE").is_some() {
+                log(format!("listen: showing {:?}", frame.first().map(|block| block.text.as_str()).unwrap_or("")));
+            }
             let _ = app.emit_to(LABEL, "live-frame", frame.clone());
             shown = Some(frame);
         }
@@ -741,6 +788,21 @@ mod tests {
         assert_eq!(blocks.len(), 1);
         assert_eq!(blocks[0].text, "The meeting has been moved to Thursday.");
         assert_eq!(blocks[0].rect, Rect { left: 10, top: 10, right: 310, bottom: 54 });
+    }
+
+    #[test]
+    fn a_sentence_being_spoken_is_translated_without_its_last_words() {
+        let soon = Duration::from_millis(100);
+        assert_eq!(sayable("Please open", false, soon), None);
+        assert_eq!(sayable("Please open the green", false, soon), None);
+        // Not "Please open the green": that is a colour until the door is heard.
+        assert_eq!(sayable("Please open the green door slowly", false, soon).as_deref(), Some("Please open"));
+        assert_eq!(sayable("I will call you after the meeting tomorrow", false, soon).as_deref(), Some("I will call you after"));
+        // The captions' own full stop does not make it final at once.
+        assert_eq!(sayable("Please open the.", true, soon), None);
+        assert_eq!(sayable("Yes.", true, LISTEN_SETTLE).as_deref(), Some("Yes."));
+        // Silence: nothing more is coming.
+        assert_eq!(sayable("Please open the green", false, LISTEN_PAUSE).as_deref(), Some("Please open the green"));
     }
 
     #[test]
