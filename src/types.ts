@@ -23,7 +23,7 @@ export type PopupState =
   | { mode: "hidden" }
   | { mode: "icon" }
   | { mode: "loading"; source: string }
-  | { mode: "result"; source: string; result: Translation }
+  | { mode: "result"; source: string; result: Translation; partial?: boolean }
   | { mode: "error"; source: string; message: string };
 
 export type Profile = { app: string; engine: string; primary_lang: string };

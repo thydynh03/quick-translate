@@ -13,7 +13,7 @@ use crate::{log, AppState};
 
 const DRAG_THRESHOLD: i32 = 8;
 /// Time the source app gets to update its selection after the mouse is released.
-const SETTLE: Duration = Duration::from_millis(140);
+const SETTLE: Duration = Duration::from_millis(80);
 
 /// Tracks presses to recognise drags and double/triple clicks.
 #[derive(Default)]
@@ -139,6 +139,8 @@ fn on_selection_gesture(app: &AppHandle, x: i32, y: i32) {
                 return;
             }
         }
+        // The handshake with the engine runs while the selection is being read.
+        crate::engine::warm(&settings);
     }
     let text_cursor = platform::cursor_is_text();
     let gesture_id = state.gesture.load(Ordering::SeqCst);

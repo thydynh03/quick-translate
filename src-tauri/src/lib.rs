@@ -319,6 +319,7 @@ pub fn run() {
             telemetry::start(handle.clone());
             app.manage(updater::UpdateState(Mutex::new(None)));
             updater::start(handle.clone());
+            engine::warm(&handle.state::<AppState>().settings.read());
 
             let (tx, rx) = std::sync::mpsc::channel();
             platform::start_mouse_hook(tx);

@@ -243,10 +243,35 @@ pub fn translate_in_context(app: &AppHandle, text: String, context: Option<Strin
         // Contextual answers are never cached, so a cached plain translation must not stand in for one.
         let cached = if context.is_none() { state(&app).cache.lock().get(&key).cloned() } else { None };
         let models = engine::offline::models_dir(&app);
+        let started = std::time::Instant::now();
+        let mut preview = None;
+        // A word the bundled dictionary knows is on screen before the engine answers.
+        if cached.is_none() && settings.engine != "offline" {
+            let (from, to) = engine::direction(&settings, &text);
+            // Undetected Latin text is taken as English, as the offline engine does.
+            let from = if from == "auto" { "en".to_string() } else { from };
+            if let Some(found) = engine::offline::from_wordbook(&text, &from, &to) {
+                let first = json!({ "mode": "result", "source": text, "result": found, "partial": true });
+                if !publish(&app, generation, first) {
+                    return;
+                }
+                preview = Some(found);
+            }
+        }
         let result = match cached {
             Some(hit) => Ok(hit),
-            None => match engine::translate(&settings, &models, &text).await {
+            None => match engine::translate_text(&settings, &models, &text).await {
                 Ok(mut translation) => {
+                    log(format!("translated by {} in {} ms", translation.engine, started.elapsed().as_millis()));
+                    // The definitions and the contextual meaning take longer:
+                    // show the translation now and the rest when it arrives.
+                    if engine::wants_definitions(&settings, &text, &translation) || context.is_some() {
+                        let first = json!({ "mode": "result", "source": text, "result": translation, "partial": true });
+                        if !publish(&app, generation, first) {
+                            return;
+                        }
+                    }
+                    engine::define(&settings, &text, &mut translation).await;
                     if let Some(sentence) = &context {
                         match engine::context::explain(&settings, &models, &text, sentence, &translation.to).await {
                             Ok(found) => translation.context = Some(found),
@@ -255,7 +280,14 @@ pub fn translate_in_context(app: &AppHandle, text: String, context: Option<Strin
                     }
                     Ok(translation)
                 }
-                Err(error) => Err(error),
+                // The dictionary's answer is already on screen: better than an error.
+                Err(error) => match preview {
+                    Some(found) => {
+                        log(format!("translate failed, keeping the dictionary's answer: {error:#}"));
+                        Ok(found)
+                    }
+                    None => Err(error),
+                },
             },
         };
         let payload = match &result {
@@ -275,15 +307,21 @@ pub fn translate_in_context(app: &AppHandle, text: String, context: Option<Strin
                 json!({ "mode": "error", "source": text, "message": error.to_string() })
             }
         };
-        {
-            let mut popup = state(&app).popup.lock();
-            if popup.generation != generation {
-                return;
-            }
-            popup.payload = payload;
-        }
-        emit(&app);
+        publish(&app, generation, payload);
     });
+}
+
+/// Shows `payload` unless a newer request has taken the popup over.
+fn publish(app: &AppHandle, generation: u64, payload: Value) -> bool {
+    {
+        let mut popup = state(app).popup.lock();
+        if popup.generation != generation {
+            return false;
+        }
+        popup.payload = payload;
+    }
+    emit(app);
+    true
 }
 
 pub fn show_error(app: &AppHandle, message: &str, anchor: Option<Rect>) {

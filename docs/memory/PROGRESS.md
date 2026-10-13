@@ -54,6 +54,8 @@ Cập nhật: 2026-10-12. Plan gốc: `docs/PLAN.md`. Hướng dẫn dùng: `REA
 
 - v0.1.12 (2026-10-12): người dùng mới báo Google lỗi 429 ngay sau khi cài. Google giới hạn cổng không key theo địa chỉ mạng, và app trước đây gửi yêu cầu không có User-Agent. Sửa: gửi User-Agent của trình duyệt; khi cổng chính trả lỗi HTTP thì thử cổng dự phòng `clients5.google.com/translate_a/t` (hạn mức riêng, chỉ trả bản dịch, không có từ điển/phiên âm) rồi mới báo lỗi. Test thật `spare_endpoint_answers` + `google_answers` qua. CHƯA tái hiện được 429 để thử đường dự phòng từ đầu đến cuối.
 
+- 2026-10-13: bản 0.1.14 (nhánh `fast-popup`): dịch nhanh hơn. Từ đơn có trong từ điển kèm app hiện ngay (`offline::from_wordbook`, payload `partial: true`) rồi kết quả của engine thay vào. `engine::http()` là một client dùng chung nên Google và từ điển tái dùng kết nối (đo bằng test `times_a_cold_and_a_warm_request`: lần đầu 440–740 ms, các lần sau 140–210 ms); `engine::warm` mở sẵn kết nối lúc khởi động và lúc vừa bôi đen nếu đã nghỉ hơn 2 phút; popup hiện bản dịch trước, định nghĩa tiếng Anh và nghĩa theo ngữ cảnh điền vào sau (`engine::define`, `popup::publish`, payload có `partial: true`); `SETTLE` giảm 140 → 80 ms; log thêm dòng `translated by … in N ms`. Chưa thử trên popup thật.
+
 ## CHƯA kiểm chứng
 
 - macOS: build + `cargo test` qua trên GitHub Actions (macos-latest), có .dmg ký ad-hoc. CHƯA chạy trên máy Mac thật. Thiếu: OCR (Vision), hover, popup không cướp focus (NSPanel), tên app đang mở. App hỏi quyền Accessibility và chờ được cấp.

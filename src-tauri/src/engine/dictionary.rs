@@ -15,8 +15,7 @@ pub struct Lookup {
 
 pub async fn lookup(word: &str) -> anyhow::Result<Lookup> {
     let url = format!("https://api.dictionaryapi.dev/api/v2/entries/en/{}", urlencoding::encode(word.trim()));
-    let client = reqwest::Client::builder().timeout(Duration::from_secs(4)).build()?;
-    let response = client.get(url).send().await?;
+    let response = super::http().get(url).timeout(Duration::from_secs(4)).send().await?;
     if !response.status().is_success() {
         anyhow::bail!("không có mục từ");
     }
