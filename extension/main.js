@@ -40,6 +40,8 @@
           text: event.segs.map((seg) => seg.utf8).join("").replace(/\s+/g, " ").trim(),
         }))
         .filter((cue) => cue.text);
+      // Nothing yet (automatic subtitles still being made): let a later request try again.
+      if (cues.length === 0) loadedFor = "";
     } catch {
       loadedFor = "";
     }
@@ -74,7 +76,8 @@
     const player = document.querySelector("#movie_player");
     const video = player && player.querySelector("video");
     if (!video) return;
-    const now = video.currentTime * 1000;
+    // During an advert the clock is the advert's, not the video's.
+    const now = document.querySelector(".ad-showing") ? -1 : video.currentTime * 1000;
     // The last line that has started wins, as lines of automatic subtitles overlap.
     let text = "";
     for (const cue of cues) {

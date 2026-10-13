@@ -78,6 +78,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: src
+          ref: ${{ env.TAG }}
       - name: Pack the browser extension
         working-directory: src/extension
         run: zip -r ../../out/QuickTranslate-YouTube-extension.zip . -x README.md

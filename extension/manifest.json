@@ -2,7 +2,8 @@
   "manifest_version": 3,
   "name": "Quick Translate for YouTube",
   "description": "Phụ đề tiếng Việt cho video YouTube, lấy sẵn cho cả video nên không có độ trễ.",
-  "version": "0.1.0",
+  "version": "0.1.1",
+  "minimum_chrome_version": "111",
   "content_scripts": [
     {
       "matches": ["https://www.youtube.com/*"],

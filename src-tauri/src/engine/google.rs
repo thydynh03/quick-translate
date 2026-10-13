@@ -31,6 +31,8 @@ pub async fn translate(text: &str, from: &str, to: &str) -> anyhow::Result<Trans
     let body = format!("q={}", urlencoding::encode(text));
 
     let client = super::http();
+    // Whether the main endpoint answered with a refusal, as opposed to not answering.
+    let refused = std::sync::atomic::AtomicBool::new(false);
     let main = || async {
         let response = client
             .post(&url)
@@ -42,6 +44,7 @@ pub async fn translate(text: &str, from: &str, to: &str) -> anyhow::Result<Trans
             .await?;
         super::google_used();
         if !response.status().is_success() {
+            refused.store(true, Ordering::Relaxed);
             anyhow::bail!("Google Translate trả về lỗi {}", response.status());
         }
         parse(&response.json().await?, from, to)
@@ -75,7 +78,7 @@ pub async fn translate(text: &str, from: &str, to: &str) -> anyhow::Result<Trans
         Ok(translation) => Ok(translation),
         Err(error) => {
             let answer = spare().await;
-            if answer.is_ok() {
+            if answer.is_ok() && refused.load(Ordering::Relaxed) {
                 crate::log(format!("google: main endpoint refused ({error:#}), using the spare one for {REFUSAL_SECS} s"));
                 REFUSED_UNTIL.store(now + REFUSAL_SECS, Ordering::Relaxed);
             }

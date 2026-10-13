@@ -42,11 +42,14 @@ fn plain(lines: &[&str]) -> String {
 
 pub fn parse(source: &str) -> Vec<Part> {
     let source = source.trim_start_matches('\u{feff}').replace("\r\n", "\n");
-    source
-        .split("\n\n")
-        .map(|block| block.trim_matches('\n'))
+    // A line holding only spaces separates cues like an empty one.
+    let lines: Vec<&str> = source.lines().collect();
+    lines
+        .split(|line| line.trim().is_empty())
         .filter(|block| !block.is_empty())
+        .map(|block| block.join("\n"))
         .map(|block| {
+            let block = block.as_str();
             let lines: Vec<&str> = block.lines().collect();
             let Some(timing) = lines.iter().position(|line| line.contains("-->")) else {
                 return Part::Raw(block.to_string());
@@ -131,6 +134,19 @@ async fn translate_batch(settings: &Settings, models: &Path, lines: &[String]) -
     Ok(out)
 }
 
+/// Subtitle files are UTF-8 or, from older Windows tools, UTF-16 with a byte order mark.
+pub fn decode(bytes: &[u8]) -> String {
+    let wide = |order: fn([u8; 2]) -> u16| {
+        let units: Vec<u16> = bytes[2..].chunks_exact(2).map(|pair| order([pair[0], pair[1]])).collect();
+        String::from_utf16_lossy(&units)
+    };
+    match bytes {
+        [0xff, 0xfe, ..] => wide(u16::from_le_bytes),
+        [0xfe, 0xff, ..] => wide(u16::from_be_bytes),
+        _ => String::from_utf8_lossy(bytes).into_owned(),
+    }
+}
+
 #[derive(Serialize, Clone)]
 struct Progress {
     path: String,
@@ -141,13 +157,16 @@ struct Progress {
 /// Translates the subtitle file at `path` into the user's language and
 /// returns where the translation was written.
 pub async fn translate_file(app: &AppHandle, path: &Path) -> anyhow::Result<PathBuf> {
+    let settings = crate::effective(app);
+    let output = output_path(path, &settings.primary_lang);
+    // "film.vi.srt" would be written over itself.
+    anyhow::ensure!(output != path, "File này đã mang tên của bản dịch ({})", settings.primary_lang);
     let bytes = tokio::fs::read(path).await?;
-    let parts = parse(&String::from_utf8_lossy(&bytes));
+    let parts = parse(&decode(&bytes));
     let texts: Vec<String> =
         parts.iter().filter_map(|part| if let Part::Cue { text, .. } = part { Some(text.clone()) } else { None }).collect();
     anyhow::ensure!(!texts.is_empty(), "Không tìm thấy dòng phụ đề nào trong file");
 
-    let settings = crate::effective(app);
     let models = engine::offline::models_dir(app);
     let shown = path.display().to_string();
     let mut translated: Vec<String> = Vec::with_capacity(texts.len());
@@ -158,7 +177,6 @@ pub async fn translate_file(app: &AppHandle, path: &Path) -> anyhow::Result<Path
         // An online service must not take the run for an attack.
         tokio::time::sleep(Duration::from_millis(250)).await;
     }
-    let output = output_path(path, &settings.primary_lang);
     tokio::fs::write(&output, render(&parts, &translated)).await?;
     crate::log(format!("subtitles: {} lines -> {}", translated.len(), output.display()));
     Ok(output)
@@ -185,6 +203,15 @@ mod tests {
         let out = render(&parts, &["Tôi chưa từng nói vậy với ai.".to_string(), "Thật sao?".to_string()]);
         assert!(out.starts_with("1\n00:00:01,000 --> 00:00:03,000\nTôi chưa từng nói vậy với ai.\n\n2\n"));
         assert!(out.contains("00:00:04,000 --> 00:00:05,000\nThật sao?\n\n3\n00:00:06,000 --> 00:00:07,000\n\n"));
+    }
+
+    #[test]
+    fn reads_utf16_and_cues_split_by_blank_looking_lines() {
+        let mut bytes = vec![0xff, 0xfe];
+        bytes.extend("1\n00:00:01,000 --> 00:00:02,000\nHi\n \n2\n00:00:03,000 --> 00:00:04,000\nBye".encode_utf16().flat_map(u16::to_le_bytes));
+        let parts = parse(&decode(&bytes));
+        assert_eq!(parts.len(), 2);
+        assert_eq!(parts[1], Part::Cue { head: "2\n00:00:03,000 --> 00:00:04,000".into(), text: "Bye".into() });
     }
 
     #[test]

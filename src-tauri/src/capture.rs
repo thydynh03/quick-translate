@@ -453,7 +453,14 @@ fn listen(app: AppHandle, session: u64, screen: Rect) {
 
     while alive() {
         std::thread::sleep(LISTEN_TICK);
-        let Some(caption) = platform::live_captions() else { continue };
+        let Some(caption) = platform::live_captions() else {
+            // The captions were closed: nothing of ours may stay behind.
+            if shown.as_ref().is_some_and(|frame| !frame.is_empty()) {
+                let _ = app.emit_to(LABEL, "live-frame", Vec::<Translated>::new());
+                shown = Some(Vec::new());
+            }
+            continue;
+        };
         if caption.text != heard {
             heard = caption.text.clone();
             changed = Instant::now();
@@ -601,6 +608,7 @@ fn follow(app: AppHandle, session: u64, screen: Rect, target: Rect) {
                     log(format!("live ocr failed: {error:#}"));
                     popup::show_error(&app, &format!("OCR lỗi: {error}"), None);
                     end_live(&app);
+                    save_memory(&app, &scope, &cache.lock());
                     return;
                 }
             };
