@@ -1248,21 +1248,53 @@ details p {
   }
 }
 
+/* The scenes explain the features, so they also play for readers who asked
+   for less motion, only without anything sliding or stretching. */
 @media (prefers-reduced-motion: reduce) {
-  .scene *,
   .js .reveal .feat {
-    animation: none !important;
     opacity: 1;
     translate: 0 0;
   }
 
-  .s-src,
-  .s-out.b,
-  .s-cue.c2,
-  .s-cue.c3,
   .s-scan {
     display: none;
   }
+
+  .s-out {
+    translate: 0 0 !important;
+  }
+
+  .s-wave i {
+    animation-name: hear-pulse;
+  }
+
+  .s-heard {
+    width: 100%;
+    animation: hear-fade 7s infinite;
+  }
+
+  .s-said {
+    translate: 0 0 !important;
+  }
+
+  .s-pick {
+    animation-timing-function: steps(1);
+  }
+
+  .s-bar i {
+    animation-timing-function: steps(9);
+  }
+}
+
+@keyframes hear-pulse {
+  from { opacity: 0.3; }
+  to { opacity: 1; }
+}
+
+@keyframes hear-fade {
+  0%, 8% { opacity: 0; }
+  20%, 94% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 @media (max-width: 760px) {
