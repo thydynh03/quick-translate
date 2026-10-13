@@ -684,6 +684,78 @@ pub fn start_live_captions() -> anyhow::Result<()> {
     anyhow::bail!("Dịch theo tiếng hiện chỉ chạy trên Windows 11")
 }
 
+// --------------------------------------------------------------- clipboard
+
+const KEY_V: u16 = 9;
+/// Marks password managers put on what they copy (nspasteboard.org).
+const CONCEALED: [&str; 2] = ["org.nspasteboard.ConcealedType", "org.nspasteboard.TransientType"];
+
+/// A number that changes whenever the clipboard does.
+pub fn clipboard_change() -> u64 {
+    autoreleasepool(|_| unsafe {
+        let board: *mut AnyObject = msg_send![class!(NSPasteboard), generalPasteboard];
+        if board.is_null() {
+            return 0;
+        }
+        let count: isize = msg_send![board, changeCount];
+        count as u64
+    })
+}
+
+/// Whether the app that copied asked clipboard histories to leave this out.
+pub fn clipboard_concealed() -> bool {
+    autoreleasepool(|_| unsafe {
+        let board: *mut AnyObject = msg_send![class!(NSPasteboard), generalPasteboard];
+        let types: *mut AnyObject = if board.is_null() { ptr::null_mut() } else { msg_send![board, types] };
+        if types.is_null() {
+            return false;
+        }
+        CONCEALED.iter().any(|name| {
+            let name = CFString::new(name);
+            let found: bool = msg_send![types, containsObject: name.as_concrete_TypeRef() as *mut AnyObject];
+            found
+        })
+    })
+}
+
+/// The application in front (its process id), to come back to with `activate`.
+pub fn foreground_handle() -> isize {
+    autoreleasepool(|_| unsafe {
+        let workspace: *mut AnyObject = msg_send![class!(NSWorkspace), sharedWorkspace];
+        let front: *mut AnyObject = if workspace.is_null() { ptr::null_mut() } else { msg_send![workspace, frontmostApplication] };
+        if front.is_null() {
+            return 0;
+        }
+        let pid: i32 = msg_send![front, processIdentifier];
+        pid as isize
+    })
+}
+
+/// Brings an application back in front.
+pub fn activate(handle: isize) {
+    if handle != 0 {
+        autoreleasepool(|_| unsafe {
+            let target: *mut AnyObject = msg_send![class!(NSRunningApplication), runningApplicationWithProcessIdentifier: handle as i32];
+            if !target.is_null() {
+                // NSApplicationActivateIgnoringOtherApps
+                let _: bool = msg_send![target, activateWithOptions: 2usize];
+            }
+        });
+    }
+}
+
+/// Presses Cmd+V in the application in front.
+pub fn send_paste() {
+    std::thread::sleep(Duration::from_millis(150));
+    let Ok(source) = CGEventSource::new(CGEventSourceStateID::CombinedSessionState) else { return };
+    for down in [true, false] {
+        if let Ok(event) = CGEvent::new_keyboard_event(source.clone(), KEY_V, down) {
+            event.set_flags(CGEventFlags::CGEventFlagCommand);
+            event.post(CGEventTapLocation::HID);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

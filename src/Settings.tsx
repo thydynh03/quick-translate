@@ -340,6 +340,22 @@ export default function Settings() {
                 />
               </label>
               <label className="row">
+                <span>Phím tắt bảng clipboard (Backspace để tắt)</span>
+                <input
+                  className="hotkey"
+                  title="Bấm vào rồi nhấn tổ hợp phím mới; Backspace để tắt bảng clipboard"
+                  readOnly
+                  placeholder="Đang tắt"
+                  value={config.clipboard_hotkey}
+                  onKeyDown={(e) => {
+                    e.preventDefault();
+                    if (e.key === "Backspace" || e.key === "Delete") return update({ clipboard_hotkey: "" });
+                    const shortcut = shortcutFrom(e);
+                    if (shortcut) update({ clipboard_hotkey: shortcut });
+                  }}
+                />
+              </label>
+              <label className="row">
                 <span>Cỡ chữ popup ({config.popup_font_size}px)</span>
                 <input
                   type="range"

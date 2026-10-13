@@ -47,6 +47,7 @@ export type Settings = {
   oxford_app_key: string;
   window_hotkey: string;
   live_hotkey: string;
+  clipboard_hotkey: string;
   instant_translate: boolean;
   hover_sentence: boolean;
   explain_in_context: boolean;

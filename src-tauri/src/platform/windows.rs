@@ -611,6 +611,58 @@ pub fn start_live_captions() -> anyhow::Result<()> {
     Ok(())
 }
 
+// --------------------------------------------------------------- clipboard
+
+/// A number that changes whenever the clipboard does.
+pub fn clipboard_change() -> u64 {
+    unsafe { GetClipboardSequenceNumber() as u64 }
+}
+
+/// Whether the app that copied asked clipboard histories to leave this out
+/// (password managers do).
+pub fn clipboard_concealed() -> bool {
+    use windows::core::w;
+    use windows::Win32::System::DataExchange::{IsClipboardFormatAvailable, RegisterClipboardFormatW};
+    unsafe {
+        let format = RegisterClipboardFormatW(w!("ExcludeClipboardContentFromMonitorProcessing"));
+        format != 0 && IsClipboardFormatAvailable(format).is_ok()
+    }
+}
+
+/// The window in front, to come back to with `activate`.
+pub fn foreground_handle() -> isize {
+    unsafe { GetForegroundWindow().0 as isize }
+}
+
+/// Brings a window back in front. Windows only allows this while one of our
+/// own windows is the one in front.
+pub fn activate(handle: isize) {
+    use windows::Win32::UI::WindowsAndMessaging::SetForegroundWindow;
+    if handle != 0 {
+        unsafe {
+            let _ = SetForegroundWindow(HWND(handle as *mut c_void));
+        }
+    }
+}
+
+/// Presses Ctrl+V in the window in front.
+pub fn send_paste() {
+    use windows::Win32::UI::Input::KeyboardAndMouse::VK_V;
+    std::thread::sleep(Duration::from_millis(120));
+    release_held_modifiers();
+    let ctrl_held = key_down(VK_CONTROL);
+    let mut inputs = Vec::with_capacity(4);
+    if !ctrl_held {
+        inputs.push(key_input(VK_CONTROL, false));
+    }
+    inputs.push(key_input(VK_V, false));
+    inputs.push(key_input(VK_V, true));
+    if !ctrl_held {
+        inputs.push(key_input(VK_CONTROL, true));
+    }
+    send(&inputs);
+}
+
 #[cfg(test)]
 mod caption_tests {
     /// Prints what the live captions show; needs them open and something speaking.
