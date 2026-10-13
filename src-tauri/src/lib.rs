@@ -266,7 +266,10 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
                 show_settings(app);
                 let _ = app.emit("show-update", ());
             }
-            "quit" => app.exit(0),
+            "quit" => {
+                capture::leave_captions();
+                app.exit(0)
+            }
             _ => {}
         });
     if let Some(icon) = app.default_window_icon() {

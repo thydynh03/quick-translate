@@ -22,3 +22,6 @@
 - Cửa sổ hiện bằng `ShowWindow` trực tiếp (`platform::show_overlay`) thì `window.hide()` của Tauri không ẩn được (thư viện tưởng nó đang ẩn): cửa sổ còn đó, trong suốt, chặn chuột. Luôn ẩn bằng `platform::hide_overlay`.
 - Test UI bằng toạ độ trên màn hình thật dễ bấm nhầm cửa sổ khác (Notepad của người dùng có nhiều tab, bản debug mở thêm cửa sổ console). Chụp màn hình xác nhận trước mỗi cú bấm; không kill Notepad.
 - Model offline (OPUS, huấn luyện trên câu) không dịch được từ đơn dù thêm dấu chấm hay đặt vào câu mẫu; đừng thử mẹo đó nữa. Từ đơn phải đi qua từ điển hoặc engine online.
+- PowerShell: truyền `$null` cho tham số `string` của P/Invoke thành chuỗi rỗng, nên `FindWindow("Class", $null)` không tìm thấy gì. Dùng `[NullString]::Value`.
+- Script thử gửi phím (SendKeys) phải tự kiểm tra cửa sổ của nó đang ở trước rồi mới gửi; nếu không, phím và lệnh dán rơi vào ứng dụng người dùng đang mở.
+- Phím giả lập bằng SendKeys không có scan code, nên trong WebView `event.code` rỗng; mã xử lý phím nên chấp nhận cả `event.key`.

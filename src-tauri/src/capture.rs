@@ -299,6 +299,18 @@ pub fn start_window(app: &AppHandle) {
 static LIVE: AtomicBool = AtomicBool::new(false);
 /// Whether the overlay is asking what live mode should follow.
 static CHOOSING: AtomicBool = AtomicBool::new(false);
+/// The session of the newest listener, and whether the app opened the captions for it.
+static LISTENER: AtomicU64 = AtomicU64::new(0);
+static CAPTIONS_OPENED: AtomicBool = AtomicBool::new(false);
+
+/// Leaves Windows' captions as they were found: back in place, and closed
+/// when the app had opened them. Also called when the app quits.
+pub fn leave_captions() {
+    platform::hide_live_captions(false);
+    if CAPTIONS_OPENED.swap(false, Ordering::SeqCst) {
+        platform::close_live_captions();
+    }
+}
 /// How often the screen is compared with the last reading.
 const LIVE_TICK: Duration = Duration::from_millis(120);
 /// A picture that keeps changing (video, scrolling) is read anyway after this long.
@@ -432,7 +444,11 @@ pub fn live_listen(app: AppHandle) {
     let _ = app.emit_to(LABEL, "live-start", LiveStart { hotkey, region: None });
     platform::show_passive(&window);
     log("live: on, following the sound");
-    std::thread::spawn(move || listen(app, session, screen, opened));
+    LISTENER.store(session, Ordering::SeqCst);
+    if opened {
+        CAPTIONS_OPENED.store(true, Ordering::SeqCst);
+    }
+    std::thread::spawn(move || listen(app, session, screen));
 }
 
 /// How often the captions are read, and how often the sentence still being
@@ -442,7 +458,7 @@ const LISTEN_OPEN: Duration = Duration::from_millis(500);
 /// Captions that have not changed for this long are taken off the screen.
 const LISTEN_SILENCE: Duration = Duration::from_secs(6);
 
-fn listen(app: AppHandle, session: u64, screen: Rect, opened: bool) {
+fn listen(app: AppHandle, session: u64, screen: Rect) {
     // Only the translation is wanted: the captions listen from outside the screen.
     let hide = app.state::<crate::AppState>().settings.read().listen_hide_captions;
     let models = crate::engine::offline::models_dir(&app);
@@ -470,6 +486,10 @@ fn listen(app: AppHandle, session: u64, screen: Rect, opened: bool) {
             }
             continue;
         };
+        if hide && caption.rect.right > -10000 {
+            // Before anything slow, and again whenever Windows puts the window back.
+            platform::hide_live_captions(true);
+        }
         if caption.text != heard {
             heard = caption.text.clone();
             changed = Instant::now();
@@ -510,10 +530,6 @@ fn listen(app: AppHandle, session: u64, screen: Rect, opened: bool) {
         let text = lines.into_iter().filter(|line| !line.is_empty()).collect::<Vec<_>>().join(" ");
 
         let height = 44;
-        if hide && caption.rect.right > -10000 {
-            // Also when Windows puts the window back by itself.
-            platform::hide_live_captions(true);
-        }
         let (rect, top) = if hide {
             // Like subtitles: across the middle, near the bottom of the screen.
             let width = screen.right - screen.left;
@@ -536,12 +552,9 @@ fn listen(app: AppHandle, session: u64, screen: Rect, opened: bool) {
             shown = Some(frame);
         }
     }
-    // Leave the captions as they were found: back in place, and closed when we opened them.
-    if hide {
-        platform::hide_live_captions(false);
-    }
-    if opened {
-        platform::close_live_captions();
+    // Unless a newer listener has taken the captions over meanwhile.
+    if LISTENER.load(Ordering::SeqCst) == session {
+        leave_captions();
     }
 }
 

@@ -413,6 +413,53 @@ fn grab(rect: Rect) -> anyhow::Result<(Vec<u8>, i32, i32)> {
     }
 }
 
+/// Windows' recogniser finds nothing in a small picture, or in one where the
+/// text touches the edges: a region dragged around a single word. Such a
+/// picture is magnified and given a margin in its own background colour.
+const OCR_COMFORT: i32 = 160;
+const OCR_MARGIN: i32 = 32;
+/// The recogniser refuses pictures larger than this on a side.
+const OCR_LIMIT: i32 = 8000;
+
+/// How many times a picture of this size is magnified before it is read.
+fn magnification(width: i32, height: i32) -> i32 {
+    let shorter = width.min(height).max(1);
+    if shorter >= OCR_COMFORT {
+        return 1;
+    }
+    let wanted = (OCR_COMFORT + shorter - 1) / shorter;
+    let room = (OCR_LIMIT - 2 * OCR_MARGIN) / width.max(height).max(1);
+    wanted.min(4).min(room).max(1)
+}
+
+/// BGRA pixels magnified `scale` times (smoothly) inside a margin of the
+/// colour found in the corner. Returns the pixels and their width and height.
+fn enlarge(pixels: &[u8], width: i32, height: i32, scale: i32) -> (Vec<u8>, i32, i32) {
+    let (w, h) = (width as usize, height as usize);
+    let (scale, margin) = (scale as usize, OCR_MARGIN as usize);
+    let (out_w, out_h) = (w * scale + 2 * margin, h * scale + 2 * margin);
+    let mut out: Vec<u8> = pixels[..4].iter().copied().cycle().take(out_w * out_h * 4).collect();
+    for y in 0..h * scale {
+        // The centre of each new pixel, in the old picture.
+        let fy = ((y as f32 + 0.5) / scale as f32 - 0.5).clamp(0.0, (h - 1) as f32);
+        let (y0, ty) = (fy as usize, fy.fract());
+        let y1 = (y0 + 1).min(h - 1);
+        for x in 0..w * scale {
+            let fx = ((x as f32 + 0.5) / scale as f32 - 0.5).clamp(0.0, (w - 1) as f32);
+            let (x0, tx) = (fx as usize, fx.fract());
+            let x1 = (x0 + 1).min(w - 1);
+            let at = ((y + margin) * out_w + x + margin) * 4;
+            for channel in 0..4 {
+                let sample = |px: usize, py: usize| pixels[(py * w + px) * 4 + channel] as f32;
+                let top = sample(x0, y0) * (1.0 - tx) + sample(x1, y0) * tx;
+                let bottom = sample(x0, y1) * (1.0 - tx) + sample(x1, y1) * tx;
+                out[at + channel] = (top * (1.0 - ty) + bottom * ty).round() as u8;
+            }
+        }
+    }
+    (out, out_w as i32, out_h as i32)
+}
+
 /// Reads the text in a screen rectangle, line by line, with each line's box
 /// relative to the rectangle. `vietnamese` is the models folder when the
 /// Vietnamese recogniser is installed: Windows has no Vietnamese OCR, so its
@@ -426,14 +473,23 @@ pub fn ocr_lines(rect: Rect, vietnamese: Option<&std::path::Path>) -> anyhow::Re
     for pixel in pixels.chunks_exact_mut(4) {
         pixel[3] = 255;
     }
+    // What the recogniser sees may be a magnified copy; its answers are brought back to `pixels`.
+    let scale = magnification(width, height);
+    let (seen, seen_width, seen_height, margin) = if scale > 1 {
+        let (seen, seen_width, seen_height) = enlarge(&pixels, width, height, scale);
+        (seen, seen_width, seen_height, OCR_MARGIN)
+    } else {
+        (pixels.clone(), width, height, 0)
+    };
+    let back = |value: f32| (value - margin as f32) / scale as f32;
     let writer = DataWriter::new()?;
-    writer.WriteBytes(&pixels)?;
+    writer.WriteBytes(&seen)?;
     let buffer = writer.DetachBuffer()?;
     let bitmap = SoftwareBitmap::CreateCopyWithAlphaFromBuffer(
         &buffer,
         BitmapPixelFormat::Bgra8,
-        width,
-        height,
+        seen_width,
+        seen_height,
         BitmapAlphaMode::Premultiplied,
     )?;
     let engine = OcrEngine::TryCreateFromUserProfileLanguages()
@@ -448,10 +504,10 @@ pub fn ocr_lines(rect: Rect, vietnamese: Option<&std::path::Path>) -> anyhow::Re
         for word in line.Words()? {
             let bounds = word.BoundingRect()?;
             words.push(Rect {
-                left: bounds.X.floor() as i32,
-                top: bounds.Y.floor() as i32,
-                right: (bounds.X + bounds.Width).ceil() as i32,
-                bottom: (bounds.Y + bounds.Height).ceil() as i32,
+                left: (back(bounds.X).floor() as i32).clamp(0, width),
+                top: (back(bounds.Y).floor() as i32).clamp(0, height),
+                right: (back(bounds.X + bounds.Width).ceil() as i32).clamp(0, width),
+                bottom: (back(bounds.Y + bounds.Height).ceil() as i32).clamp(0, height),
             });
         }
         let Some(bounds) = words.iter().copied().reduce(|a, b| a.union(&b)) else { continue };
@@ -621,7 +677,8 @@ pub fn hide_live_captions(hide: bool) -> bool {
             return false;
         }
         if hide {
-            if rect.left > CAPTIONS_AWAY / 2 {
+            // Only the place it had before we first moved it counts.
+            if home.is_none() {
                 *home = Some((rect.left, rect.top));
             }
             (CAPTIONS_AWAY, rect.top)
@@ -720,5 +777,42 @@ mod caption_tests {
             std::thread::sleep(std::time::Duration::from_millis(500));
             println!("{:?}", super::live_captions().map(|caption| (caption.text, caption.rect)));
         }
+    }
+}
+
+#[cfg(test)]
+mod ocr_tests {
+    use super::*;
+
+    #[test]
+    fn small_pictures_are_magnified_within_the_limit() {
+        assert_eq!(magnification(800, 600), 1);
+        assert_eq!(magnification(90, 28), 4);
+        assert_eq!(magnification(300, 100), 2);
+        // A long thin strip may not grow past what the recogniser accepts.
+        assert_eq!(magnification(3000, 30), 2);
+        assert_eq!(magnification(7990, 20), 1);
+    }
+
+    #[test]
+    fn enlarging_keeps_the_picture_inside_a_margin() {
+        // Two pixels: black, then white, on a black corner.
+        let pixels = [0, 0, 0, 255, 255, 255, 255, 255];
+        let (out, width, height) = enlarge(&pixels, 2, 1, 4);
+        assert_eq!((width, height), (8 + 2 * OCR_MARGIN, 4 + 2 * OCR_MARGIN));
+        let at = |x: i32, y: i32| out[((y * width + x) * 4) as usize];
+        assert_eq!(at(0, 0), 0);
+        assert_eq!(at(OCR_MARGIN, OCR_MARGIN), 0);
+        assert_eq!(at(OCR_MARGIN + 7, OCR_MARGIN + 3), 255);
+        assert_eq!(at(width - 1, height - 1), 0);
+    }
+
+    /// Reads the screen rectangle given as `QT_OCR_RECT=left,top,right,bottom`.
+    #[test]
+    #[ignore]
+    fn reads_a_screen_rectangle() {
+        let numbers: Vec<i32> = std::env::var("QT_OCR_RECT").unwrap().split(',').map(|n| n.parse().unwrap()).collect();
+        let rect = Rect { left: numbers[0], top: numbers[1], right: numbers[2], bottom: numbers[3] };
+        println!("magnified {}x: {:?}", magnification(rect.right - rect.left, rect.bottom - rect.top), ocr_lines(rect, None).unwrap());
     }
 }
