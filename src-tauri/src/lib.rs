@@ -9,6 +9,7 @@ use tauri::{AppHandle, Emitter, Manager, WindowEvent};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
 mod capture;
+mod clipboard;
 mod engine;
 mod history;
 mod platform;
@@ -144,6 +145,18 @@ fn register_hotkeys(app: &AppHandle) -> Vec<String> {
         if let Err(error) = result {
             log(format!("hotkey {live_hotkey}: {error}"));
             failed.push(live_hotkey);
+        }
+    }
+    let clipboard_hotkey = app.state::<AppState>().settings.read().clipboard_hotkey.clone();
+    if !clipboard_hotkey.trim().is_empty() {
+        let result = shortcuts.on_shortcut(clipboard_hotkey.as_str(), |app, _shortcut, event| {
+            if event.state() == ShortcutState::Pressed {
+                clipboard::toggle(app);
+            }
+        });
+        if let Err(error) = result {
+            log(format!("hotkey {clipboard_hotkey}: {error}"));
+            failed.push(clipboard_hotkey);
         }
     }
     failed
@@ -291,6 +304,13 @@ pub fn run() {
             capture::capture_cancel,
             capture::live_begin,
             capture::live_listen,
+            clipboard::clipboard_list,
+            clipboard::clipboard_paste,
+            clipboard::clipboard_pin,
+            clipboard::clipboard_remove,
+            clipboard::clipboard_clear,
+            clipboard::clipboard_hide,
+            clipboard::clipboard_translate,
             subtitle_translate,
             history::history_list,
             history::history_clear,
@@ -327,6 +347,8 @@ pub fn run() {
             let overlay = popup::create_window(&handle)?;
             platform::prepare_overlay(&overlay);
             capture::create_window(&handle)?;
+            clipboard::create_window(&handle)?;
+            clipboard::start(handle.clone());
             build_tray(&handle)?;
             register_hotkeys(&handle);
             telemetry::start(handle.clone());
@@ -349,6 +371,11 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
+            if let WindowEvent::Focused(false) = event {
+                if window.label() == clipboard::LABEL {
+                    clipboard::blurred(window.app_handle());
+                }
+            }
             // Closing the settings window keeps the app running in the tray.
             if let WindowEvent::CloseRequested { api, .. } = event {
                 if window.label() == "main" {

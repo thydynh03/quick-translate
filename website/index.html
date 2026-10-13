@@ -40,7 +40,7 @@
     "applicationCategory": "UtilitiesApplication",
     "operatingSystem": "Windows 10, Windows 11, macOS 11+",
     "inLanguage": "vi",
-    "softwareVersion": "0.1.18",
+    "softwareVersion": "0.1.19",
     "license": "https://thydynh03.github.io/quick-translate/license.html",
     "url": "https://thydynh03.github.io/quick-translate/",
     "downloadUrl": "https://github.com/thydynh03/quick-translate/releases/latest",
@@ -78,6 +78,7 @@
     </a>
     <nav class="nav" aria-label="Điều hướng chính">
       <a href="#cach-dung">Cách dùng</a>
+      <a href="#moi">Tính năng mới</a>
       <a href="#offline">Dịch offline</a>
       <a href="docs.html">Tài liệu</a>
       <a href="license.html">Giấy phép</a>
@@ -142,6 +143,68 @@
             <p class="way-key"><kbd>Alt</kbd><kbd>W</kbd></p>
             <h3>Quét một vùng màn hình</h3>
             <p>Dành cho chữ không bôi đen được: ảnh chụp, PDF scan, video đang dừng. Kéo một hình chữ nhật quanh chữ, ứng dụng nhận dạng rồi dịch.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="fresh" id="moi">
+      <div class="wrap">
+        <p class="eyebrow">Mới trong các bản gần đây</p>
+        <h2>Không chỉ là bôi đen để dịch</h2>
+        <p class="section-lead">Bốn việc mới cho những lúc chữ không đứng yên để bạn bôi đen: game, phim, video không có phụ đề, và cả những đoạn bạn vừa copy.</p>
+        <div class="feats">
+          <article class="feat" style="--i:0">
+            <div class="scene s-live" aria-hidden="true">
+              <div class="s-frame">
+                <span class="s-name">Elder</span>
+                <p class="s-src a">The old bridge fell last winter.</p>
+                <p class="s-src b">Take the forest road instead.</p>
+                <p class="s-out a">Cây cầu cũ đã sập mùa đông năm ngoái.</p>
+                <p class="s-out b">Hãy đi đường rừng thay vào đó.</p>
+              </div>
+              <span class="s-scan"></span>
+            </div>
+            <p class="way-key"><kbd>Alt</kbd><kbd>R</kbd></p>
+            <h3>Dịch thời gian thực trên màn hình</h3>
+            <p>Chọn cả màn hình hoặc kéo một vùng. Chữ đổi thì bản dịch đổi theo, phủ ngay lên chỗ cũ. Hợp với game, phụ đề cứng trong video và phần mềm chỉ có tiếng Anh. Câu đã gặp được nhớ lại, lần sau hiện ngay.</p>
+          </article>
+          <article class="feat" style="--i:1">
+            <div class="scene s-film" aria-hidden="true">
+              <span class="s-file">phim.vi.srt</span>
+              <p class="s-cue c1">Anh đã ở đâu suốt thời gian qua?</p>
+              <p class="s-cue c2">Tôi không thể nói với em được.</p>
+              <p class="s-cue c3">Vậy thì đừng quay lại nữa.</p>
+              <span class="s-bar"><i></i></span>
+            </div>
+            <p class="way-key">Kéo thả file</p>
+            <h3>Phụ đề dịch sẵn cho cả bộ phim</h3>
+            <p>Thả file <code>.srt</code> hoặc <code>.vtt</code> vào tab Phụ đề, nhận lại file tiếng Việt nằm cạnh file gốc. VLC hay MPV tự nhận, xem không có độ trễ nào. Với YouTube có <a href="docs.html#youtube">extension riêng cho Chrome và Edge</a>.</p>
+          </article>
+          <article class="feat" style="--i:2">
+            <div class="scene s-hear" aria-hidden="true">
+              <div class="s-wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+              <p class="s-heard">Please send me the report today.</p>
+              <p class="s-said">Hãy gửi cho tôi bản báo cáo hôm nay.</p>
+            </div>
+            <p class="way-key"><kbd>Alt</kbd><kbd>R</kbd> rồi <kbd>3</kbd> <span class="tag">Windows 11</span></p>
+            <h3>Nghe tiếng rồi dịch</h3>
+            <p>Video không có phụ đề? Quick Translate đọc phụ đề trực tiếp mà Windows tạo ra từ âm thanh của máy, rồi dịch từng câu ngay bên dưới. Hiện chỉ nghe được tiếng Anh.</p>
+          </article>
+          <article class="feat" style="--i:3">
+            <div class="scene s-clip" aria-hidden="true">
+              <div class="s-glass">
+                <p class="s-find">Tìm trong clipboard</p>
+                <span class="s-pick"></span>
+                <p class="s-row">The meeting was moved<b>⌘1</b></p>
+                <p class="s-row">github.com/thydynh03<b>⌘2</b></p>
+                <p class="s-row">pnpm tauri build<b>⌘3</b></p>
+                <p class="s-row">Cảm ơn bạn đã phản hồi<b>⌘4</b></p>
+              </div>
+            </div>
+            <p class="way-key"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>V</kbd> <span class="tag">macOS, thử nghiệm</span></p>
+            <h3>Bảng clipboard cho macOS</h3>
+            <p>Những đoạn bạn đã copy, mở giữa màn hình như Spotlight với nền kính theo chế độ sáng tối của máy. Chọn để dán lại, ghim đoạn hay dùng, hoặc dịch luôn đoạn đó. Mật khẩu từ trình quản lý mật khẩu không bị ghi lại.</p>
           </article>
         </div>
       </div>

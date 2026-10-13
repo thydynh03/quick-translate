@@ -2,7 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the settings window and the popup",
-  "windows": ["main", "popup", "capture"],
+  "windows": ["main", "popup", "capture", "clipboard"],
   "permissions": [
     "core:default",
     "opener:default",

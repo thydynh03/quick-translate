@@ -48,6 +48,8 @@ pub struct Settings {
     /// Global shortcut that translates every text block of the active window in place.
     pub window_hotkey: String,
     pub live_hotkey: String,
+    /// Global shortcut that opens the list of copied texts; empty switches the list off.
+    pub clipboard_hotkey: String,
     /// Translate as soon as text is selected, without showing the icon first.
     pub instant_translate: bool,
     /// Hover (Ctrl) translates the whole sentence under the pointer, not just the word.
@@ -110,6 +112,8 @@ impl Default for Settings {
             oxford_app_key: String::new(),
             window_hotkey: "Alt+E".into(),
             live_hotkey: "Alt+R".into(),
+            // Windows has its own (Win+V).
+            clipboard_hotkey: if cfg!(target_os = "macos") { "Super+Shift+V".into() } else { String::new() },
             instant_translate: false,
             hover_sentence: true,
             explain_in_context: true,

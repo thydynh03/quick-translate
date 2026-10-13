@@ -28,6 +28,8 @@ Bộ cài chưa ký số, hệ điều hành sẽ cảnh báo khi mở lần đ�
 
 Tra một từ tiếng Anh thì popup có thêm nghĩa theo từ loại, phiên âm, định nghĩa tiếng Anh và nút mở từ điển Cambridge / Oxford.
 
+Trên macOS còn có **bảng clipboard** (`Cmd+Shift+V`): danh sách các đoạn đã copy để dán lại, ghim hoặc dịch, tương tự `Win+V` của Windows. Trên Windows tính năng này tắt sẵn; bật bằng cách đặt phím tắt trong Cài đặt.
+
 ## Engine dịch
 
 1. **Google** (mặc định): không cần key, cần mạng.

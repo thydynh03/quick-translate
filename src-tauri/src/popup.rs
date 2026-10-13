@@ -350,7 +350,7 @@ pub fn translate_selection(app: &AppHandle) {
         let selection = platform::selection_via_accessibility();
         let (text, rect, context) = match selection {
             Some(s) => (Some(s.text), s.rect, s.context),
-            None => (platform::selection_via_copy(), None, None),
+            None => (crate::clipboard::own(platform::selection_via_copy), None, None),
         };
         log(format!("hotkey: text={:?} rect={:?}", text.as_deref().map(preview), rect));
         match text {
@@ -378,7 +378,7 @@ pub fn popup_activate(app: AppHandle) {
     match pending {
         Some(Pending::Text(text, context)) => translate_in_context(&app, text, context, None),
         Some(Pending::NeedCopy) => {
-            std::thread::spawn(move || match platform::selection_via_copy() {
+            std::thread::spawn(move || match crate::clipboard::own(platform::selection_via_copy) {
                 Some(text) => translate_text(&app, text, None),
                 None => show_error(&app, "KhĂ´ng láº¥y Ä‘Æ°á»£c vÄƒn báº£n á»Ÿ á»©ng dá»¥ng nĂ y.", None),
             });

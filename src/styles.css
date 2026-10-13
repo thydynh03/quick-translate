@@ -706,3 +706,223 @@ html[data-window="capture"] body {
 .subtitle-job progress {
   width: 100%;
 }
+
+/* Clipboard board: a glass panel in the manner of Spotlight. The system blurs
+   what is behind the window; the page only tints it, and follows light and dark. */
+html[data-window="clipboard"],
+html[data-window="clipboard"] body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}
+
+.board {
+  --tint: rgba(255, 255, 255, 0.36);
+  --edge: rgba(255, 255, 255, 0.7);
+  --fill: rgba(60, 60, 67, 0.1);
+  --hairline: rgba(60, 60, 67, 0.18);
+  --ink: rgba(0, 0, 0, 0.88);
+  --ink-2: rgba(60, 60, 67, 0.72);
+  --ink-3: rgba(60, 60, 67, 0.5);
+  --select: #0a6cff;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  box-sizing: border-box;
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--tint);
+  color: var(--ink);
+  font: 13px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .board {
+    --tint: rgba(28, 28, 32, 0.38);
+    --edge: rgba(255, 255, 255, 0.18);
+    --fill: rgba(235, 235, 245, 0.12);
+    --hairline: rgba(235, 235, 245, 0.14);
+    --ink: rgba(255, 255, 255, 0.92);
+    --ink-2: rgba(235, 235, 245, 0.66);
+    --ink-3: rgba(235, 235, 245, 0.42);
+    --select: #0a84ff;
+  }
+}
+
+.board-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.board-search svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--ink-3);
+}
+
+.board-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 20px;
+  font-weight: 300;
+}
+
+.board-search input::placeholder {
+  color: var(--ink-3);
+}
+
+.board-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+}
+
+.board-list {
+  overflow-y: auto;
+  padding: 8px;
+  border-right: 1px solid var(--hairline);
+}
+
+.board-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.board-list::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background: var(--fill);
+}
+
+.board-section {
+  padding: 6px 10px 4px;
+  color: var(--ink-3);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.board-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+.board-kind {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--fill);
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 22px;
+  text-align: center;
+}
+
+.board-item .board-line {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-item kbd {
+  flex: none;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: 11px;
+}
+
+.board-item.active {
+  background: var(--select);
+  color: #fff;
+}
+
+.board-item.active kbd {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.board-item.active .board-kind {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+.board-preview {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 14px 18px 10px;
+}
+
+.board-full {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.board-meta {
+  padding-top: 8px;
+  color: var(--ink-3);
+  font-size: 11px;
+}
+
+.board-empty {
+  grid-column: 1 / -1;
+  align-self: center;
+  color: var(--ink-3);
+  text-align: center;
+}
+
+.board-foot {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+  padding: 6px 10px;
+  border-top: 1px solid var(--hairline);
+}
+
+.board-foot button {
+  padding: 3px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: default;
+  font: inherit;
+  font-size: 11px;
+}
+
+.board-foot button:hover {
+  background: var(--fill);
+}
+
+.board-foot button:first-child {
+  margin-right: auto;
+}
+
+.board-foot kbd {
+  margin-left: 4px;
+  color: var(--ink-3);
+  font: inherit;
+}

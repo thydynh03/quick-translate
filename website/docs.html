@@ -168,6 +168,16 @@
       <h3>Quét chữ trên macOS</h3>
       <p>Trên macOS, ba phím tắt <kbd>Alt</kbd><kbd>W</kbd>, <kbd>Alt</kbd><kbd>E</kbd> và <kbd>Alt</kbd><kbd>R</kbd> (phím <kbd>Option</kbd>) dùng bộ nhận dạng chữ có sẵn của hệ điều hành, đọc được cả tiếng Việt nên không cần tải thêm model OCR. Lần đầu dùng, macOS sẽ hỏi quyền <strong>Ghi màn hình</strong>: mở System Settings → Privacy &amp; Security → Screen Recording, bật Quick Translate rồi mở lại ứng dụng. Nhận dạng tiếng Việt cần macOS 13 trở lên. Phần này mới qua biên dịch tự động, chưa được chạy thử trên máy Mac thật; nếu gặp lỗi, hãy báo ở trang GitHub của dự án.</p>
 
+      <h2 id="clipboard">Bảng clipboard</h2>
+      <p>macOS không có sẵn danh sách những đoạn đã copy như <kbd>Win</kbd>+<kbd>V</kbd> của Windows, nên Quick Translate thêm vào. Nhấn <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>V</kbd>: bảng hiện giữa màn hình như Spotlight, nền kính mờ theo chế độ sáng/tối của máy: bên trái là các đoạn văn bản đã copy (mới nhất ở trên), bên phải là nội dung đầy đủ của đoạn đang chọn.</p>
+      <ul>
+        <li><kbd>Enter</kbd> hoặc <kbd>Cmd</kbd>+<kbd>1</kbd>…<kbd>9</kbd>: dán đoạn đó vào nơi đang gõ. <kbd>↑</kbd> <kbd>↓</kbd> để chọn, gõ chữ để tìm, <kbd>Esc</kbd> để đóng.</li>
+        <li><kbd>Cmd</kbd>+<kbd>T</kbd>: dịch đoạn đang chọn. <kbd>Cmd</kbd>+<kbd>P</kbd>: ghim hoặc bỏ ghim. <kbd>Cmd</kbd>+<kbd>Backspace</kbd>: xoá khỏi danh sách. Trên Windows dùng <kbd>Ctrl</kbd> thay cho <kbd>Cmd</kbd>.</li>
+        <li>Danh sách giữ 50 đoạn gần nhất và chỉ nằm trong bộ nhớ: tắt ứng dụng là mất, trừ các đoạn đã ghim (giống Windows).</li>
+        <li>Không ghi lại những gì trình quản lý mật khẩu đánh dấu là bí mật, và những gì copy trong các ứng dụng thuộc danh sách loại trừ.</li>
+      </ul>
+      <p>Trên Windows tính năng này tắt sẵn vì đã có <kbd>Win</kbd>+<kbd>V</kbd>; muốn dùng thì đặt phím tắt ở <em>Cài đặt → Chung</em>. Ở ô phím tắt, nhấn <kbd>Backspace</kbd> để tắt hẳn bảng clipboard (ứng dụng khi đó không theo dõi clipboard nữa).</p>
+
       <h2 id="tu-dien">Từ điển</h2>
       <p>Khi bạn tra một từ tiếng Anh và đang có mạng, popup hiện nghĩa tiếng Việt theo từ loại, phiên âm và định nghĩa tiếng Anh lấy từ Free Dictionary API. Hai nút Cambridge và Oxford mở mục từ tương ứng trong trình duyệt.</p>
       <p>Nếu bạn có tài khoản Oxford Dictionaries API, nhập <code>app_id</code> và <code>app_key</code> trong Cài đặt để lấy định nghĩa từ Oxford. Cambridge không cung cấp API công khai nên ứng dụng chỉ mở trang web của họ.</p>
