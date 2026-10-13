@@ -5,7 +5,7 @@ import { listen } from "@tauri-apps/api/event";
 type Box = { x0: number; y0: number; x1: number; y1: number };
 
 /** A translated paragraph, in physical pixels relative to the overlay. */
-type Block = { x: number; y: number; width: number; height: number; line_height: number; text: string };
+type Block = { x: number; y: number; width: number; height: number; line_height: number; text: string; subtitle?: boolean };
 
 /**
  * Full-screen overlay with two jobs: drag a rectangle to translate the text
@@ -114,7 +114,13 @@ export default function Capture() {
             }}
           />
         )}
-        {blocks.map((block, index) => (
+        {blocks.map((block, index) =>
+          block.subtitle ? (
+            // Speech: a film subtitle, centred in the span it was given.
+            <div key={index} className="capture-subtitle" style={{ left: block.x / scale - origin.x, top: block.y / scale - origin.y, width: block.width / scale }}>
+              <p key={block.text}>{block.text}</p>
+            </div>
+          ) : (
           <p
             key={index}
             className="capture-text"
@@ -130,7 +136,8 @@ export default function Capture() {
           >
             {block.text}
           </p>
-        ))}
+          ),
+        )}
         <p className="capture-hint" key={status}>
           {status}
         </p>

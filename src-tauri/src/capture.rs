@@ -117,6 +117,8 @@ struct Translated {
     height: i32,
     line_height: i32,
     text: String,
+    /// Drawn as a film subtitle (speech) instead of a patch over the text it replaces.
+    subtitle: bool,
 }
 
 /// Merges consecutive lines that sit right under each other into paragraphs,
@@ -244,6 +246,7 @@ fn translated(block: &Block, text: &str, dx: i32, dy: i32) -> Option<Translated>
         height: block.rect.bottom - block.rect.top,
         line_height: block.line_height,
         text: text.to_string(),
+        subtitle: false,
     })
 }
 
@@ -451,10 +454,12 @@ pub fn live_listen(app: AppHandle) {
     std::thread::spawn(move || listen(app, session, screen));
 }
 
-/// How often the captions are read, and how often the sentence still being
-/// spoken is translated again.
+/// How often the captions are read.
 const LISTEN_TICK: Duration = Duration::from_millis(150);
-const LISTEN_OPEN: Duration = Duration::from_millis(500);
+/// A sentence is translated once it is finished. One still being spoken is
+/// only translated after the speaker has paused this long: translating it
+/// word by word gave lines that changed meaning as the sentence grew.
+const LISTEN_PAUSE: Duration = Duration::from_millis(900);
 /// Captions that have not changed for this long are taken off the screen.
 const LISTEN_SILENCE: Duration = Duration::from_secs(6);
 
@@ -464,10 +469,11 @@ fn listen(app: AppHandle, session: u64, screen: Rect) {
     let models = crate::engine::offline::models_dir(&app);
     let alive = || SESSION.load(Ordering::SeqCst) == session;
     let mut cache: HashMap<String, String> = HashMap::new();
-    // The unfinished sentence last translated, its translation and when.
+    // The unfinished sentence as last heard and since when, and its translation once paused on.
+    let mut open_heard = String::new();
+    let mut open_since = Instant::now();
     let mut open_source = String::new();
     let mut open_text = String::new();
-    let mut open_at = Instant::now() - LISTEN_OPEN;
     let mut heard = String::new();
     let mut changed = Instant::now();
     let mut shown: Option<Vec<Translated>> = None;
@@ -501,8 +507,8 @@ fn listen(app: AppHandle, session: u64, screen: Rect) {
                 .unwrap_or_default()
         };
         let (finished, open) = caption_units(&caption.text);
-        // The last finished sentence gives the one being spoken its context on screen.
-        let recent: Vec<&String> = finished.iter().rev().take(if open.is_some() { 1 } else { 2 }).rev().collect();
+        // Two sentences at most, as on a film.
+        let recent: Vec<&String> = finished.iter().rev().take(2).rev().collect();
         for sentence in &recent {
             if !cache.contains_key(*sentence) {
                 if cache.len() > LIVE_CACHE {
@@ -514,17 +520,26 @@ fn listen(app: AppHandle, session: u64, screen: Rect) {
                 cache.insert((*sentence).clone(), translated);
             }
         }
-        match &open {
-            Some(open) if *open != open_source && open.split(' ').count() >= 3 && open_at.elapsed() >= LISTEN_OPEN => {
-                open_text = translate(open);
-                open_source = open.clone();
-                open_at = Instant::now();
+        let spoken = open.clone().unwrap_or_default();
+        if spoken != open_heard {
+            open_heard = spoken.clone();
+            open_since = Instant::now();
+        }
+        if spoken != open_source {
+            // What was translated is no longer what is being said.
+            open_source.clear();
+            open_text.clear();
+            if spoken.split(' ').count() >= 3 && open_since.elapsed() >= LISTEN_PAUSE {
+                open_text = translate(&spoken);
+                open_source = spoken;
             }
-            None => open_text.clear(),
-            _ => {}
         }
         let mut lines: Vec<&str> = recent.iter().filter_map(|sentence| cache.get(*sentence)).map(String::as_str).collect();
-        if open.is_some() {
+        if !open_text.is_empty() {
+            // It takes the place of the older of two sentences.
+            if lines.len() == 2 {
+                lines.remove(0);
+            }
             lines.push(&open_text);
         }
         let text = lines.into_iter().filter(|line| !line.is_empty()).collect::<Vec<_>>().join(" ");
@@ -535,7 +550,7 @@ fn listen(app: AppHandle, session: u64, screen: Rect) {
             let width = screen.right - screen.left;
             let inset = width * 15 / 100;
             let rect = Rect { left: screen.left + inset, right: screen.right - inset, ..screen };
-            (rect, screen.bottom - height - (screen.bottom - screen.top) / 10)
+            (rect, screen.bottom - (screen.bottom - screen.top) * 18 / 100)
         } else {
             // Under the captions when they sit at the top of the screen, above them otherwise.
             let rect = caption.rect;
@@ -545,7 +560,7 @@ fn listen(app: AppHandle, session: u64, screen: Rect) {
         let frame: Vec<Translated> = if text.is_empty() || changed.elapsed() > LISTEN_SILENCE {
             Vec::new()
         } else {
-            vec![Translated { x: rect.left - screen.left, y: top - screen.top, width: rect.right - rect.left, height, line_height: 30, text }]
+            vec![Translated { x: rect.left - screen.left, y: top - screen.top, width: rect.right - rect.left, height, line_height: 30, text, subtitle: true }]
         };
         if alive() && shown.as_ref() != Some(&frame) {
             let _ = app.emit_to(LABEL, "live-frame", frame.clone());
