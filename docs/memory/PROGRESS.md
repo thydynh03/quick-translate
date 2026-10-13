@@ -58,6 +58,8 @@ Cập nhật: 2026-10-12. Plan gốc: `docs/PLAN.md`. Hướng dẫn dùng: `REA
 
 - 2026-10-13: bản 0.1.15: sửa nút "Cập nhật ngay" trên Windows. Bản 0.1.13/0.1.14 gọi bộ cài qua `cmd /C start "" …`, Rust thoát dấu nháy thành `\"` nên Windows báo không tìm thấy `\` và app thoát mà không cài. Giờ chạy thẳng bộ cài với `/P /R` (đã thử tay: cài xong tự mở lại app). Người dùng 0.1.13/0.1.14 phải tải bộ cài thủ công một lần.
 
+- 2026-10-13: bản 0.1.16: Alt+R mở bảng chọn "Toàn màn hình" (phím 1) / "Chọn một vùng" (phím 2, kéo như Alt+W) → lệnh `live_begin`; vòng `capture::follow` so ảnh mỗi 120 ms và đọc lại ngay khi hình đứng yên (hình động: sau 400 ms, vùng chọn: 120 ms), vùng chọn dịch chữ ngay lần đầu thấy; `paragraphs` gộp cả các dòng căn giữa. Thử trên Windows bằng bản debug qua log: toàn màn hình đọc 153 ms, đọc + dịch 58 đoạn 257 ms; vùng 1200×540 đọc 58 ms, đọc + dịch 9 đoạn 664 ms, hiện 10/10. Chưa nhìn bằng mắt (lớp phủ không lên ảnh chụp).
+
 ## CHƯA kiểm chứng
 
 - macOS: build + `cargo test` qua trên GitHub Actions (macos-latest), có .dmg ký ad-hoc. CHƯA chạy trên máy Mac thật. Thiếu: OCR (Vision), hover, popup không cướp focus (NSPanel), tên app đang mở. App hỏi quyền Accessibility và chờ được cấp.

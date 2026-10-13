@@ -14,6 +14,8 @@ use tauri::{AppHandle, Emitter, Manager};
 use crate::{log, AppState};
 
 const LATEST: &str = "https://api.github.com/repos/thydynh03/quick-translate/releases/latest";
+/// The release page of the newest version; it redirects to `…/releases/tag/vX`.
+const LATEST_PAGE: &str = "https://github.com/thydynh03/quick-translate/releases/latest";
 const CHECKSUMS: &str = "SHA256SUMS.txt";
 
 #[cfg(windows)]
@@ -94,10 +96,43 @@ pub fn info_from_release(release: &Value, current: &str) -> UpdateInfo {
     }
 }
 
-pub async fn check(app: &AppHandle) -> anyhow::Result<UpdateInfo> {
-    let response = client()?.get(LATEST).header("Accept", "application/vnd.github+json").send().await?;
+/// What can be told from the address of the newest release alone
+/// (`…/releases/tag/v0.1.16`): everything but the notes and the date.
+pub fn info_from_page(page: &str, current: &str) -> Option<UpdateInfo> {
+    let (base, tag) = page.split_once("/releases/tag/")?;
+    let tag = tag.split(['?', '#', '/']).next().filter(|tag| !tag.is_empty())?;
+    let latest = tag.trim_start_matches('v').to_string();
+    let file = |name: &str| format!("{base}/releases/download/{tag}/{name}");
+    Some(UpdateInfo {
+        current: current.to_string(),
+        available: is_newer(&latest, current) && !ASSET.is_empty(),
+        latest,
+        page: page.to_string(),
+        installer: (!ASSET.is_empty()).then(|| file(ASSET)),
+        checksums: Some(file(CHECKSUMS)),
+        ..Default::default()
+    })
+}
+
+/// The newest release. GitHub's API allows only 60 anonymous questions an
+/// hour per network address and answers 403 beyond that (common on shared
+/// networks), so the release page is asked when the API refuses.
+async fn latest(current: &str) -> anyhow::Result<UpdateInfo> {
+    let client = client()?;
+    let api = client.get(LATEST).header("Accept", "application/vnd.github+json").send().await;
+    let refused = match api {
+        Ok(response) if response.status().is_success() => return Ok(info_from_release(&response.json().await?, current)),
+        Ok(response) => format!("GitHub trả lỗi {}", response.status()),
+        Err(error) => error.to_string(),
+    };
+    log(format!("update: api refused ({refused}), asking the release page"));
+    let response = client.get(LATEST_PAGE).send().await?;
     anyhow::ensure!(response.status().is_success(), "GitHub trả lỗi {}", response.status());
-    let info = info_from_release(&response.json().await?, env!("CARGO_PKG_VERSION"));
+    info_from_page(response.url().as_str(), current).ok_or_else(|| anyhow::anyhow!("{refused}"))
+}
+
+pub async fn check(app: &AppHandle) -> anyhow::Result<UpdateInfo> {
+    let info = latest(env!("CARGO_PKG_VERSION")).await?;
     *app.state::<UpdateState>().0.lock() = Some(info.clone());
     if info.available {
         crate::show_update_in_tray(app, &info.latest);
@@ -258,5 +293,28 @@ mod tests {
         assert_eq!(listed_digest(sums, "QuickTranslate-Setup-x64.exe").as_deref(), Some("abc123"));
         assert_eq!(listed_digest(sums, "QuickTranslate-macOS-AppleSilicon.dmg").as_deref(), Some("def456"));
         assert_eq!(listed_digest(sums, "other"), None);
+    }
+
+    #[test]
+    fn reads_the_version_from_the_release_page() {
+        let info = info_from_page("https://github.com/thydynh03/quick-translate/releases/tag/v0.2.0", "0.1.16").unwrap();
+        assert_eq!(info.latest, "0.2.0");
+        assert_eq!(
+            info.checksums.as_deref(),
+            Some("https://github.com/thydynh03/quick-translate/releases/download/v0.2.0/SHA256SUMS.txt")
+        );
+        #[cfg(windows)]
+        assert!(info.available && info.installer.unwrap().ends_with("/v0.2.0/QuickTranslate-Setup-x64.exe"));
+        assert!(!info_from_page("https://github.com/thydynh03/quick-translate/releases/tag/v0.1.16", "0.1.16").unwrap().available);
+        assert!(info_from_page("https://github.com/thydynh03/quick-translate/releases", "0.1.16").is_none());
+    }
+
+    /// The release page answers without the API.
+    #[test]
+    #[ignore]
+    fn release_page_answers() {
+        let page = tauri::async_runtime::block_on(async { client().unwrap().get(LATEST_PAGE).send().await.unwrap().url().to_string() });
+        println!("{page}");
+        assert!(info_from_page(&page, "0.0.1").unwrap().available);
     }
 }

@@ -5,7 +5,7 @@
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use futures_util::StreamExt;
 use parking_lot::Mutex;
@@ -20,6 +20,9 @@ pub const LABEL: &str = "capture";
 
 /// Top-left corner (physical pixels) of the monitor the overlay covers.
 static ORIGIN: Mutex<(i32, i32)> = Mutex::new((0, 0));
+
+/// The monitor the overlay covers.
+static SCREEN: Mutex<Rect> = Mutex::new(Rect { left: 0, top: 0, right: 0, bottom: 0 });
 
 pub fn create_window(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     tauri::WebviewWindowBuilder::new(app, LABEL, tauri::WebviewUrl::App("index.html".into()))
@@ -119,18 +122,25 @@ struct Translated {
 /// so sentences are translated whole.
 pub fn paragraphs(lines: Vec<(Rect, String)>) -> Vec<Block> {
     let mut blocks: Vec<Block> = Vec::new();
+    // Twice the centre of the last line added, to compare without halving.
+    let mut last_centre = 0;
     for (rect, text) in lines {
         let height = rect.bottom - rect.top;
         if let Some(last) = blocks.last_mut() {
             let gap = rect.top - last.rect.bottom;
             let similar = (height - last.line_height).abs() * 3 <= last.line_height;
-            if similar && gap * 10 < height * 7 && gap * 2 > -height && (rect.left - last.rect.left).abs() * 2 < height * 3 {
+            // Lines of one paragraph start at the same place, or share a centre (subtitles, headings).
+            let centre = |r: &Rect| r.left + r.right;
+            let aligned = (rect.left - last.rect.left).abs() * 2 < height * 3 || (centre(&rect) - last_centre).abs() < height * 3;
+            if similar && gap * 10 < height * 7 && gap * 2 > -height && aligned {
+                last_centre = centre(&rect);
                 last.rect = last.rect.union(&rect);
                 last.text.push(' ');
                 last.text.push_str(&text);
                 continue;
             }
         }
+        last_centre = rect.left + rect.right;
         blocks.push(Block { rect, text, line_height: height });
     }
     blocks
@@ -168,6 +178,7 @@ fn target_in(screen: Rect) -> Rect {
 
 fn cover(window: &WebviewWindow, screen: Rect) {
     *ORIGIN.lock() = (screen.left, screen.top);
+    *SCREEN.lock() = screen;
     let _ = window.set_position(PhysicalPosition::new(screen.left, screen.top));
     let size = PhysicalSize::new((screen.right - screen.left) as u32, (screen.bottom - screen.top) as u32);
     let _ = window.set_size(size);
@@ -259,6 +270,10 @@ pub fn start_window(app: &AppHandle) {
         };
         log(format!("window: {} blocks in {target:?}, engine {} into {}", blocks.len(), settings.engine, settings.primary_lang));
 
+        // Reading took a while: another use of the overlay may have started since.
+        if SESSION.load(Ordering::SeqCst) != session {
+            return;
+        }
         cover(&window, screen);
         let _ = app.emit_to(LABEL, "window-start", blocks.len());
         let _ = window.show();
@@ -279,14 +294,20 @@ pub fn start_window(app: &AppHandle) {
 
 // -------------------------------------------------------------------- live
 
-/// Whether the overlay is following the active window.
+/// Whether the overlay is translating the screen continuously.
 static LIVE: AtomicBool = AtomicBool::new(false);
-const LIVE_INTERVAL: Duration = Duration::from_millis(900);
+/// Whether the overlay is asking what live mode should follow.
+static CHOOSING: AtomicBool = AtomicBool::new(false);
+/// How often the screen is compared with the last reading.
+const LIVE_TICK: Duration = Duration::from_millis(120);
+/// A picture that keeps changing (video, scrolling) is read anyway after this long.
+const LIVE_RESTLESS: Duration = Duration::from_millis(400);
 /// Translations kept while live mode runs, so text that returns is not sent again.
 const LIVE_CACHE: usize = 2000;
 
 /// Gives the overlay back its normal behaviour after live mode.
 fn end_live(app: &AppHandle) {
+    CHOOSING.store(false, Ordering::SeqCst);
     if LIVE.swap(false, Ordering::SeqCst) {
         SESSION.fetch_add(1, Ordering::SeqCst);
         if let Some(window) = app.get_webview_window(LABEL) {
@@ -298,97 +319,171 @@ fn end_live(app: &AppHandle) {
     }
 }
 
-/// Switches live translation on or off. While on, the active window is read
-/// about once a second and translations are drawn over its text; the overlay
-/// lets the mouse through, so the window underneath stays usable.
+/// The live shortcut: switches live translation off when it runs, otherwise
+/// asks whether to follow the whole screen or a region the user drags.
 pub fn toggle_live(app: &AppHandle) {
     if LIVE.load(Ordering::SeqCst) {
         end_live(app);
         return;
     }
-    let Some(window) = app.get_webview_window(LABEL) else { return };
-    let Some(screen) = monitor_rect(app) else { return };
-    popup::hide(app);
+    if CHOOSING.load(Ordering::SeqCst) {
+        capture_cancel(app.clone());
+        return;
+    }
     crate::remember_app();
+    let Some(window) = app.get_webview_window(LABEL) else { return };
+    popup::hide(app);
+    SESSION.fetch_add(1, Ordering::SeqCst);
+    let Some(screen) = monitor_rect(app) else { return };
+    cover(&window, screen);
+    CHOOSING.store(true, Ordering::SeqCst);
+    // The connection is opened while the user chooses.
+    crate::engine::warm(&app.state::<crate::AppState>().settings.read());
+    let _ = app.emit_to(LABEL, "live-choose", ());
+    let _ = window.show();
+    let _ = window.set_focus();
+}
+
+#[derive(Serialize, Clone)]
+struct LiveStart {
+    hotkey: String,
+    /// The followed region as x, y, width, height relative to the overlay; none for the whole screen.
+    region: Option<[i32; 4]>,
+}
+
+/// The user chose what to follow: the whole screen, or `region` (x, y, width,
+/// height in physical pixels relative to the overlay).
+#[tauri::command]
+pub fn live_begin(app: AppHandle, region: Option<[i32; 4]>) {
+    if !CHOOSING.swap(false, Ordering::SeqCst) {
+        return;
+    }
+    let Some(window) = app.get_webview_window(LABEL) else { return };
+    let screen = *SCREEN.lock();
+    let target = match region {
+        Some([x, y, width, height]) if width >= 24 && height >= 12 => {
+            Rect { left: screen.left + x, top: screen.top + y, right: screen.left + x + width, bottom: screen.top + y + height }
+        }
+        Some(_) => {
+            let _ = window.hide();
+            return;
+        }
+        None => screen,
+    };
     let session = SESSION.fetch_add(1, Ordering::SeqCst) + 1;
     LIVE.store(true, Ordering::SeqCst);
 
-    cover(&window, screen);
+    // From here on the overlay only shows: the mouse and the keyboard go to
+    // the windows underneath, and our own text stays out of the pictures we read.
+    platform::hide_overlay(&window);
     let _ = window.set_ignore_cursor_events(true);
-    // Our own translations must not end up in the pictures we read.
     platform::exclude_from_capture(&window, true);
     let hotkey = app.state::<crate::AppState>().settings.read().live_hotkey.clone();
-    let _ = app.emit_to(LABEL, "live-start", hotkey);
+    let _ = app.emit_to(LABEL, "live-start", LiveStart { hotkey, region: region.filter(|_| target != screen) });
     platform::show_passive(&window);
-    log("live: on");
+    log(format!("live: on, following {target:?}"));
 
-    let app = app.clone();
-    std::thread::spawn(move || {
-        let models = crate::engine::offline::models_dir(&app);
-        let mut cache: HashMap<String, String> = HashMap::new();
-        // Texts of the previous reading: only text seen twice in a row is
-        // translated, so scrolling and animations do not cause requests.
-        let mut previous: HashSet<String> = HashSet::new();
-        let mut picture = None;
-        let mut settled = false;
-        let mut shown: Option<Vec<Translated>> = None;
-        while SESSION.load(Ordering::SeqCst) == session {
-            let target = target_in(screen);
-            let now = platform::fingerprint(target);
-            if settled && now.is_some() && now == picture {
-                std::thread::sleep(LIVE_INTERVAL);
+    std::thread::spawn(move || follow(app, session, screen, target));
+}
+
+/// Reads `target` whenever it changes and draws the translations over it.
+fn follow(app: AppHandle, session: u64, screen: Rect, target: Rect) {
+    let models = crate::engine::offline::models_dir(&app);
+    let mut cache: HashMap<String, String> = HashMap::new();
+    // Texts of the previous reading. While the picture keeps moving, only text
+    // seen twice in a row is translated, so scrolling does not cause requests.
+    let mut previous: HashSet<String> = HashSet::new();
+    // The picture of the last reading, the last picture seen, and since when it moves.
+    let mut read = None;
+    let mut seen = None;
+    let mut moving: Option<Instant> = None;
+    let mut settled = false;
+    let mut shown: Option<Vec<Translated>> = None;
+    let (dx, dy) = (target.left - screen.left, target.top - screen.top);
+    let alive = || SESSION.load(Ordering::SeqCst) == session;
+    // A region is small and usually holds subtitles over a moving picture:
+    // it is read sooner and its text is translated at first sight.
+    let eager = target != screen;
+    let restless = if eager { LIVE_TICK } else { LIVE_RESTLESS };
+
+    while alive() {
+        let now = platform::fingerprint(target);
+        let mut stable = true;
+        match now {
+            Some(_) if settled && now == read => {
+                std::thread::sleep(LIVE_TICK);
                 continue;
             }
-            picture = now;
-            let settings = crate::effective(&app);
-            let blocks = match read_blocks(target, &settings, &models) {
-                Ok(blocks) => blocks,
-                Err(error) => {
-                    log(format!("live ocr failed: {error:#}"));
-                    popup::show_error(&app, &format!("OCR lỗi: {error}"), None);
-                    end_live(&app);
-                    return;
+            Some(_) if now != seen => {
+                // Still changing: give it a moment to come to rest.
+                seen = now;
+                if moving.get_or_insert_with(Instant::now).elapsed() < restless {
+                    std::thread::sleep(LIVE_TICK);
+                    continue;
                 }
-            };
-            let mut fresh: Vec<String> = Vec::new();
-            for block in &blocks {
-                if !cache.contains_key(&block.text) && previous.contains(&block.text) && !fresh.contains(&block.text) {
-                    fresh.push(block.text.clone());
-                }
+                stable = false;
             }
-            if !fresh.is_empty() {
-                if cache.len() > LIVE_CACHE {
-                    cache.clear();
-                }
-                log(format!("live: {} new blocks, engine {} into {}", fresh.len(), settings.engine, settings.primary_lang));
-                let mut results: Vec<Option<String>> = vec![None; fresh.len()];
-                tauri::async_runtime::block_on(translate_each(&settings, &models, fresh.clone(), session, |index, text| {
-                    results[index] = Some(text);
-                }));
-                // A failed text is remembered as empty, so it is not sent again on every reading.
-                for (text, result) in fresh.into_iter().zip(results) {
-                    cache.insert(text, result.unwrap_or_default());
-                }
-            }
-            settled = blocks.iter().all(|block| cache.contains_key(&block.text));
-            previous = blocks.iter().map(|block| block.text.clone()).collect();
-
-            let (dx, dy) = (target.left - screen.left, target.top - screen.top);
-            let frame: Vec<Translated> = blocks
-                .iter()
-                .filter_map(|block| translated(block, cache.get(&block.text)?, dx, dy))
-                .collect();
-            if SESSION.load(Ordering::SeqCst) != session {
+            Some(_) => {}
+            // No way to tell whether the screen changed: read it at a slower pace.
+            None => std::thread::sleep(LIVE_TICK * 4),
+        }
+        moving = None;
+        read = now;
+        let started = Instant::now();
+        let settings = crate::effective(&app);
+        let blocks = match read_blocks(target, &settings, &models) {
+            Ok(blocks) => blocks,
+            Err(error) => {
+                log(format!("live ocr failed: {error:#}"));
+                popup::show_error(&app, &format!("OCR lỗi: {error}"), None);
+                end_live(&app);
                 return;
             }
-            if shown.as_ref() != Some(&frame) {
+        };
+        let read_ms = started.elapsed().as_millis();
+        let mut show = |cache: &HashMap<String, String>| {
+            let frame: Vec<Translated> =
+                blocks.iter().filter_map(|block| translated(block, cache.get(&block.text)?, dx, dy)).collect();
+            if alive() && shown.as_ref() != Some(&frame) {
                 log(format!("live: showing {} of {} blocks", frame.len(), blocks.len()));
                 let _ = app.emit_to(LABEL, "live-frame", frame.clone());
                 shown = Some(frame);
             }
-            std::thread::sleep(if settled { LIVE_INTERVAL } else { LIVE_INTERVAL / 2 });
+        };
+
+        let mut fresh: Vec<String> = Vec::new();
+        for block in &blocks {
+            let wanted = stable || eager || previous.contains(&block.text);
+            if wanted && !cache.contains_key(&block.text) && !fresh.contains(&block.text) {
+                fresh.push(block.text.clone());
+            }
         }
-    });
+        if !fresh.is_empty() {
+            // What is already known moves to its new place without waiting for the rest.
+            show(&cache);
+            if cache.len() > LIVE_CACHE {
+                cache.clear();
+            }
+            let count = fresh.len();
+            let mut results: Vec<Option<String>> = vec![None; count];
+            tauri::async_runtime::block_on(translate_each(&settings, &models, fresh.clone(), session, |index, text| {
+                results[index] = Some(text);
+            }));
+            // A failed text is remembered as empty, so it is not sent again on every reading.
+            for (text, result) in fresh.into_iter().zip(results) {
+                cache.insert(text, result.unwrap_or_default());
+            }
+            log(format!(
+                "live: {count} new blocks by {} in {} ms (reading {read_ms} ms)",
+                settings.engine,
+                started.elapsed().as_millis()
+            ));
+        }
+        settled = blocks.iter().all(|block| cache.contains_key(&block.text));
+        previous = blocks.iter().map(|block| block.text.clone()).collect();
+        show(&cache);
+        std::thread::sleep(LIVE_TICK);
+    }
 }
 
 #[cfg(test)]
@@ -405,6 +500,15 @@ mod tests {
         assert_eq!(blocks.len(), 1);
         assert_eq!(blocks[0].text, "The meeting has been moved to Thursday.");
         assert_eq!(blocks[0].rect, Rect { left: 10, top: 10, right: 310, bottom: 54 });
+    }
+
+    #[test]
+    fn centred_lines_become_one_paragraph() {
+        let wide = (Rect { left: 300, top: 900, right: 900, bottom: 930 }, "I never said that".to_string());
+        let narrow = (Rect { left: 450, top: 936, right: 750, bottom: 966 }, "to anyone.".to_string());
+        let blocks = paragraphs(vec![wide, narrow]);
+        assert_eq!(blocks.len(), 1);
+        assert_eq!(blocks[0].text, "I never said that to anyone.");
     }
 
     #[test]

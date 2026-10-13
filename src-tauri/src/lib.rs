@@ -279,6 +279,7 @@ pub fn run() {
             popup::copy_text,
             capture::capture_region,
             capture::capture_cancel,
+            capture::live_begin,
             history::history_list,
             history::history_clear,
             updater::update_check,

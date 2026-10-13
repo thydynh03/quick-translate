@@ -18,6 +18,11 @@ export default function Capture() {
   const [done, setDone] = useState(false);
   // Live mode: the shortcut that switches it off, while it is on.
   const [live, setLive] = useState<string | null>(null);
+  // The part of the screen live mode follows, when it is not all of it.
+  const [region, setRegion] = useState<number[] | null>(null);
+  // Asking what live mode should follow, then dragging the region for it.
+  const [choosing, setChoosing] = useState(false);
+  const [forLive, setForLive] = useState(false);
   const isLive = useRef(false);
   // Where the overlay element really starts inside the window. Everything
   // drawn in it is placed relative to that, so screen pixels line up.
@@ -28,9 +33,19 @@ export default function Capture() {
     if (rect && (rect.left !== origin.x || rect.top !== origin.y)) setOrigin({ x: rect.left, y: rect.top });
   });
 
+  const choosingNow = useRef(false);
+  choosingNow.current = choosing;
+  const pickRegion = () => {
+    setChoosing(false);
+    setForLive(true);
+  };
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") invoke("capture_cancel");
+      if (!choosingNow.current) return;
+      if (event.key === "1") invoke("live_begin", { region: null });
+      if (event.key === "2") pickRegion();
     };
     window.addEventListener("keydown", onKey);
     const listeners = [
@@ -39,10 +54,23 @@ export default function Capture() {
         setLive(null);
         setBlocks(null);
         setBox(null);
+        setChoosing(false);
+        setForLive(false);
       }),
-      listen<string>("live-start", (event) => {
+      listen("live-choose", () => {
+        isLive.current = false;
+        setLive(null);
+        setBlocks(null);
+        setBox(null);
+        setForLive(false);
+        setChoosing(true);
+      }),
+      listen<{ hotkey: string; region: number[] | null }>("live-start", (event) => {
         isLive.current = true;
-        setLive(event.payload);
+        setLive(event.payload.hotkey);
+        setRegion(event.payload.region);
+        setChoosing(false);
+        setForLive(false);
         setBlocks([]);
       }),
       // A reading that arrives after live mode ended must not bring it back.
@@ -74,6 +102,17 @@ export default function Capture() {
         : "Bấm chuột hoặc nhấn Esc để đóng";
     return (
       <div ref={root} className={live !== null ? "capture result live" : "capture result"} onClick={() => invoke("capture_cancel")} onContextMenu={(e) => e.preventDefault()}>
+        {live !== null && region && (
+          <div
+            className="capture-region"
+            style={{
+              left: region[0] / scale - origin.x,
+              top: region[1] / scale - origin.y,
+              width: region[2] / scale,
+              height: region[3] / scale,
+            }}
+          />
+        )}
         {blocks.map((block, index) => (
           <p
             key={index}
@@ -98,6 +137,23 @@ export default function Capture() {
     );
   }
 
+  if (choosing) {
+    return (
+      <div ref={root} className="capture choose" onContextMenu={(e) => { e.preventDefault(); invoke("capture_cancel"); }}>
+        <div className="capture-choice">
+          <strong>Dịch thời gian thực</strong>
+          <button autoFocus onClick={() => invoke("live_begin", { region: null })}>
+            <kbd>1</kbd> Toàn màn hình
+          </button>
+          <button onClick={pickRegion}>
+            <kbd>2</kbd> Chọn một vùng
+          </button>
+          <small>Esc để huỷ</small>
+        </div>
+      </div>
+    );
+  }
+
   const finish = (x1: number, y1: number) => {
     if (!box) return;
     box.x1 = x1;
@@ -105,12 +161,14 @@ export default function Capture() {
     const scale = window.devicePixelRatio;
     const left = Math.min(box.x0, box.x1);
     const top = Math.min(box.y0, box.y1);
-    invoke("capture_region", {
+    const area = {
       x: Math.round(left * scale),
       y: Math.round(top * scale),
       width: Math.round(Math.abs(box.x1 - box.x0) * scale),
       height: Math.round(Math.abs(box.y1 - box.y0) * scale),
-    });
+    };
+    if (forLive) invoke("live_begin", { region: [area.x, area.y, area.width, area.height] });
+    else invoke("capture_region", area);
     setBox(null);
   };
 
@@ -141,7 +199,7 @@ export default function Capture() {
           }}
         />
       ) : (
-        <p className="capture-hint">Kéo để chọn vùng cần dịch · Esc để huỷ</p>
+        <p className="capture-hint">{forLive ? "Kéo để chọn vùng dịch thời gian thực · Esc để huỷ" : "Kéo để chọn vùng cần dịch · Esc để huỷ"}</p>
       )}
     </div>
   );
