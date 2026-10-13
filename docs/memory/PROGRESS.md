@@ -60,6 +60,8 @@ Cập nhật: 2026-10-12. Plan gốc: `docs/PLAN.md`. Hướng dẫn dùng: `REA
 
 - 2026-10-13: bản 0.1.16: Alt+R mở bảng chọn "Toàn màn hình" (phím 1) / "Chọn một vùng" (phím 2, kéo như Alt+W) → lệnh `live_begin`; vòng `capture::follow` so ảnh mỗi 120 ms và đọc lại ngay khi hình đứng yên (hình động: sau 400 ms, vùng chọn: 120 ms), vùng chọn dịch chữ ngay lần đầu thấy; `paragraphs` gộp cả các dòng căn giữa. Thử trên Windows bằng bản debug qua log: toàn màn hình đọc 153 ms, đọc + dịch 58 đoạn 257 ms; vùng 1200×540 đọc 58 ms, đọc + dịch 9 đoạn 664 ms, hiện 10/10. Chưa nhìn bằng mắt (lớp phủ không lên ảnh chụp).
 
+- 2026-10-13: bản 0.1.16 còn có: kiểm tra bản mới hỏi trang Releases khi API GitHub trả 403 (`updater::info_from_page`). Bản 0.1.17: bảng chọn của Alt+R lấy màu nút từ theme (trước bị nền trắng chữ sáng ở theme tối) và nằm phía trên màn hình. Điểm review còn treo: `capture::follow` không đọc màn hình trong lúc chờ dịch.
+
 ## CHƯA kiểm chứng
 
 - macOS: build + `cargo test` qua trên GitHub Actions (macos-latest), có .dmg ký ad-hoc. CHƯA chạy trên máy Mac thật. Thiếu: OCR (Vision), hover, popup không cướp focus (NSPanel), tên app đang mở. App hỏi quyền Accessibility và chờ được cấp.
