@@ -41,6 +41,13 @@ impl Rect {
     }
 }
 
+/// Speech the system recognised, and where its captions are on screen.
+#[derive(Clone, Debug)]
+pub struct Caption {
+    pub text: String,
+    pub rect: Rect,
+}
+
 #[derive(Clone, Debug)]
 pub struct Selection {
     pub text: String,

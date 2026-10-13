@@ -31,7 +31,7 @@ pub(crate) fn http() -> &'static reqwest::Client {
 }
 
 /// Seconds since the app started.
-fn uptime() -> u64 {
+pub(crate) fn uptime() -> u64 {
     static START: OnceLock<std::time::Instant> = OnceLock::new();
     START.get_or_init(std::time::Instant::now).elapsed().as_secs()
 }

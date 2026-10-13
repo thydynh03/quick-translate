@@ -673,6 +673,17 @@ pub fn hover_modifier_down() -> bool {
     unsafe { CGEventSourceFlagsState(COMBINED_SESSION_STATE) & CONTROL != 0 }
 }
 
+// ---------------------------------------------------------- live captions
+
+/// Speech recognised in the sound the computer plays. Not available here.
+pub fn live_captions() -> Option<super::Caption> {
+    None
+}
+
+pub fn start_live_captions() -> anyhow::Result<()> {
+    anyhow::bail!("Dịch theo tiếng hiện chỉ chạy trên Windows 11")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

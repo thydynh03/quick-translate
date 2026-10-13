@@ -1,6 +1,7 @@
 //! Google Translate through the keyless web endpoint. Unofficial: it can be
 //! rate-limited or change shape, so every field is read defensively.
 
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
 use serde_json::Value;
@@ -12,6 +13,10 @@ const ENDPOINT: &str = "https://translate.googleapis.com/translate_a/single";
 /// refuses. It returns the translation only: no dictionary, no reading.
 const SPARE: &str = "https://clients5.google.com/translate_a/t";
 /// Requests that do not look like a browser are limited much sooner.
+/// Until when (in `uptime` seconds) the main endpoint is left alone after refusing.
+static REFUSED_UNTIL: AtomicU64 = AtomicU64::new(0);
+const REFUSAL_SECS: u64 = 600;
+
 /// Where `warm` opens the connection to.
 pub(crate) const HOST: &str = "https://translate.googleapis.com/";
 const AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
@@ -26,38 +31,60 @@ pub async fn translate(text: &str, from: &str, to: &str) -> anyhow::Result<Trans
     let body = format!("q={}", urlencoding::encode(text));
 
     let client = super::http();
-    let response = client
-        .post(url)
-        .timeout(Duration::from_secs(12))
-        .header("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
-        .header("User-Agent", AGENT)
-        .body(body.clone())
-        .send()
-        .await?;
-    super::google_used();
-    if !response.status().is_success() {
-        // Usually 429: this network address has used up its share. The spare
-        // endpoint counts separately, so try it before giving up.
-        let status = response.status();
-        let spare = client
+    // Whether the main endpoint answered with a refusal, as opposed to not answering.
+    let refused = std::sync::atomic::AtomicBool::new(false);
+    let main = || async {
+        let response = client
+            .post(&url)
+            .timeout(Duration::from_secs(12))
+            .header("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
+            .header("User-Agent", AGENT)
+            .body(body.clone())
+            .send()
+            .await?;
+        super::google_used();
+        if !response.status().is_success() {
+            refused.store(true, Ordering::Relaxed);
+            anyhow::bail!("Google Translate trả về lỗi {}", response.status());
+        }
+        parse(&response.json().await?, from, to)
+    };
+    let spare = || async {
+        let response = client
             .post(format!("{SPARE}?client=dict-chrome-ex&sl={from}&tl={to}"))
             .timeout(Duration::from_secs(12))
             .header("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
             .header("User-Agent", AGENT)
-            .body(body)
+            .body(body.clone())
             .send()
-            .await;
-        if let Ok(spare) = spare {
-            if spare.status().is_success() {
-                if let Ok(translation) = parse_spare(&spare.json().await?, from, to) {
-                    return Ok(translation);
-                }
-            }
+            .await?;
+        if !response.status().is_success() {
+            anyhow::bail!("Google Translate trả về lỗi {}", response.status());
         }
-        anyhow::bail!("Google Translate trả về lỗi {status}");
+        parse_spare(&response.json().await?, from, to)
+    };
+
+    // The main endpoint refuses a network address that has used up its share
+    // (429, often after a redirect to a challenge page) for a good while. The
+    // spare endpoint counts separately, so it answers first until then.
+    let now = super::uptime();
+    if REFUSED_UNTIL.load(Ordering::Relaxed) > now {
+        if let Ok(translation) = spare().await {
+            return Ok(translation);
+        }
+        return main().await;
     }
-    let json: Value = response.json().await?;
-    parse(&json, from, to)
+    match main().await {
+        Ok(translation) => Ok(translation),
+        Err(error) => {
+            let answer = spare().await;
+            if answer.is_ok() && refused.load(Ordering::Relaxed) {
+                crate::log(format!("google: main endpoint refused ({error:#}), using the spare one for {REFUSAL_SECS} s"));
+                REFUSED_UNTIL.store(now + REFUSAL_SECS, Ordering::Relaxed);
+            }
+            answer.map_err(|_| error)
+        }
+    }
 }
 
 /// The spare endpoint answers `["text"]` when the source language was given

@@ -570,3 +570,56 @@ pub fn sentence_at(x: i32, y: i32) -> Option<Selection> {
 pub fn hover_modifier_down() -> bool {
     key_down(VK_CONTROL)
 }
+
+// ---------------------------------------------------------- live captions
+
+const CAPTIONS_WINDOW: &str = "LiveCaptionsDesktopWindow";
+
+/// What Windows' own live captions (Win+Ctrl+L) show right now: the speech
+/// it recognised in the sound the computer plays. None while the feature is
+/// off or has nothing to show.
+pub fn live_captions() -> Option<super::Caption> {
+    use uiautomation::types::{TreeScope, UIProperty};
+    use uiautomation::variants::Variant;
+
+    use windows::core::HSTRING;
+    use windows::Win32::UI::WindowsAndMessaging::FindWindowW;
+
+    let handle = unsafe { FindWindowW(&HSTRING::from(CAPTIONS_WINDOW), None) }.ok().filter(|window| !window.0.is_null())?;
+    let automation = UIAutomation::new().ok()?;
+    let window = automation.element_from_handle(uiautomation::types::Handle::from(handle.0 as isize)).ok()?;
+    let condition = automation.create_property_condition(UIProperty::AutomationId, Variant::from("CaptionsTextBlock"), None).ok()?;
+    let text = window.find_first(TreeScope::Descendants, &condition).ok()?.get_name().ok()?;
+    let bounds = window.get_bounding_rectangle().ok()?;
+    let rect = Rect { left: bounds.get_left(), top: bounds.get_top(), right: bounds.get_right(), bottom: bounds.get_bottom() };
+    Some(super::Caption { text, rect })
+}
+
+/// Opens Windows' live captions unless they are already on screen.
+pub fn start_live_captions() -> anyhow::Result<()> {
+    use windows::core::HSTRING;
+    use windows::Win32::UI::WindowsAndMessaging::FindWindowW;
+
+    let open = unsafe { FindWindowW(&HSTRING::from(CAPTIONS_WINDOW), None) }.is_ok_and(|window| !window.0.is_null());
+    if open {
+        return Ok(());
+    }
+    let system = std::env::var("WINDIR").unwrap_or_else(|_| "C:\\Windows".into());
+    std::process::Command::new(format!("{system}\\System32\\LiveCaptions.exe"))
+        .spawn()
+        .map_err(|_| anyhow::anyhow!("Máy này không có Live Captions (cần Windows 11 22H2 trở lên)"))?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod caption_tests {
+    /// Prints what the live captions show; needs them open and something speaking.
+    #[test]
+    #[ignore]
+    fn reads_the_live_captions() {
+        for _ in 0..12 {
+            std::thread::sleep(std::time::Duration::from_millis(500));
+            println!("{:?}", super::live_captions().map(|caption| (caption.text, caption.rect)));
+        }
+    }
+}

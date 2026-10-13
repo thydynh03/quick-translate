@@ -46,6 +46,7 @@ export default function Capture() {
       if (!choosingNow.current) return;
       if (event.key === "1") invoke("live_begin", { region: null });
       if (event.key === "2") pickRegion();
+      if (event.key === "3") invoke("live_listen");
     };
     window.addEventListener("keydown", onKey);
     const listeners = [
@@ -147,6 +148,9 @@ export default function Capture() {
           </button>
           <button onClick={pickRegion}>
             <kbd>2</kbd> Chọn một vùng
+          </button>
+          <button onClick={() => invoke("live_listen")}>
+            <kbd>3</kbd> Nghe tiếng (Live Captions)
           </button>
           <small>Esc để huỷ</small>
         </div>
