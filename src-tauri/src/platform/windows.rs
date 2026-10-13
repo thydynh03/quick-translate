@@ -590,25 +590,72 @@ pub fn live_captions() -> Option<super::Caption> {
     let window = automation.element_from_handle(uiautomation::types::Handle::from(handle.0 as isize)).ok()?;
     let condition = automation.create_property_condition(UIProperty::AutomationId, Variant::from("CaptionsTextBlock"), None).ok()?;
     let text = window.find_first(TreeScope::Descendants, &condition).ok()?.get_name().ok()?;
-    let bounds = window.get_bounding_rectangle().ok()?;
-    let rect = Rect { left: bounds.get_left(), top: bounds.get_top(), right: bounds.get_right(), bottom: bounds.get_bottom() };
+    // From the window itself: it may sit off the screen, where the accessibility tree reports no bounds.
+    let mut bounds = windows::Win32::Foundation::RECT::default();
+    unsafe { windows::Win32::UI::WindowsAndMessaging::GetWindowRect(handle, &mut bounds) }.ok()?;
+    let rect = Rect { left: bounds.left, top: bounds.top, right: bounds.right, bottom: bounds.bottom };
     Some(super::Caption { text, rect })
 }
 
-/// Opens Windows' live captions unless they are already on screen.
-pub fn start_live_captions() -> anyhow::Result<()> {
+fn captions_window() -> Option<HWND> {
     use windows::core::HSTRING;
     use windows::Win32::UI::WindowsAndMessaging::FindWindowW;
+    unsafe { FindWindowW(&HSTRING::from(CAPTIONS_WINDOW), None) }.ok().filter(|window| !window.0.is_null())
+}
 
-    let open = unsafe { FindWindowW(&HSTRING::from(CAPTIONS_WINDOW), None) }.is_ok_and(|window| !window.0.is_null());
-    if open {
-        return Ok(());
+/// Far enough to the left to be on no screen.
+const CAPTIONS_AWAY: i32 = -30000;
+/// Where the captions window was before `hide_live_captions` moved it away.
+static CAPTIONS_HOME: std::sync::Mutex<Option<(i32, i32)>> = std::sync::Mutex::new(None);
+
+/// Moves the captions window off the screen, where it keeps listening, or
+/// back to where it was. Returns whether the window is now where asked.
+pub fn hide_live_captions(hide: bool) -> bool {
+    use windows::Win32::Foundation::RECT;
+    use windows::Win32::UI::WindowsAndMessaging::{GetWindowRect, SWP_NOZORDER};
+    let Some(window) = captions_window() else { return false };
+    let mut home = CAPTIONS_HOME.lock().unwrap();
+    let mut rect = RECT::default();
+    let target = unsafe {
+        if GetWindowRect(window, &mut rect).is_err() {
+            return false;
+        }
+        if hide {
+            if rect.left > CAPTIONS_AWAY / 2 {
+                *home = Some((rect.left, rect.top));
+            }
+            (CAPTIONS_AWAY, rect.top)
+        } else {
+            match home.take() {
+                Some(place) => place,
+                None => return true,
+            }
+        }
+    };
+    unsafe { SetWindowPos(window, None, target.0, target.1, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE).is_ok() }
+}
+
+/// Closes the captions window.
+pub fn close_live_captions() {
+    use windows::Win32::UI::WindowsAndMessaging::{PostMessageW, WM_CLOSE};
+    if let Some(window) = captions_window() {
+        unsafe {
+            let _ = PostMessageW(Some(window), WM_CLOSE, WPARAM(0), LPARAM(0));
+        }
+    }
+}
+
+/// Opens Windows' live captions unless they are already on screen. Returns
+/// whether they had to be opened.
+pub fn start_live_captions() -> anyhow::Result<bool> {
+    if captions_window().is_some() {
+        return Ok(false);
     }
     let system = std::env::var("WINDIR").unwrap_or_else(|_| "C:\\Windows".into());
     std::process::Command::new(format!("{system}\\System32\\LiveCaptions.exe"))
         .spawn()
         .map_err(|_| anyhow::anyhow!("Máy này không có Live Captions (cần Windows 11 22H2 trở lên)"))?;
-    Ok(())
+    Ok(true)
 }
 
 // --------------------------------------------------------------- clipboard

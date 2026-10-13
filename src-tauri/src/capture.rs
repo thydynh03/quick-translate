@@ -414,11 +414,14 @@ pub fn live_listen(app: AppHandle) {
         return;
     }
     let Some(window) = app.get_webview_window(LABEL) else { return };
-    if let Err(error) = platform::start_live_captions() {
-        let _ = window.hide();
-        popup::show_error(&app, &error.to_string(), None);
-        return;
-    }
+    let opened = match platform::start_live_captions() {
+        Ok(opened) => opened,
+        Err(error) => {
+            let _ = window.hide();
+            popup::show_error(&app, &error.to_string(), None);
+            return;
+        }
+    };
     let screen = *SCREEN.lock();
     let session = SESSION.fetch_add(1, Ordering::SeqCst) + 1;
     LIVE.store(true, Ordering::SeqCst);
@@ -429,7 +432,7 @@ pub fn live_listen(app: AppHandle) {
     let _ = app.emit_to(LABEL, "live-start", LiveStart { hotkey, region: None });
     platform::show_passive(&window);
     log("live: on, following the sound");
-    std::thread::spawn(move || listen(app, session, screen));
+    std::thread::spawn(move || listen(app, session, screen, opened));
 }
 
 /// How often the captions are read, and how often the sentence still being
@@ -439,7 +442,9 @@ const LISTEN_OPEN: Duration = Duration::from_millis(500);
 /// Captions that have not changed for this long are taken off the screen.
 const LISTEN_SILENCE: Duration = Duration::from_secs(6);
 
-fn listen(app: AppHandle, session: u64, screen: Rect) {
+fn listen(app: AppHandle, session: u64, screen: Rect, opened: bool) {
+    // Only the translation is wanted: the captions listen from outside the screen.
+    let hide = app.state::<crate::AppState>().settings.read().listen_hide_captions;
     let models = crate::engine::offline::models_dir(&app);
     let alive = || SESSION.load(Ordering::SeqCst) == session;
     let mut cache: HashMap<String, String> = HashMap::new();
@@ -454,6 +459,10 @@ fn listen(app: AppHandle, session: u64, screen: Rect) {
     while alive() {
         std::thread::sleep(LISTEN_TICK);
         let Some(caption) = platform::live_captions() else {
+            if hide {
+                // Still starting, with nothing heard yet: out of sight already.
+                platform::hide_live_captions(true);
+            }
             // The captions were closed: nothing of ours may stay behind.
             if shown.as_ref().is_some_and(|frame| !frame.is_empty()) {
                 let _ = app.emit_to(LABEL, "live-frame", Vec::<Translated>::new());
@@ -500,11 +509,23 @@ fn listen(app: AppHandle, session: u64, screen: Rect) {
         }
         let text = lines.into_iter().filter(|line| !line.is_empty()).collect::<Vec<_>>().join(" ");
 
-        // Under the captions when they sit at the top of the screen, above them otherwise.
-        let rect = caption.rect;
         let height = 44;
-        let below = (rect.top + rect.bottom) / 2 < (screen.top + screen.bottom) / 2;
-        let top = if below { rect.bottom + 6 } else { rect.top - height - 6 };
+        if hide && caption.rect.right > -10000 {
+            // Also when Windows puts the window back by itself.
+            platform::hide_live_captions(true);
+        }
+        let (rect, top) = if hide {
+            // Like subtitles: across the middle, near the bottom of the screen.
+            let width = screen.right - screen.left;
+            let inset = width * 15 / 100;
+            let rect = Rect { left: screen.left + inset, right: screen.right - inset, ..screen };
+            (rect, screen.bottom - height - (screen.bottom - screen.top) / 10)
+        } else {
+            // Under the captions when they sit at the top of the screen, above them otherwise.
+            let rect = caption.rect;
+            let below = (rect.top + rect.bottom) / 2 < (screen.top + screen.bottom) / 2;
+            (rect, if below { rect.bottom + 6 } else { rect.top - height - 6 })
+        };
         let frame: Vec<Translated> = if text.is_empty() || changed.elapsed() > LISTEN_SILENCE {
             Vec::new()
         } else {
@@ -514,6 +535,13 @@ fn listen(app: AppHandle, session: u64, screen: Rect) {
             let _ = app.emit_to(LABEL, "live-frame", frame.clone());
             shown = Some(frame);
         }
+    }
+    // Leave the captions as they were found: back in place, and closed when we opened them.
+    if hide {
+        platform::hide_live_captions(false);
+    }
+    if opened {
+        platform::close_live_captions();
     }
 }
 

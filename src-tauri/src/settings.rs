@@ -54,6 +54,8 @@ pub struct Settings {
     pub instant_translate: bool,
     /// Hover (Ctrl) translates the whole sentence under the pointer, not just the word.
     pub hover_sentence: bool,
+    /// Listening mode keeps Windows' captions off the screen and shows only the translation.
+    pub listen_hide_captions: bool,
     /// A selected word is also explained through the sentence around it.
     pub explain_in_context: bool,
     /// Look for a new release on start and once a day.
@@ -116,6 +118,7 @@ impl Default for Settings {
             clipboard_hotkey: if cfg!(target_os = "macos") { "Super+Shift+V".into() } else { String::new() },
             instant_translate: false,
             hover_sentence: true,
+            listen_hide_captions: false,
             explain_in_context: true,
             check_updates: true,
             popup_font_size: 14,

@@ -680,7 +680,13 @@ pub fn live_captions() -> Option<super::Caption> {
     None
 }
 
-pub fn start_live_captions() -> anyhow::Result<()> {
+pub fn hide_live_captions(_hide: bool) -> bool {
+    false
+}
+
+pub fn close_live_captions() {}
+
+pub fn start_live_captions() -> anyhow::Result<bool> {
     anyhow::bail!("Dịch theo tiếng hiện chỉ chạy trên Windows 11")
 }
 

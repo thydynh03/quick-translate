@@ -50,6 +50,7 @@ export type Settings = {
   clipboard_hotkey: string;
   instant_translate: boolean;
   hover_sentence: boolean;
+  listen_hide_captions: boolean;
   explain_in_context: boolean;
   check_updates: boolean;
   popup_font_size: number;
