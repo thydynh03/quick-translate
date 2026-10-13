@@ -185,16 +185,9 @@ pub async fn install(app: &AppHandle) -> anyhow::Result<()> {
 
 #[cfg(windows)]
 fn launch(app: &AppHandle, installer: &Path) -> anyhow::Result<()> {
-    use std::os::windows::process::CommandExt;
-    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-    // Passive install (progress bar only), then start the new version.
-    let exe = std::env::current_exe()?;
-    let script = format!(
-        "start \"\" /wait \"{}\" /P & start \"\" \"{}\"",
-        installer.display(),
-        exe.display()
-    );
-    std::process::Command::new("cmd").args(["/C", &script]).creation_flags(CREATE_NO_WINDOW).spawn()?;
+    // The installer's own switches: /P shows only a progress bar, /R starts
+    // the new version when it is done. Going through `cmd` broke on quoting.
+    std::process::Command::new(installer).args(["/P", "/R"]).spawn()?;
     app.exit(0);
     Ok(())
 }
