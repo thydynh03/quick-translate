@@ -2,6 +2,9 @@
 //! user chose and falls back to the offline model when that fails.
 
 use std::path::Path;
+use std::sync::OnceLock;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
@@ -17,6 +20,46 @@ pub mod ocr_vi;
 pub mod offline;
 pub mod openai;
 pub mod wordbook;
+
+/// One client for the short requests, so that a translation reuses the open
+/// connection instead of paying for a new TLS handshake every time.
+pub(crate) fn http() -> &'static reqwest::Client {
+    static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
+    CLIENT.get_or_init(|| {
+        reqwest::Client::builder().pool_idle_timeout(Duration::from_secs(240)).build().unwrap_or_default()
+    })
+}
+
+/// Seconds since the app started.
+fn uptime() -> u64 {
+    static START: OnceLock<std::time::Instant> = OnceLock::new();
+    START.get_or_init(std::time::Instant::now).elapsed().as_secs()
+}
+
+/// When the connection to Google was last used, in `uptime` seconds, plus one.
+static GOOGLE_USED: AtomicU64 = AtomicU64::new(0);
+
+pub(crate) fn google_used() {
+    GOOGLE_USED.store(uptime() + 1, Ordering::Relaxed);
+}
+
+/// Opens the connection to Google ahead of the translation when it has been
+/// idle long enough to have been closed. Call when a translation is likely,
+/// e.g. while the selection is still being read.
+pub fn warm(settings: &Settings) {
+    const IDLE: u64 = 120;
+    if settings.engine != "google" {
+        return;
+    }
+    let (now, last) = (uptime() + 1, GOOGLE_USED.load(Ordering::Relaxed));
+    if last != 0 && now - last < IDLE {
+        return;
+    }
+    google_used();
+    tauri::async_runtime::spawn(async {
+        let _ = http().head(google::HOST).timeout(Duration::from_secs(5)).send().await;
+    });
+}
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct DictEntry {
@@ -85,7 +128,19 @@ async fn run_engine(
 /// Translates, then adds English definitions for a single English word.
 pub async fn translate(settings: &Settings, models: &Path, text: &str) -> anyhow::Result<Translation> {
     let mut translation = translate_text(settings, models, text).await?;
-    if settings.english_definitions && translation.from == "en" && lang::is_single_word(text) {
+    define(settings, text, &mut translation).await;
+    Ok(translation)
+}
+
+/// Whether `define` has anything to look up for this translation.
+pub fn wants_definitions(settings: &Settings, text: &str, translation: &Translation) -> bool {
+    settings.english_definitions && translation.from == "en" && lang::is_single_word(text)
+}
+
+/// Adds English definitions for a single English word. Slower than the
+/// translation itself, so the popup shows the translation first.
+pub async fn define(settings: &Settings, text: &str, translation: &mut Translation) {
+    if wants_definitions(settings, text, translation) && translation.from == "en" && lang::is_single_word(text) {
         // Oxford when the user has credentials, the free dictionary otherwise.
         let has_oxford = !settings.oxford_app_id.trim().is_empty() && !settings.oxford_app_key.trim().is_empty();
         let mut found = Err(anyhow::anyhow!("no oxford credentials"));
@@ -102,7 +157,6 @@ pub async fn translate(settings: &Settings, models: &Path, text: &str) -> anyhow
             }
         }
     }
-    Ok(translation)
 }
 
 /// `models` is the folder that holds the downloaded offline models.

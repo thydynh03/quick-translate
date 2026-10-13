@@ -249,7 +249,7 @@ export default function Popup() {
         </p>
       )}
 
-      {state.mode === "loading" && <div className="loading" />}
+      {(state.mode === "loading" || (state.mode === "result" && state.partial)) && <div className="loading" />}
       {state.mode === "error" && <p className="error">{state.message}</p>}
 
       {result && (

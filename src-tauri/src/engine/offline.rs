@@ -252,19 +252,8 @@ pub fn translate(root: &Path, text: &str, from: &str, to: &str) -> anyhow::Resul
         bail!("Văn bản đã ở ngôn ngữ đích");
     }
     // Bare words: the bundled word list beats the sentence model.
-    if let Some(found) = super::wordbook::find(text, &from, to) {
-        if let Some(first) = found.senses.first().and_then(|sense| sense.terms.first()) {
-            return Ok(Translation {
-                text: first.clone(),
-                from,
-                to: to.to_string(),
-                engine: "offline".into(),
-                phonetic: found.phonetic,
-                note: found.stem.map(|stem| format!("Nghĩa của từ gốc “{stem}”.")),
-                dict: found.senses,
-                ..Default::default()
-            });
-        }
+    if let Some(found) = from_wordbook(text, &from, to) {
+        return Ok(found);
     }
     // The sentence models turn a lone word into nonsense ("institution" came
     // out as one word repeated twenty times). Failing here lets an online
@@ -428,6 +417,23 @@ pub fn offline_remove(app: AppHandle, id: String) -> Result<(), String> {
         fs::remove_dir_all(&dir).map_err(|e| e.to_string())?;
     }
     Ok(())
+}
+
+/// What the bundled word lists say about a bare word. Needs no model and no
+/// network, so the popup can show it while an online engine is still working.
+pub fn from_wordbook(text: &str, from: &str, to: &str) -> Option<Translation> {
+    let found = super::wordbook::find(text, from, to)?;
+    let first = found.senses.first().and_then(|sense| sense.terms.first())?.clone();
+    Some(Translation {
+        text: first,
+        from: from.to_string(),
+        to: to.to_string(),
+        engine: "offline".into(),
+        phonetic: found.phonetic,
+        note: found.stem.map(|stem| format!("Nghĩa của từ gốc “{stem}”.")),
+        dict: found.senses,
+        ..Default::default()
+    })
 }
 
 #[cfg(test)]

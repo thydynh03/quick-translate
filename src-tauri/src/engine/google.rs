@@ -12,6 +12,8 @@ const ENDPOINT: &str = "https://translate.googleapis.com/translate_a/single";
 /// refuses. It returns the translation only: no dictionary, no reading.
 const SPARE: &str = "https://clients5.google.com/translate_a/t";
 /// Requests that do not look like a browser are limited much sooner.
+/// Where `warm` opens the connection to.
+pub(crate) const HOST: &str = "https://translate.googleapis.com/";
 const AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
 
 pub async fn translate(text: &str, from: &str, to: &str) -> anyhow::Result<Translation> {
@@ -23,9 +25,11 @@ pub async fn translate(text: &str, from: &str, to: &str) -> anyhow::Result<Trans
     }
     let body = format!("q={}", urlencoding::encode(text));
 
-    let client = reqwest::Client::builder().timeout(Duration::from_secs(12)).build()?;
+    let client = super::http();
+    super::google_used();
     let response = client
         .post(url)
+        .timeout(Duration::from_secs(12))
         .header("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
         .header("User-Agent", AGENT)
         .body(body.clone())
@@ -37,6 +41,7 @@ pub async fn translate(text: &str, from: &str, to: &str) -> anyhow::Result<Trans
         let status = response.status();
         let spare = client
             .post(format!("{SPARE}?client=dict-chrome-ex&sl={from}&tl={to}"))
+            .timeout(Duration::from_secs(12))
             .header("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
             .header("User-Agent", AGENT)
             .body(body)
@@ -135,6 +140,19 @@ mod tests {
         let detected = parse_spare(&serde_json::json!([["Xin chào.", "en"]]), "auto", "vi").unwrap();
         assert_eq!((detected.text.as_str(), detected.from.as_str()), ("Xin chào.", "en"));
         assert!(parse_spare(&serde_json::json!([]), "en", "vi").is_err());
+    }
+
+    /// Prints how long a cold and a warm request take; the warm one reuses the connection.
+    #[test]
+    #[ignore]
+    fn times_a_cold_and_a_warm_request() {
+        tauri::async_runtime::block_on(async {
+            for text in ["The meeting was moved to Thursday.", "Please send me the report.", "institution"] {
+                let start = std::time::Instant::now();
+                let result = translate(text, "en", "vi").await;
+                println!("{:?} {:?}", start.elapsed(), result.map(|found| found.text));
+            }
+        });
     }
 
     /// The spare endpoint answers a real request, as it must when the main one refuses.
