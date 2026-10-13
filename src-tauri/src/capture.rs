@@ -270,6 +270,10 @@ pub fn start_window(app: &AppHandle) {
         };
         log(format!("window: {} blocks in {target:?}, engine {} into {}", blocks.len(), settings.engine, settings.primary_lang));
 
+        // Reading took a while: another use of the overlay may have started since.
+        if SESSION.load(Ordering::SeqCst) != session {
+            return;
+        }
         cover(&window, screen);
         let _ = app.emit_to(LABEL, "window-start", blocks.len());
         let _ = window.show();
