@@ -27,7 +27,7 @@ static SCREEN: Mutex<Rect> = Mutex::new(Rect { left: 0, top: 0, right: 0, bottom
 
 pub fn create_window(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     tauri::WebviewWindowBuilder::new(app, LABEL, tauri::WebviewUrl::App("index.html".into()))
-        .title("Quick Translate Capture")
+        .title("Swipelate Capture")
         .visible(false)
         .decorations(false)
         .transparent(true)

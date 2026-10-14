@@ -1,7 +1,7 @@
 // Dashboard: downloads from the GitHub Releases API, users from the stats server (server/).
 // Every number on the page comes from one of those two sources; nothing is filled in by hand.
 (() => {
-  const REPO = "thydynh03/quick-translate";
+  const REPO = "thydynh03/swipelate";
   const STATS = (window.QT_STATS_URL || "").replace(/\/$/, "");
   const NS = "http://www.w3.org/2000/svg";
   const $ = (id) => document.getElementById(id);

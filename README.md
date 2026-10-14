@@ -1,15 +1,17 @@
-# Quick Translate
+# Swipelate
 
 Ứng dụng desktop chạy nền: bôi đen văn bản ở bất kỳ phần mềm nào, bản dịch hiện trong popup ngay tại vùng bôi đen. Mặc định dịch Anh ↔ Việt.
 
-**Trang giới thiệu và tải về:** https://thydynh03.github.io/quick-translate/ · [Tài liệu](https://thydynh03.github.io/quick-translate/docs.html) · [Giấy phép](LICENSE)
+Trước bản 0.1.22 app có tên **Quick Translate**. Bản cài cũ tự cập nhật lên Swipelate và giữ nguyên cài đặt; trên macOS, kéo Swipelate vào Applications rồi xoá "Quick Translate" cũ.
+
+**Trang giới thiệu và tải về:** https://thydynh03.github.io/swipelate/ · [Tài liệu](https://thydynh03.github.io/swipelate/docs.html) · [Giấy phép](LICENSE)
 
 ## Tải về
 
 | Hệ điều hành | Tệp | Ghi chú |
 |---|---|---|
-| Windows 10/11 x64 | [QuickTranslate-Setup-x64.exe](https://github.com/thydynh03/quick-translate/releases/latest/download/QuickTranslate-Setup-x64.exe) | Đầy đủ tính năng |
-| macOS 11+ (chip Apple) | [QuickTranslate-macOS-AppleSilicon.dmg](https://github.com/thydynh03/quick-translate/releases/latest/download/QuickTranslate-macOS-AppleSilicon.dmg) | Thử nghiệm: chưa có OCR và hover |
+| Windows 10/11 x64 | [Swipelate-Setup-x64.exe](https://github.com/thydynh03/swipelate/releases/latest/download/Swipelate-Setup-x64.exe) | Đầy đủ tính năng |
+| macOS 11+ (chip Apple) | [Swipelate-macOS-AppleSilicon.dmg](https://github.com/thydynh03/swipelate/releases/latest/download/Swipelate-macOS-AppleSilicon.dmg) | Thử nghiệm: chưa có OCR và hover |
 
 Bộ cài chưa ký số, hệ điều hành sẽ cảnh báo khi mở lần đầu; xem hướng dẫn trong trang tài liệu.
 
@@ -80,7 +82,7 @@ cd src-tauri && cargo test offline_end_to_end -- --ignored --nocapture
 
 - Mới chạy thử thật trên Windows. Bản macOS build và qua test trên GitHub Actions nhưng chưa được chạy thử trên máy Mac thật. Trên macOS, OCR (`Alt+W`, `Alt+E`, `Alt+R`) dùng Vision và cần quyền Screen Recording; chưa có hover.
 - Trong app Electron/Chromium, popup đặt theo con trỏ chứ không theo toạ độ chính xác của vùng bôi đen.
-- Không hoạt động trên cửa sổ chạy quyền admin trừ khi Quick Translate cũng chạy quyền admin.
+- Không hoạt động trên cửa sổ chạy quyền admin trừ khi Swipelate cũng chạy quyền admin.
 - OCR dùng các gói ngôn ngữ OCR đã cài trong Windows.
 - API key lưu dạng văn bản thường trong `%APPDATA%\com.quicktranslate.app\settings.json`.
 

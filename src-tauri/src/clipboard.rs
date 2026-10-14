@@ -139,7 +139,7 @@ fn changed(app: &AppHandle) {
 
 pub fn create_window(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     tauri::WebviewWindowBuilder::new(app, LABEL, tauri::WebviewUrl::App("index.html".into()))
-        .title("Quick Translate Clipboard")
+        .title("Swipelate Clipboard")
         .inner_size(WIDTH, HEIGHT)
         .visible(false)
         .decorations(false)
@@ -194,7 +194,7 @@ fn watch(app: AppHandle) {
             continue;
         }
         // Texts the app itself puts there (a copied translation) have no source to show.
-        let source = platform::foreground_app().filter(|name| !name.starts_with("quick-translate"));
+        let source = platform::foreground_app().filter(|name| !name.starts_with("swipelate"));
         let excluded = source.as_ref().is_some_and(|name| {
             app.state::<AppState>().settings.read().excluded_apps.iter().any(|e| e.eq_ignore_ascii_case(name))
         });

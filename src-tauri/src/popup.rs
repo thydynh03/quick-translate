@@ -57,7 +57,7 @@ impl Default for PopupState {
 /// because WebView2 refuses to create both at once from the config.
 pub fn create_window(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     tauri::WebviewWindowBuilder::new(app, LABEL, tauri::WebviewUrl::App("index.html".into()))
-        .title("Quick Translate Popup")
+        .title("Swipelate Popup")
         .inner_size(CARD_WIDTH, LOADING_HEIGHT)
         .visible(false)
         .decorations(false)

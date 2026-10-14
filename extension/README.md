@@ -1,4 +1,4 @@
-# Quick Translate for YouTube
+# Swipelate for YouTube
 
 Extension cho Chrome/Edge: hiện phụ đề tiếng Việt cho video YouTube đang phát. Bản dịch của cả video được lấy một lần ngay khi video bắt đầu, nên không có độ trễ khi xem.
 
@@ -13,7 +13,7 @@ Extension cho Chrome/Edge: hiện phụ đề tiếng Việt cho video YouTube �
 
 - YouTube chỉ trả file phụ đề cho trình phát của chính nó (địa chỉ có kèm mã xác thực). Extension theo dõi yêu cầu phụ đề của trình phát rồi xin lại đúng file đó kèm `tlang=vi`, tức bản do YouTube dịch.
 - Trình phát chỉ tải phụ đề khi nút CC đang bật, nên extension tự bật CC một lần cho mỗi video.
-- Không gửi dữ liệu đi đâu ngoài YouTube. Không cần ứng dụng Quick Translate đang chạy.
+- Không gửi dữ liệu đi đâu ngoài YouTube. Không cần ứng dụng Swipelate đang chạy.
 
 ## Giới hạn
 

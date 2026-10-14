@@ -1,11 +1,11 @@
 {
-  "name": "Quick Translate",
-  "short_name": "Quick Translate",
+  "name": "Swipelate",
+  "short_name": "Swipelate",
   "description": "Bôi đen để dịch ở mọi ứng dụng trên Windows và macOS",
   "lang": "vi",
   "start_url": "./",
   "display": "browser",
-  "theme_color": "#1f4fd8",
+  "theme_color": "#d61f6e",
   "background_color": "#f7f5f0",
   "icons": [
     { "src": "assets/icon-256.png", "sizes": "256x256", "type": "image/png" },

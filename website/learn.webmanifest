@@ -1,12 +1,12 @@
 {
-  "name": "Quick Translate – Học từ vựng",
+  "name": "Swipelate – Học từ vựng",
   "short_name": "Học từ",
-  "description": "Flashcard từ các từ đã lưu trong Quick Translate",
+  "description": "Flashcard từ các từ đã lưu trong Swipelate",
   "lang": "vi",
   "start_url": "./learn.html",
   "scope": "./",
   "display": "standalone",
-  "theme_color": "#1f4fd8",
+  "theme_color": "#d61f6e",
   "background_color": "#f7f5f0",
   "icons": [
     { "src": "assets/icon-256.png", "sizes": "256x256", "type": "image/png" },

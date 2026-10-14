@@ -13,15 +13,15 @@ use tauri::{AppHandle, Emitter, Manager};
 
 use crate::{log, AppState};
 
-const LATEST: &str = "https://api.github.com/repos/thydynh03/quick-translate/releases/latest";
+const LATEST: &str = "https://api.github.com/repos/thydynh03/swipelate/releases/latest";
 /// The release page of the newest version; it redirects to `…/releases/tag/vX`.
-const LATEST_PAGE: &str = "https://github.com/thydynh03/quick-translate/releases/latest";
+const LATEST_PAGE: &str = "https://github.com/thydynh03/swipelate/releases/latest";
 const CHECKSUMS: &str = "SHA256SUMS.txt";
 
 #[cfg(windows)]
-const ASSET: &str = "QuickTranslate-Setup-x64.exe";
+const ASSET: &str = "Swipelate-Setup-x64.exe";
 #[cfg(target_os = "macos")]
-const ASSET: &str = "QuickTranslate-macOS-AppleSilicon.dmg";
+const ASSET: &str = "Swipelate-macOS-AppleSilicon.dmg";
 #[cfg(not(any(windows, target_os = "macos")))]
 const ASSET: &str = "";
 
@@ -65,7 +65,7 @@ pub fn is_newer(latest: &str, current: &str) -> bool {
 
 fn client() -> reqwest::Result<reqwest::Client> {
     reqwest::Client::builder()
-        .user_agent(concat!("QuickTranslate/", env!("CARGO_PKG_VERSION")))
+        .user_agent(concat!("Swipelate/", env!("CARGO_PKG_VERSION")))
         .connect_timeout(Duration::from_secs(15))
         // A stalled connection must end in an error, not a stuck button.
         .read_timeout(Duration::from_secs(60))
@@ -206,7 +206,7 @@ pub async fn install(app: &AppHandle) -> anyhow::Result<()> {
     let sums = response.text().await?;
     let expected = listed_digest(&sums, ASSET).ok_or_else(|| anyhow::anyhow!("SHA256SUMS.txt không có {ASSET}"))?;
 
-    let dir: PathBuf = std::env::temp_dir().join("quick-translate-update");
+    let dir: PathBuf = std::env::temp_dir().join("swipelate-update");
     tokio::fs::create_dir_all(&dir).await?;
     let path = dir.join(ASSET);
     let actual = download(app, &url, &path).await?;
@@ -289,24 +289,24 @@ mod tests {
 
     #[test]
     fn finds_the_digest_for_a_file() {
-        let sums = "ABC123  QuickTranslate-Setup-x64.exe\ndef456 *QuickTranslate-macOS-AppleSilicon.dmg\n";
-        assert_eq!(listed_digest(sums, "QuickTranslate-Setup-x64.exe").as_deref(), Some("abc123"));
-        assert_eq!(listed_digest(sums, "QuickTranslate-macOS-AppleSilicon.dmg").as_deref(), Some("def456"));
+        let sums = "ABC123  Swipelate-Setup-x64.exe\ndef456 *Swipelate-macOS-AppleSilicon.dmg\n";
+        assert_eq!(listed_digest(sums, "Swipelate-Setup-x64.exe").as_deref(), Some("abc123"));
+        assert_eq!(listed_digest(sums, "Swipelate-macOS-AppleSilicon.dmg").as_deref(), Some("def456"));
         assert_eq!(listed_digest(sums, "other"), None);
     }
 
     #[test]
     fn reads_the_version_from_the_release_page() {
-        let info = info_from_page("https://github.com/thydynh03/quick-translate/releases/tag/v0.2.0", "0.1.16").unwrap();
+        let info = info_from_page("https://github.com/thydynh03/swipelate/releases/tag/v0.2.0", "0.1.16").unwrap();
         assert_eq!(info.latest, "0.2.0");
         assert_eq!(
             info.checksums.as_deref(),
-            Some("https://github.com/thydynh03/quick-translate/releases/download/v0.2.0/SHA256SUMS.txt")
+            Some("https://github.com/thydynh03/swipelate/releases/download/v0.2.0/SHA256SUMS.txt")
         );
         #[cfg(windows)]
-        assert!(info.available && info.installer.unwrap().ends_with("/v0.2.0/QuickTranslate-Setup-x64.exe"));
-        assert!(!info_from_page("https://github.com/thydynh03/quick-translate/releases/tag/v0.1.16", "0.1.16").unwrap().available);
-        assert!(info_from_page("https://github.com/thydynh03/quick-translate/releases", "0.1.16").is_none());
+        assert!(info.available && info.installer.unwrap().ends_with("/v0.2.0/Swipelate-Setup-x64.exe"));
+        assert!(!info_from_page("https://github.com/thydynh03/swipelate/releases/tag/v0.1.16", "0.1.16").unwrap().available);
+        assert!(info_from_page("https://github.com/thydynh03/swipelate/releases", "0.1.16").is_none());
     }
 
     /// The release page answers without the API.
