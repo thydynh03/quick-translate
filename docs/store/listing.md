@@ -4,8 +4,8 @@ Product: Swipelate, Store ID `9NWX2CTRQ2RX`, MSIX. Screenshots: `screenshot-1-po
 
 ## Properties
 - Category: Productivity (subcategory: none). Secondary: Education.
-- Privacy policy URL: https://thydynh03.github.io/swipelate/privacy.html
-- Website: https://thydynh03.github.io/swipelate/
+- Privacy policy URL: https://swipelate.com/privacy.html
+- Website: https://swipelate.com/
 - Support contact: https://github.com/thydynh03/swipelate/issues
 - Product declarations: none needed (no in-app purchases, no ads).
 - System requirements: Windows 10 1809 or later, x64, with the WebView2 Runtime (built into Windows 11; delivered to Windows 10 by Windows Update). Live caption translation needs Windows 11 22H2 or later. Internet for online engines; offline engine needs a model download.
