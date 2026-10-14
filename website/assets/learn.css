@@ -43,3 +43,8 @@
 #done { text-align: center; padding-top: 12dvh; }
 .done-big { font-size: 3.5rem; margin: 0; }
 .lmain section { padding: 0; }
+@media (prefers-color-scheme: dark) {
+  .grades [data-grade="0"] { color: #fb923c; }
+  .choices .right { border-color: #22c55e; }
+  .choices .wrong { border-color: #ef4444; }
+}
