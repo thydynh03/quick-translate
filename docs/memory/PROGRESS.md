@@ -158,5 +158,5 @@ Xem `DECISIONS.md`. Cambridge không có API công khai → chỉ mở link. Oxf
   - Đã kiểm tra giao diện trên server tĩnh ở khổ 375 px và 1280 px, cả chế độ sáng và tối.
 - 14/10: Bản 0.1.25:
   - Bỏ tab "GitHub" trên header navigation của các trang web (`website/index.html`, `docs.html`, `license.html`, `privacy.html`, `stats.html`).
-  - Kiểm tra và xác thực nhận diện tiếng Việt qua VietOCR: thêm bài test `test_vietnamese_font_rendering` trong `ocr_vi.rs` render 5 font chữ Windows (Segoe UI, Arial, Times New Roman, Tahoma, Calibri) kiểm tra độ chính xác dấu tiếng Việt.
+  - Kiểm tra và chẩn đoán nhận diện tiếng Việt qua VietOCR: thêm bài test `#[ignore]` `test_vietnamese_font_rendering` trong `ocr_vi.rs` kết xuất 5 font chữ Windows (Segoe UI, Arial, Times New Roman, Tahoma, Calibri) kiểm tra và assert nhận diện đầy đủ dấu tiếng Việt khi đã cài model.
   - Tăng version lên 0.1.25 ở `package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`, `website/index.html`.

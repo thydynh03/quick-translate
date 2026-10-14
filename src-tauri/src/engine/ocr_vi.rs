@@ -260,16 +260,17 @@ mod tests {
         println!("VIETOCR: {}", crate::capture::join_lines(crate::platform::ocr_lines(rect, Some(&root)).unwrap()));
     }
 
+    /// Renders Vietnamese phrases with various Windows fonts into BGRA bitmaps
+    /// and verifies VietOCR reads them with diacritics. Requires ocr-vi model installed.
+    /// Run with: cargo test test_vietnamese_font_rendering -- --ignored --nocapture
     #[cfg(windows)]
     #[test]
+    #[ignore]
     fn test_vietnamese_font_rendering() {
-        let root = PathBuf::from(std::env::var("APPDATA").unwrap())
-            .join("com.quicktranslate.app")
-            .join("models");
-        if !installed(&root) {
-            println!("ocr-vi not installed, skipping test");
-            return;
-        }
+        let root = std::env::var("QT_OCR_VI_ROOT")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| PathBuf::from(std::env::var("APPDATA").unwrap()).join("com.quicktranslate.app").join("models"));
+        assert!(installed(&root), "ocr-vi model must be installed to run this test (set QT_OCR_VI_ROOT)");
 
         use windows::Win32::Graphics::Gdi::*;
         use windows::core::PCWSTR;
@@ -341,6 +342,11 @@ mod tests {
                 println!("[Font: {font:<15}] Original: {phrase}");
                 println!("[Font: {font:<15}] VietOCR : {read}");
                 println!();
+                assert!(!read.trim().is_empty(), "VietOCR output should not be empty for font {font}");
+                assert!(
+                    read.chars().any(|c| "àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ".contains(c.to_ascii_lowercase())),
+                    "VietOCR output should contain Vietnamese diacritics for font {font}: got '{read}'"
+                );
             }
         }
     }
