@@ -350,8 +350,9 @@ pub fn run() {
             let version_file = settings::data_dir(&handle).join("last-version");
             let current = app.package_info().version.to_string();
             let previous = std::fs::read_to_string(&version_file).map(|text| text.trim().to_string()).ok();
-            let _ = std::fs::write(&version_file, &current);
-            let updated = !first_run && previous.as_deref() != Some(current.as_str());
+            // Without the note of this version, every start would look like an update.
+            let noted = std::fs::write(&version_file, &current).is_ok();
+            let updated = noted && !first_run && previous.as_deref() != Some(current.as_str());
             app.manage(UpdatedFrom(Mutex::new(updated.then(|| previous.unwrap_or_default()))));
             let loaded = settings::load(&handle);
             if first_run {

@@ -249,9 +249,9 @@ export default function Settings() {
 
       <main className="pane">
         {updatedFrom !== null && (
-          <p className="updated" onClick={() => setUpdatedFrom(null)}>
+          <button className="updated" title="Bấm để ẩn" onClick={() => setUpdatedFrom(null)}>
             Đã cập nhật{updatedFrom ? ` từ ${updatedFrom}` : ""} lên phiên bản {version}. Ứng dụng đang chạy ở khay hệ thống.
-          </p>
+          </button>
         )}
         {tab === "general" && (
           <>

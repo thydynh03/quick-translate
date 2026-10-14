@@ -959,6 +959,11 @@ html[data-window="clipboard"] body {
 
 /* Shown once after an update. */
 .updated {
+  display: block;
+  width: 100%;
+  border: 0;
+  font: inherit;
+  text-align: left;
   margin: 0 0 16px;
   padding: 10px 14px;
   border-radius: 8px;
