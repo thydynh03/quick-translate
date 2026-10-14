@@ -117,6 +117,7 @@ function About({ checkUpdates, setCheckUpdates }: { checkUpdates: boolean; setCh
       <div className="actions">
         <button onClick={() => openUrl(`${SITE}docs.html`)}>Hướng dẫn sử dụng</button>
         <button onClick={() => openUrl(`${SITE}license.html`)}>Giấy phép</button>
+        <button onClick={() => openUrl(`${SITE}privacy.html`)}>Quyền riêng tư</button>
         <button onClick={() => openUrl(`${REPO}/issues`)}>Báo lỗi</button>
       </div>
     </section>
