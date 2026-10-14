@@ -4,10 +4,11 @@
   --card: #ffffff;
   --ink: #15171c;
   --soft: #5a616d;
-  --accent: #b3175a;
+  --accent: #c03546;
   --accent-ink: #ffffff;
-  --accent-soft: #ffe0ee;
+  --accent-soft: #ffe8e5;
   --select: #b9ccff;
+  --brand-gradient: linear-gradient(135deg, #ff5f6d 0%, #ffc371 100%);
   --shadow: 0 24px 60px -28px rgba(20, 28, 60, 0.45);
   --radius: 14px;
   --gutter: clamp(20px, 5vw, 48px);
@@ -21,9 +22,9 @@
     --card: #1d2029;
     --ink: #eef0f4;
     --soft: #9ba3b2;
-    --accent: #ff7ab8;
+    --accent: #ff8577;
     --accent-ink: #0d1020;
-    --accent-soft: #4a1f33;
+    --accent-soft: #451c1e;
     --select: #33488f;
     --shadow: 0 24px 60px -28px rgba(0, 0, 0, 0.8);
   }
@@ -1078,7 +1079,7 @@ details p {
   display: block;
   height: 100%;
   border-radius: 2px;
-  background: #ff5b6b;
+  background: linear-gradient(90deg, #ff5f6d, #ffc371);
   transform-origin: left;
   animation: film-bar 9s linear infinite;
 }
@@ -1162,10 +1163,10 @@ details p {
   display: grid;
   place-items: center;
   background:
-    radial-gradient(60% 80% at 15% 20%, #ffb36b 0, transparent 60%),
+    radial-gradient(60% 80% at 15% 20%, #ffc371 0, transparent 60%),
     radial-gradient(50% 70% at 85% 15%, #6bc7ff 0, transparent 60%),
-    radial-gradient(60% 80% at 70% 90%, #ff7eb6 0, transparent 60%),
-    radial-gradient(60% 80% at 20% 90%, #8f7bff 0, transparent 60%), #e9eef5;
+    radial-gradient(60% 80% at 70% 90%, #ff5f6d 0, transparent 60%),
+    radial-gradient(60% 80% at 20% 90%, #ff9e7d 0, transparent 60%), #f8f4ee;
 }
 
 .s-glass {
@@ -1232,8 +1233,8 @@ details p {
     background:
       radial-gradient(60% 80% at 15% 20%, #7a3cff 0, transparent 60%),
       radial-gradient(50% 70% at 85% 15%, #0a6cff 0, transparent 60%),
-      radial-gradient(60% 80% at 70% 90%, #ff3d77 0, transparent 60%),
-      radial-gradient(60% 80% at 20% 90%, #00b3a4 0, transparent 60%), #0c0f1a;
+      radial-gradient(60% 80% at 70% 90%, #ff5f6d 0, transparent 60%),
+      radial-gradient(60% 80% at 20% 90%, #e07050 0, transparent 60%), #0c0f1a;
   }
 
   .s-glass {
