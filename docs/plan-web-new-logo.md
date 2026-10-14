@@ -1,6 +1,6 @@
 # Plan: favicon mới và giao diện web theo logo mới
 
-Repo: `E:\Templates\quick-translate` (GitHub `thydynh03/swipelate`). Website tĩnh trong `website/`, deploy tự động lên https://swipelate.com/ bằng `.github/workflows/pages.yml` khi merge vào `main`. Đọc `AGENTS.md` trước.
+Repo: GitHub `thydynh03/swipelate` (công khai, xem `README.md`). Website tĩnh trong `website/`, deploy tự động lên https://swipelate.com/ bằng `.github/workflows/pages.yml` khi merge vào `main`. Đọc `AGENTS.md` trước.
 
 ## 1. Sửa favicon cũ
 Tab trình duyệt vẫn hiện logo cũ (chữ S hồng) vì `website/favicon.ico` chưa được tạo lại.
@@ -21,5 +21,5 @@ Logo mới có gradient cam–hồng `#ff5f6d` → `#ffc371`, với các thẻ t
 
 ## 3. Kiểm tra và giao
 - Mở `website/index.html` bằng một server tĩnh, xem ở 375 px và 1280 px, ở cả chế độ sáng và tối.
-- Tạo branch, commit, mở PR vào `main`. CI phải xanh, các comment review của cubic phải được trả lời và resolve. Merge xong thì kiểm tra lại https://swipelate.com/.
+- Khi chủ dự án yêu cầu: tạo branch, commit, mở PR vào `main`. CI phải xanh, các comment review của cubic phải được trả lời và resolve. Merge xong thì kiểm tra lại https://swipelate.com/.
 - Commit kết thúc bằng `Co-Authored-By: <tên model>`. Cập nhật `docs/memory/PROGRESS.md`.
