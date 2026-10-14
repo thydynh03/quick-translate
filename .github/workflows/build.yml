@@ -30,7 +30,7 @@ jobs:
           desktop=true
           if [ -n "$BASE" ]; then
             # On its own line: a diff that fails must fail the job, not pass for "nothing changed".
-            files=$(git diff --name-only "$BASE...HEAD")
+            files=$(git diff --name-only --no-renames "$BASE...HEAD")
             if ! grep -qvE '^(website/|docs/|[^/]*\.md$)' <<< "$files"; then
               desktop=false
             fi
