@@ -16,6 +16,7 @@ mod platform;
 mod popup;
 mod sentence;
 mod settings;
+mod store;
 mod subtitles;
 mod telemetry;
 mod trigger;
@@ -204,13 +205,14 @@ async fn translate_now(app: AppHandle, text: String) -> Result<engine::Translati
 /// The tray menu's check item, kept so a left click on the icon can update it.
 struct TrayItems {
     auto: tauri::menu::CheckMenuItem<tauri::Wry>,
-    update: tauri::menu::MenuItem<tauri::Wry>,
+    /// Missing from the Store build, which the Store updates.
+    update: Option<tauri::menu::MenuItem<tauri::Wry>>,
 }
 
 /// Renames the tray's update item once a newer release is found.
 pub fn show_update_in_tray(app: &AppHandle, latest: &str) {
-    if let Some(items) = app.try_state::<TrayItems>() {
-        let _ = items.update.set_text(format!("Cập nhật lên bản {latest}…"));
+    if let Some(update) = app.try_state::<TrayItems>().and_then(|items| items.update.clone()) {
+        let _ = update.set_text(format!("Cập nhật lên bản {latest}…"));
     }
 }
 
@@ -252,9 +254,13 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
         .checked(settings.auto_trigger)
         .build(app)?;
     let open = MenuItemBuilder::with_id("settings", "Cài đặt…").build(app)?;
-    let update = MenuItemBuilder::with_id("update", "Kiểm tra cập nhật…").build(app)?;
+    let update = (!store::packaged()).then(|| MenuItemBuilder::with_id("update", "Kiểm tra cập nhật…").build(app)).transpose()?;
     let quit = MenuItemBuilder::with_id("quit", "Thoát").build(app)?;
-    let menu = MenuBuilder::new(app).items(&[&translate, &ocr, &live, &auto]).separator().items(&[&open, &update, &quit]).build()?;
+    let mut menu = MenuBuilder::new(app).items(&[&translate, &ocr, &live, &auto]).separator().item(&open);
+    if let Some(update) = &update {
+        menu = menu.item(update);
+    }
+    let menu = menu.item(&quit).build()?;
     app.manage(TrayItems { auto, update });
 
     let mut tray = TrayIconBuilder::with_id("main")
@@ -333,6 +339,9 @@ pub fn run() {
             updater::update_check,
             updater::update_install,
             updated_from,
+            store::autostart_get,
+            store::autostart_set,
+            store::store_build,
             vocab::vocab_add,
             vocab::vocab_list,
             vocab::vocab_remove,
@@ -358,7 +367,8 @@ pub fn run() {
             if first_run {
                 let _ = settings::save(&handle, &loaded);
                 // Runs in the background from sign-in by default; the settings can turn it off.
-                if !cfg!(debug_assertions) {
+                // The Store package's startup task is on from its manifest.
+                if !cfg!(debug_assertions) && !store::packaged() {
                     use tauri_plugin_autostart::ManagerExt;
                     let _ = handle.autolaunch().enable();
                 }
@@ -401,7 +411,7 @@ pub fn run() {
             let hover = handle.clone();
             std::thread::spawn(move || trigger::run_hover(hover));
 
-            let hidden = std::env::args().any(|arg| arg == "--hidden");
+            let hidden = std::env::args().any(|arg| arg == "--hidden") || store::started_at_sign_in();
             let open_settings = std::env::args().any(|arg| arg == "--settings");
             if ((first_run || updated) && !hidden) || open_settings {
                 show_settings(&handle);

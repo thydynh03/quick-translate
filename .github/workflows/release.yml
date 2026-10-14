@@ -65,6 +65,22 @@ jobs:
           name: ${{ matrix.asset }}
           path: out/${{ matrix.asset }}
           if-no-files-found: error
+      # The Store package, for uploading to Partner Center by hand. Not on the release:
+      # it is unsigned until the Store signs it. Runs once the identity is in the repo variables.
+      - name: Pack for the Microsoft Store
+        if: ${{ runner.os == 'Windows' && vars.MSIX_IDENTITY_NAME != '' && vars.MSIX_PUBLISHER != '' && vars.MSIX_PUBLISHER_DISPLAY_NAME != '' }}
+        shell: pwsh
+        run: >
+          scripts/make-msix.ps1 -Version "$env:TAG" -Out out-store/Swipelate-Store-x64.msix
+          -IdentityName "${{ vars.MSIX_IDENTITY_NAME }}"
+          -Publisher "${{ vars.MSIX_PUBLISHER }}"
+          -PublisherDisplayName "${{ vars.MSIX_PUBLISHER_DISPLAY_NAME }}"
+      - if: ${{ runner.os == 'Windows' && vars.MSIX_IDENTITY_NAME != '' && vars.MSIX_PUBLISHER != '' && vars.MSIX_PUBLISHER_DISPLAY_NAME != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: store-package
+          path: out-store/Swipelate-Store-x64.msix
+          if-no-files-found: error
 
   publish:
     needs: build
@@ -74,6 +90,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: out
+          pattern: Swipelate-*
           merge-multiple: true
       - uses: actions/checkout@v4
         with:

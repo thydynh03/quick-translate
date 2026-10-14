@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chính sách quyền riêng tư – Swipelate</title>
+  <meta name="description" content="Swipelate gửi gì ra khỏi máy bạn và lưu gì trên máy: văn bản cần dịch, thống kê ẩn danh có thể tắt, lịch sử và từ vựng chỉ nằm trên máy.">
+  <link rel="canonical" href="https://thydynh03.github.io/swipelate/privacy.html">
+  <meta property="og:type" content="article">
+  <meta property="og:locale" content="vi_VN">
+  <meta property="og:site_name" content="Swipelate">
+  <meta property="og:title" content="Chính sách quyền riêng tư – Swipelate">
+  <meta property="og:url" content="https://thydynh03.github.io/swipelate/privacy.html">
+  <meta property="og:image" content="https://thydynh03.github.io/swipelate/assets/og.png">
+  <meta name="theme-color" content="#b3175a">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <a class="skip" href="#main">Bỏ qua điều hướng</a>
+  <header class="top">
+    <a class="brand" href="./" aria-label="Swipelate, trang chủ">
+      <img src="assets/icon.svg" alt="" width="28" height="28">
+      <span>Swipelate</span>
+    </a>
+    <nav class="nav" aria-label="Điều hướng chính">
+      <a href="./#cach-dung">Cách dùng</a>
+      <a href="./#offline">Dịch offline</a>
+      <a href="docs.html">Tài liệu</a>
+      <a href="license.html">Giấy phép</a>
+      <a href="https://github.com/thydynh03/swipelate" rel="noopener">GitHub</a>
+    </nav>
+    <a class="btn small" href="./#tai-ve">Tải về</a>
+  </header>
+
+  <div class="doc single">
+    <main id="main" class="prose">
+      <h1>Chính sách quyền riêng tư</h1>
+      <p>Cập nhật ngày 14/10/2026. Áp dụng cho ứng dụng Swipelate trên Windows (bản tải từ GitHub và bản trên Microsoft Store), macOS, tiện ích YouTube và trang web này.</p>
+      <p>Tóm tắt: Swipelate không có tài khoản, không bán hay chia sẻ dữ liệu, không quảng cáo. Văn bản bạn cần dịch chỉ được gửi tới dịch vụ dịch mà bạn chọn. Thống kê ẩn danh có thể tắt.</p>
+
+      <h2 id="van-ban">Văn bản bạn dịch</h2>
+      <ul>
+        <li>Khi bạn bôi đen hoặc chọn vùng màn hình để dịch, văn bản đó được gửi tới engine dịch bạn chọn trong Cài đặt: Google Translate (mặc định), DeepL, Anthropic Claude, hoặc địa chỉ API tương thích OpenAI do bạn nhập. Mỗi dịch vụ xử lý văn bản theo chính sách riêng của họ.</li>
+        <li>Nếu bật "tự dùng dự phòng khi engine chính lỗi" (bật sẵn), văn bản có thể được dịch bằng engine offline trên máy, rồi bằng engine khác mà bạn đã nhập API key (DeepL, Claude hoặc API tương thích OpenAI).</li>
+        <li>Engine Offline dịch ngay trên máy, không gửi văn bản đi đâu.</li>
+        <li>Nhận dạng chữ trên màn hình (OCR) chạy trên máy bằng Windows OCR hoặc Apple Vision. Ảnh chụp vùng màn hình không được lưu hay gửi đi.</li>
+        <li>Khi bật tra nghĩa tiếng Anh, từ đang tra được gửi tới Free Dictionary API, và tới Oxford Dictionaries API nếu bạn nhập khoá của họ.</li>
+        <li>API key bạn nhập (DeepL, Anthropic, OpenAI, Oxford) chỉ lưu trên máy và chỉ gửi tới đúng dịch vụ đó.</li>
+      </ul>
+
+      <h2 id="tren-may">Dữ liệu lưu trên máy</h2>
+      <p>Cài đặt, lịch sử dịch, sổ từ vựng, mục clipboard đã ghim và model dịch offline được lưu trong thư mục dữ liệu của ứng dụng trên máy bạn. Chúng không được gửi lên máy chủ nào. Bạn có thể tắt lưu lịch sử hoặc xoá lịch sử trong Cài đặt. Bản Microsoft Store xoá dữ liệu khi gỡ. Với bản cài từ GitHub, gỡ ứng dụng không xoá thư mục dữ liệu: xoá thư mục <code>com.quicktranslate.app</code> trong <code>%APPDATA%</code> (Windows) hoặc <code>~/Library/Application Support</code> (macOS).</p>
+
+      <h2 id="thong-ke">Thống kê ẩn danh</h2>
+      <p>Để đếm số người dùng, ứng dụng gửi mỗi ngày một lần: một mã ngẫu nhiên tạo khi cài, số phiên bản và tên hệ điều hành. Không gửi văn bản bạn dịch, tên, email hay thông tin nhận dạng nào khác. Để chống spam, máy chủ thống kê lưu một giá trị băm (SHA-256, rút gọn) của dải mạng gửi yêu cầu theo từng ngày, không lưu địa chỉ IP gốc. Tắt bằng mục "Gửi thống kê ẩn danh" trong Cài đặt.</p>
+      <p>Trang web này đếm lượt truy cập theo cách tương tự (một mã ngẫu nhiên lưu trong trình duyệt, tối đa một lần mỗi ngày) và không gửi gì khi trình duyệt bật Do Not Track. Phông chữ của trang tải từ Google Fonts, nên trình duyệt gửi địa chỉ IP và thông tin trình duyệt tới Google khi mở trang.</p>
+
+      <h2 id="mang">Kết nối mạng khác</h2>
+      <ul>
+        <li>Bản tải từ GitHub kiểm tra bản mới trên GitHub mỗi ngày (có thể tắt trong tab Giới thiệu). Bản Microsoft Store do Store cập nhật.</li>
+        <li>Model dịch offline được tải từ Hugging Face khi bạn bấm Tải về.</li>
+      </ul>
+
+      <h2 id="tre-em">Trẻ em</h2>
+      <p>Swipelate không thu thập thông tin cá nhân của bất kỳ ai, kể cả trẻ em.</p>
+
+      <h2 id="lien-he">Thay đổi và liên hệ</h2>
+      <p>Khi chính sách này thay đổi, ngày cập nhật ở đầu trang sẽ đổi theo. Câu hỏi về quyền riêng tư: mở issue tại <a href="https://github.com/thydynh03/swipelate/issues" rel="noopener">github.com/thydynh03/swipelate/issues</a>.</p>
+
+      <h2 id="english" lang="en">Summary in English</h2>
+      <div lang="en">
+        <p>Swipelate has no accounts, ads or data sales. Text you translate is sent to the translation service you pick (Google Translate by default, DeepL, Anthropic Claude or an OpenAI-compatible API you enter); with fallback on (the default), a failed translation is retried offline, then with another engine you entered a key for. The Offline engine and OCR run on your device. Settings, history, vocabulary and API keys stay on your device. A daily anonymous ping (random install id, version, OS) counts users and can be turned off in Settings; for abuse protection the stats server keeps a truncated SHA-256 hash of the sender's network per day, never the IP address. The website loads fonts from Google Fonts. The GitHub build checks GitHub for updates; the Microsoft Store build is updated by the Store. Contact: GitHub issues.</p>
+      </div>
+    </main>
+  </div>
+
+  <footer class="foot">
+    <div class="wrap foot-row">
+      <p>© 2026 thydynh03. Phát hành theo giấy phép MIT.</p>
+      <nav aria-label="Liên kết cuối trang">
+        <a href="./">Trang chủ</a>
+        <a href="docs.html">Tài liệu</a>
+        <a href="privacy.html">Quyền riêng tư</a>
+        <a href="https://github.com/thydynh03/swipelate" rel="noopener">Mã nguồn</a>
+      </nav>
+    </div>
+  </footer>
+  <script src="assets/stats-config.js" defer></script>
+</body>
+</html>

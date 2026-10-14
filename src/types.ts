@@ -42,6 +42,7 @@ export type Settings = {
   excluded_apps: string[];
   save_history: boolean;
   usage_stats: boolean;
+  theme: "system" | "light" | "dark";
   english_definitions: boolean;
   oxford_app_id: string;
   oxford_app_key: string;

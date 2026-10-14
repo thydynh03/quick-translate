@@ -5,6 +5,7 @@
   "windows": ["main", "popup", "capture", "clipboard"],
   "permissions": [
     "core:default",
+    "core:window:allow-set-theme",
     "opener:default",
     "autostart:allow-enable",
     "autostart:allow-disable",

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { getVersion } from "@tauri-apps/api/app";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { disable, enable, isEnabled } from "@tauri-apps/plugin-autostart";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ENGINE_NAMES, HistoryEntry, UpdateInfo, LANGUAGES, Profile, Settings as Config, Translation, langName } from "./types";
 import OfflineModels from "./OfflineModels";
@@ -20,6 +19,8 @@ function About({ checkUpdates, setCheckUpdates }: { checkUpdates: boolean; setCh
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
+  // Installed from the Microsoft Store, which does the updating.
+  const [store, setStore] = useState(false);
 
   const check = async () => {
     setBusy(true);
@@ -53,7 +54,10 @@ function About({ checkUpdates, setCheckUpdates }: { checkUpdates: boolean; setCh
 
   useEffect(() => {
     getVersion().then(setVersion);
-    if (checkUpdates) check();
+    invoke<boolean>("store_build").then((packaged) => {
+      setStore(packaged);
+      if (checkUpdates && !packaged) check();
+    });
     const progressed = listen<{ done: number; total: number }>("update-progress", (event) => {
       const { done, total } = event.payload;
       setProgress(total ? Math.round((done / total) * 100) : null);
@@ -68,35 +72,39 @@ function About({ checkUpdates, setCheckUpdates }: { checkUpdates: boolean; setCh
       <h2>Giới thiệu</h2>
       <p>Swipelate {version && `phiên bản ${version}`}</p>
 
-      <div className="update">
-        {update?.available ? (
-          <>
-            <p>
-              <strong>Có bản mới {update.latest}</strong>
-              {update.published && <small> · {new Date(update.published).toLocaleDateString("vi-VN")}</small>}
-            </p>
-            {update.notes && <pre className="notes">{update.notes}</pre>}
+      {store ? (
+        <p className="help">Bản cài từ Microsoft Store: Store tự cập nhật Swipelate.</p>
+      ) : (
+        <div className="update">
+          {update?.available ? (
+            <>
+              <p>
+                <strong>Có bản mới {update.latest}</strong>
+                {update.published && <small> · {new Date(update.published).toLocaleDateString("vi-VN")}</small>}
+              </p>
+              {update.notes && <pre className="notes">{update.notes}</pre>}
+              <div className="actions">
+                <button className="primary" onClick={install} disabled={busy}>
+                  {progress !== null ? `Đang tải ${progress}%` : "Cập nhật ngay"}
+                </button>
+                <button onClick={() => openUrl(update.page)}>Xem trên GitHub</button>
+              </div>
+              <p className="help">Bộ cài được kiểm tra mã SHA-256 trước khi chạy. Trên Windows app tự đóng, cài bản mới rồi mở lại.</p>
+            </>
+          ) : (
             <div className="actions">
-              <button className="primary" onClick={install} disabled={busy}>
-                {progress !== null ? `Đang tải ${progress}%` : "Cập nhật ngay"}
+              <button onClick={check} disabled={busy}>
+                Kiểm tra cập nhật
               </button>
-              <button onClick={() => openUrl(update.page)}>Xem trên GitHub</button>
             </div>
-            <p className="help">Bộ cài được kiểm tra mã SHA-256 trước khi chạy. Trên Windows app tự đóng, cài bản mới rồi mở lại.</p>
-          </>
-        ) : (
-          <div className="actions">
-            <button onClick={check} disabled={busy}>
-              Kiểm tra cập nhật
-            </button>
-          </div>
-        )}
-        {status && <p className="help">{status}</p>}
-        <label className="row">
-          <span>Tự kiểm tra bản mới khi mở app và mỗi ngày</span>
-          <input type="checkbox" checked={checkUpdates} onChange={(e) => setCheckUpdates(e.target.checked)} />
-        </label>
-      </div>
+          )}
+          {status && <p className="help">{status}</p>}
+          <label className="row">
+            <span>Tự kiểm tra bản mới khi mở app và mỗi ngày</span>
+            <input type="checkbox" checked={checkUpdates} onChange={(e) => setCheckUpdates(e.target.checked)} />
+          </label>
+        </div>
+      )}
 
       <p className="help">
         Bản quyền © 2026 thydynh03. Phần mềm phát hành theo giấy phép MIT: bạn được dùng, sao chép và sửa đổi miễn phí, kèm
@@ -109,6 +117,7 @@ function About({ checkUpdates, setCheckUpdates }: { checkUpdates: boolean; setCh
       <div className="actions">
         <button onClick={() => openUrl(`${SITE}docs.html`)}>Hướng dẫn sử dụng</button>
         <button onClick={() => openUrl(`${SITE}license.html`)}>Giấy phép</button>
+        <button onClick={() => openUrl(`${SITE}privacy.html`)}>Quyền riêng tư</button>
         <button onClick={() => openUrl(`${REPO}/issues`)}>Báo lỗi</button>
       </div>
     </section>
@@ -177,7 +186,7 @@ export default function Settings() {
 
   useEffect(() => {
     load();
-    isEnabled().then(setAutostart).catch(() => {});
+    invoke<boolean>("autostart_get").then(setAutostart).catch(() => {});
     const unlisten = listen("settings-changed", load);
     return () => {
       unlisten.then((off) => off());
@@ -206,8 +215,7 @@ export default function Settings() {
 
   const toggleAutostart = async (on: boolean) => {
     try {
-      await (on ? enable() : disable());
-      setAutostart(on);
+      setAutostart(await invoke<boolean>("autostart_set", { on }));
     } catch (error) {
       setStatus(String(error));
     }
@@ -399,6 +407,14 @@ export default function Settings() {
               <label className="row">
                 <span>Khởi động cùng máy</span>
                 <input type="checkbox" checked={autostart} onChange={(e) => toggleAutostart(e.target.checked)} />
+              </label>
+              <label className="row">
+                <span>Giao diện</span>
+                <select value={config.theme} onChange={(e) => update({ theme: e.target.value as Config["theme"] })}>
+                  <option value="system">Theo hệ thống</option>
+                  <option value="light">Sáng</option>
+                  <option value="dark">Tối</option>
+                </select>
               </label>
               <label className="row">
                 <span>Gửi thống kê ẩn danh (đếm số người dùng)</span>
