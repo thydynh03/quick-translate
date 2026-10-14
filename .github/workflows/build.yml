@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths-ignore: ["website/**", "docs/**", "*.md"]
   pull_request:
+    # A change to the website or the documents alone needs no desktop build.
+    paths-ignore: ["website/**", "docs/**", "*.md"]
   workflow_dispatch:
 
 concurrency:
