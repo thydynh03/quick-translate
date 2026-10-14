@@ -28,8 +28,12 @@ jobs:
           BASE: ${{ github.event.pull_request.base.sha }}
         run: |
           desktop=true
-          if [ -n "$BASE" ] && ! git diff --name-only "$BASE...HEAD" | grep -qvE '^(website/|docs/|[^/]*\.md$)'; then
-            desktop=false
+          if [ -n "$BASE" ]; then
+            # On its own line: a diff that fails must fail the job, not pass for "nothing changed".
+            files=$(git diff --name-only "$BASE...HEAD")
+            if ! grep -qvE '^(website/|docs/|[^/]*\.md$)' <<< "$files"; then
+              desktop=false
+            fi
           fi
           echo "desktop=$desktop" >> "$GITHUB_OUTPUT"
 
