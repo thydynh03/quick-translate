@@ -156,3 +156,7 @@ Xem `DECISIONS.md`. Cambridge không có API công khai → chỉ mở link. Oxf
   - Gradient trang trí: `#ff5f6d → #ffc371` trong `site.css` (`--brand-gradient`, thanh tiến trình `.s-bar i`, hình nền `.s-clip`).
   - Cập nhật `theme-color` và liên kết icon trên toàn bộ 7 trang (`index`, `docs`, `learn`, `license`, `privacy`, `stats`, `404`) và 2 webmanifest (`site`, `learn`).
   - Đã kiểm tra giao diện trên server tĩnh ở khổ 375 px và 1280 px, cả chế độ sáng và tối.
+- 14/10: Bản 0.1.25:
+  - Bỏ tab "GitHub" trên header navigation của các trang web (`website/index.html`, `docs.html`, `license.html`, `privacy.html`, `stats.html`).
+  - Kiểm tra và chẩn đoán nhận diện tiếng Việt qua VietOCR: thêm bài test `#[ignore]` `test_vietnamese_font_rendering` trong `ocr_vi.rs` kết xuất 5 font chữ Windows (Segoe UI, Arial, Times New Roman, Tahoma, Calibri) kiểm tra và assert nhận diện đầy đủ dấu tiếng Việt khi đã cài model.
+  - Tăng version lên 0.1.25 ở `package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`, `website/index.html`.

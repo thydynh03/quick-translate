@@ -259,4 +259,96 @@ mod tests {
         println!("WINDOWS: {}", crate::capture::join_lines(crate::platform::ocr_lines(rect, None).unwrap()));
         println!("VIETOCR: {}", crate::capture::join_lines(crate::platform::ocr_lines(rect, Some(&root)).unwrap()));
     }
+
+    /// Renders Vietnamese phrases with various Windows fonts into BGRA bitmaps
+    /// and verifies VietOCR reads them with diacritics. Requires ocr-vi model installed.
+    /// Run with: cargo test test_vietnamese_font_rendering -- --ignored --nocapture
+    #[cfg(windows)]
+    #[test]
+    #[ignore]
+    fn test_vietnamese_font_rendering() {
+        let root = std::env::var("QT_OCR_VI_ROOT")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| PathBuf::from(std::env::var("APPDATA").unwrap()).join("com.quicktranslate.app").join("models"));
+        assert!(installed(&root), "ocr-vi model must be installed to run this test (set QT_OCR_VI_ROOT)");
+
+        use windows::Win32::Graphics::Gdi::*;
+        use windows::core::PCWSTR;
+
+        let fonts = ["Segoe UI", "Arial", "Times New Roman", "Tahoma", "Calibri"];
+        let test_phrases = [
+            "Bôi đen bằng bàn phím rồi nhấn phím tắt.",
+            "Bạn đổi được tổ hợp phím trong Cài đặt nếu nó trùng với phần mềm khác.",
+            "Double-click để dịch một từ, triple-click để dịch một câu.",
+            "Việt Nam đất nước tuyệt vời!",
+        ];
+
+        for font in fonts {
+            for phrase in test_phrases {
+                let width = 1000i32;
+                let height = 50i32;
+                let bgra = unsafe {
+                    let dc = CreateCompatibleDC(None);
+                    let info = BITMAPINFO {
+                        bmiHeader: BITMAPINFOHEADER {
+                            biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
+                            biWidth: width,
+                            biHeight: -height,
+                            biPlanes: 1,
+                            biBitCount: 32,
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    };
+                    let mut bits: *mut std::ffi::c_void = std::ptr::null_mut();
+                    let bitmap = CreateDIBSection(Some(dc), &info, DIB_RGB_COLORS, &mut bits, None, 0).unwrap();
+                    let prev_bmp = SelectObject(dc, bitmap.into());
+
+                    let brush = CreateSolidBrush(windows::Win32::Foundation::COLORREF(0x00FFFFFF));
+                    let rect = windows::Win32::Foundation::RECT { left: 0, top: 0, right: width, bottom: height };
+                    FillRect(dc, &rect, brush);
+                    let _ = DeleteObject(brush.into());
+
+                    SetBkMode(dc, TRANSPARENT);
+                    SetTextColor(dc, windows::Win32::Foundation::COLORREF(0x00000000));
+
+                    let mut wide_font: Vec<u16> = font.encode_utf16().chain(std::iter::once(0)).collect();
+                    let hfont = CreateFontW(
+                        28, 0, 0, 0, FW_NORMAL.0 as i32, 0, 0, 0,
+                        DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                        CLEARTYPE_QUALITY, 0,
+                        PCWSTR(wide_font.as_mut_ptr()),
+                    );
+                    let prev_font = SelectObject(dc, hfont.into());
+
+                    let wide_text: Vec<u16> = phrase.encode_utf16().collect();
+                    let mut draw_rect = windows::Win32::Foundation::RECT { left: 10, top: 10, right: width - 10, bottom: height - 5 };
+                    DrawTextW(dc, &mut wide_text.clone(), &mut draw_rect, DT_LEFT | DT_TOP | DT_SINGLELINE);
+
+                    let mut bgra = vec![0u8; (width * height * 4) as usize];
+                    std::ptr::copy_nonoverlapping(bits as *const u8, bgra.as_mut_ptr(), bgra.len());
+
+                    SelectObject(dc, prev_font);
+                    let _ = DeleteObject(hfont.into());
+                    SelectObject(dc, prev_bmp);
+                    let _ = DeleteObject(bitmap.into());
+                    let _ = DeleteDC(dc);
+
+                    bgra
+                };
+
+                let words = [Rect { left: 5, top: 5, right: width - 5, bottom: height - 5 }];
+                let read = read_line(&root, &bgra, width, height, &words).unwrap();
+                println!("[Font: {font:<15}] Original: {phrase}");
+                println!("[Font: {font:<15}] VietOCR : {read}");
+                println!();
+                assert!(!read.trim().is_empty(), "VietOCR output should not be empty for font {font}");
+                assert!(
+                    read.chars().any(|c| "àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ".contains(c.to_ascii_lowercase())),
+                    "VietOCR output should contain Vietnamese diacritics for font {font}: got '{read}'"
+                );
+            }
+        }
+    }
 }
+
