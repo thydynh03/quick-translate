@@ -143,6 +143,10 @@ pub async fn check(app: &AppHandle) -> anyhow::Result<UpdateInfo> {
 
 /// Checks shortly after start and then once a day, unless turned off.
 pub fn start(app: AppHandle) {
+    // The Store keeps its own copy up to date.
+    if crate::store::packaged() {
+        return;
+    }
     tauri::async_runtime::spawn(async move {
         tokio::time::sleep(Duration::from_secs(30)).await;
         loop {
@@ -246,6 +250,9 @@ pub async fn update_check(app: AppHandle) -> Result<UpdateInfo, String> {
 
 #[tauri::command]
 pub async fn update_install(app: AppHandle) -> Result<(), String> {
+    if crate::store::packaged() {
+        return Err("Bản cài từ Microsoft Store được Store tự cập nhật.".into());
+    }
     install(&app).await.map_err(|e| {
         log(format!("update: install failed: {e:#}"));
         e.to_string()
