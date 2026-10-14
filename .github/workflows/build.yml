@@ -5,8 +5,6 @@ on:
     branches: [main]
     paths-ignore: ["website/**", "docs/**", "*.md"]
   pull_request:
-    # A change to the website or the documents alone needs no desktop build.
-    paths-ignore: ["website/**", "docs/**", "*.md"]
   workflow_dispatch:
 
 concurrency:
@@ -14,7 +12,30 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # A change to the website or the documents alone needs no desktop build.
+  # It is decided here and not by a path filter on the trigger, so that the
+  # check the main branch requires ("ci") reports on every pull request.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      desktop: ${{ steps.files.outputs.desktop }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: files
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          desktop=true
+          if [ -n "$BASE" ] && ! git diff --name-only "$BASE...HEAD" | grep -qvE '^(website/|docs/|[^/]*\.md$)'; then
+            desktop=false
+          fi
+          echo "desktop=$desktop" >> "$GITHUB_OUTPUT"
+
   test:
+    needs: changes
+    if: needs.changes.outputs.desktop == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -37,3 +58,16 @@ jobs:
       - run: pnpm build
       - run: cargo test
         working-directory: src-tauri
+
+  # The one check required before a merge: green when the tests passed or were not needed.
+  ci:
+    needs: [changes, test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          CHANGES: ${{ needs.changes.result }}
+          TEST: ${{ needs.test.result }}
+        run: |
+          echo "changes: $CHANGES, test: $TEST"
+          [ "$CHANGES" = success ] && { [ "$TEST" = success ] || [ "$TEST" = skipped ]; }
