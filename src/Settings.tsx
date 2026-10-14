@@ -42,7 +42,7 @@ function About({ checkUpdates, setCheckUpdates }: { checkUpdates: boolean; setCh
     try {
       await invoke("update_install");
       // Windows quits here to run the installer; macOS opens the disk image.
-      setStatus("Đã mở bộ cài. Kéo Swipelate vào Applications để thay bản cũ, rồi mở lại app.");
+      setStatus("Đã mở bộ cài. Kéo Swipelate vào Applications để thay bản cũ, rồi mở lại app. Còn Quick Translate (tên cũ) trong Applications thì xoá đi.");
     } catch (error) {
       setStatus(`Không cập nhật được: ${error}`);
     } finally {

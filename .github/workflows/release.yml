@@ -81,7 +81,10 @@ jobs:
           ref: ${{ env.TAG }}
       - name: Pack the browser extension
         working-directory: src/extension
-        run: zip -r ../../out/Swipelate-YouTube-extension.zip . -x README.md
+        run: |
+          zip -r ../../out/Swipelate-YouTube-extension.zip . -x README.md
+          # The name it had before the rename, for links already shared.
+          cp ../../out/Swipelate-YouTube-extension.zip ../../out/QuickTranslate-YouTube-extension.zip
       - name: Copies named after the version
         # The plain names stay: the website's "latest" links and the app's updater ask for them.
         working-directory: out

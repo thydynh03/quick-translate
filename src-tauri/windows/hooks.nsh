@@ -24,6 +24,11 @@
     StrCpy $R1 $R0 "" $R2
     ${If} $R1 == "${OLD_NAME}"
       RMDir /r "$R0"
+    ${Else}
+      ; A folder the user chose: let the old uninstaller remove only its own files.
+      ExecWait '"$R0\uninstall.exe" /S _?=$R0'
+      Delete "$R0\uninstall.exe"
+      RMDir "$R0"
     ${EndIf}
     Delete "$SMPROGRAMS\${OLD_NAME}.lnk"
     Delete "$DESKTOP\${OLD_NAME}.lnk"
@@ -33,7 +38,7 @@
     ReadRegStr $R1 HKCU "${RUN_KEY}" "${OLD_NAME}"
     ${If} $R1 != ""
       DeleteRegValue HKCU "${RUN_KEY}" "${OLD_NAME}"
-      WriteRegStr HKCU "${RUN_KEY}" "${PRODUCTNAME}" "$INSTDIR\${MAINBINARYNAME}.exe --hidden"
+      WriteRegStr HKCU "${RUN_KEY}" "${PRODUCTNAME}" '"$INSTDIR\${MAINBINARYNAME}.exe" --hidden'
     ${EndIf}
   ${EndIf}
 !macroend

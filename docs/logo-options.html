@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Swipelate logos</title>
+<style>
+  :root { --bg: #f4f5f8; --card: #fff; --text: #16181d; --muted: #5b6070; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #121317; --card: #1c1e24; --text: #eef0f5; --muted: #9aa0b0; } }
+  body { margin: 0; padding: 32px 16px; background: var(--bg); color: var(--text); font: 15px/1.5 "Segoe UI", -apple-system, sans-serif; }
+  h1 { font-size: 22px; margin: 0 auto 24px; max-width: 1040px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 20px; max-width: 1040px; margin: 0 auto; }
+  .card { background: var(--card); border-radius: 18px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+  .card h2 { margin: 0 0 4px; font-size: 18px; }
+  .card p { margin: 0 0 18px; color: var(--muted); }
+  .big { width: 160px; height: 160px; display: block; margin: 0 auto 18px; }
+  .row { display: flex; align-items: center; justify-content: center; gap: 18px; }
+  .row svg { flex: none; }
+  .lockup { display: flex; align-items: center; gap: 10px; justify-content: center; margin-top: 18px; font-weight: 700; font-size: 26px; letter-spacing: -0.02em; }
+  .lockup svg { width: 40px; height: 40px; }
+</style>
+</head>
+<body>
+<h1>Swipelate: 3 phương án logo</h1>
+<div class="grid">
+
+  <!-- A: a highlighter swipe across a line of text, with the translation bubble rising from it -->
+  <div class="card">
+    <h2>A. Vệt bôi + bong bóng</h2>
+    <p>Vệt bôi đen chéo qua dòng chữ, bản dịch bật lên thành bong bóng. Kể đúng cách dùng app.</p>
+    <svg class="big" id="logo-a" viewBox="0 0 1024 1024">
+      <defs><linearGradient id="ga" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b6cff"/><stop offset="1" stop-color="#7b3cff"/></linearGradient></defs>
+      <rect width="1024" height="1024" rx="228" fill="url(#ga)"/>
+      <path d="M268 210h488a64 64 0 0 1 64 64v196a64 64 0 0 1-64 64H560l-92 84v-84H268a64 64 0 0 1-64-64V274a64 64 0 0 1 64-64z" fill="#fff"/>
+      <rect x="282" y="300" width="300" height="52" rx="26" fill="#5a52ff"/>
+      <rect x="282" y="394" width="190" height="52" rx="26" fill="#b9b5ff"/>
+      <rect x="170" y="700" width="684" height="124" rx="62" fill="#ffd84d" transform="rotate(-8 512 762)"/>
+      <rect x="240" y="740" width="420" height="44" rx="22" fill="#3a2d8f" opacity=".85" transform="rotate(-8 512 762)"/>
+    </svg>
+    <div class="row">
+      <svg width="64" height="64" viewBox="0 0 1024 1024"><use href="#logo-a"/></svg>
+      <svg width="32" height="32" viewBox="0 0 1024 1024"><use href="#logo-a"/></svg>
+      <svg width="16" height="16" viewBox="0 0 1024 1024"><use href="#logo-a"/></svg>
+    </div>
+    <div class="lockup"><svg viewBox="0 0 1024 1024"><use href="#logo-a"/></svg>Swipelate</div>
+  </div>
+
+  <!-- B: an S drawn as one highlighter swipe, ending in an arrow -->
+  <div class="card">
+    <h2>B. Chữ S một nét quét</h2>
+    <p>Chữ S vẽ bằng một nét bút dạ quang, đầu nét là mũi tên "dịch sang". Gọn, dễ nhận ra ở cỡ nhỏ.</p>
+    <svg class="big" id="logo-b" viewBox="0 0 1024 1024">
+      <defs><linearGradient id="gb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#14b8a6"/><stop offset="1" stop-color="#0e7490"/></linearGradient></defs>
+      <rect width="1024" height="1024" rx="228" fill="url(#gb)"/>
+      <path d="M700 300C660 236 584 214 512 214c-112 0-196 60-196 150 0 196 392 112 392 300 0 92-88 150-200 150-86 0-160-34-204-100" fill="none" stroke="#fff" stroke-width="112" stroke-linecap="round"/>
+      <path d="M232 690l-30 168 160-62z" fill="#fff"/>
+      <circle cx="736" cy="290" r="34" fill="#fde047"/>
+    </svg>
+    <div class="row">
+      <svg width="64" height="64" viewBox="0 0 1024 1024"><use href="#logo-b"/></svg>
+      <svg width="32" height="32" viewBox="0 0 1024 1024"><use href="#logo-b"/></svg>
+      <svg width="16" height="16" viewBox="0 0 1024 1024"><use href="#logo-b"/></svg>
+    </div>
+    <div class="lockup"><svg viewBox="0 0 1024 1024"><use href="#logo-b"/></svg>Swipelate</div>
+  </div>
+
+  <!-- C: two letters, A and Vietnamese Ă, joined by a swipe -->
+  <div class="card">
+    <h2>C. A → Ă</h2>
+    <p>Chữ A (tiếng Anh) và Ă (tiếng Việt) nối bằng một vệt quét. Nói rõ app dịch Anh – Việt.</p>
+    <svg class="big" id="logo-c" viewBox="0 0 1024 1024">
+      <rect width="1024" height="1024" rx="228" fill="#111827"/>
+      <rect x="150" y="560" width="724" height="150" rx="75" fill="#f97316" transform="rotate(-10 512 635)"/>
+      <path d="M210 720l140-400h56l140 400" fill="none" stroke="#fff" stroke-width="64" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M262 590h176" stroke="#fff" stroke-width="56" stroke-linecap="round"/>
+      <path d="M556 720l118-336h48l118 336" fill="none" stroke="#fff" stroke-width="58" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M600 612h152" stroke="#fff" stroke-width="50" stroke-linecap="round"/>
+      <path d="M636 236q62 70 124 0" fill="none" stroke="#fdba74" stroke-width="46" stroke-linecap="round"/>
+    </svg>
+    <div class="row">
+      <svg width="64" height="64" viewBox="0 0 1024 1024"><use href="#logo-c"/></svg>
+      <svg width="32" height="32" viewBox="0 0 1024 1024"><use href="#logo-c"/></svg>
+      <svg width="16" height="16" viewBox="0 0 1024 1024"><use href="#logo-c"/></svg>
+    </div>
+    <div class="lockup"><svg viewBox="0 0 1024 1024"><use href="#logo-c"/></svg>Swipelate</div>
+  </div>
+
+</div>
+</body>
+</html>

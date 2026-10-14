@@ -114,7 +114,7 @@ Xem `DECISIONS.md`. Cambridge không có API công khai → chỉ mở link. Oxf
 
 ## Đổi tên sang Swipelate (đang làm, 14/10/2026)
 - Người dùng chốt tên **Swipelate** (đã kiểm: `swipelate.com` chưa có NS, Google không trùng). Domain mua sau. Đổi cả tên repo.
-- Logo: 6 phương án ở `docs/logo-options.html` (A, B, C) và `docs/logo-options-2.html` (D, E, F); chờ người dùng chọn.
+- Logo: người dùng chọn **F** (chữ s đen trên vệt dạ quang hồng, nền trắng) trong 6 phương án ở `docs/logo-options.html` (A, B, C) và `docs/logo-options-2.html` (D, E, F). Màu nhấn web `#b3175a` (đạt AA trên nền `--tone`).
 - Main đã bảo vệ: phải qua PR, check `ci` xanh, mọi review thread resolved, cấm force-push (áp dụng cả admin). Thread cubic phải resolve bằng GraphQL `resolveReviewThread` trước khi merge.
 - Kế hoạch đổi tên an toàn cho người đang dùng:
   - Giữ `identifier` `com.quicktranslate.app` (thư mục dữ liệu) và có thể giữ `mainBinaryName`.
