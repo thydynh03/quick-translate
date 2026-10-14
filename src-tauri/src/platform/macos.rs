@@ -6,7 +6,7 @@
 //! Recording permission.
 //!
 //! Not yet implemented here: a non-activating panel for the popup — showing
-//! it briefly activates Quick Translate.
+//! it briefly activates Swipelate.
 
 use std::ffi::{c_char, c_void, CStr};
 use std::ptr;
@@ -467,7 +467,7 @@ fn screen_access() -> anyhow::Result<()> {
         CGRequestScreenCaptureAccess();
     }
     anyhow::bail!(
-        "hãy cấp quyền Ghi màn hình (Screen Recording) cho Quick Translate trong System Settings → Privacy & Security, rồi mở lại ứng dụng"
+        "hãy cấp quyền Ghi màn hình (Screen Recording) cho Swipelate trong System Settings → Privacy & Security, rồi mở lại ứng dụng"
     )
 }
 
@@ -634,7 +634,7 @@ pub fn exclude_from_capture(window: &tauri::WebviewWindow, exclude: bool) {
     HIDDEN_FROM_CAPTURE.store(number, Ordering::Relaxed);
 }
 
-/// Shows a window without making Quick Translate the active application.
+/// Shows a window without making Swipelate the active application.
 pub fn show_passive(window: &tauri::WebviewWindow) {
     let shown = window.clone();
     let _ = window.run_on_main_thread(move || {

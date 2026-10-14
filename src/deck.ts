@@ -3,7 +3,7 @@
 import qrcode from "qrcode-generator";
 import type { Card } from "./types";
 
-export const LEARN_URL = "https://thydynh03.github.io/quick-translate/learn.html";
+export const LEARN_URL = "https://thydynh03.github.io/swipelate/learn.html";
 /** Longest link that still fits a QR code a phone camera reads from a screen. */
 const QR_LIMIT = 1600;
 

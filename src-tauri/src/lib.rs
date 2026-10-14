@@ -32,9 +32,9 @@ pub struct AppState {
     pub gesture: AtomicU64,
 }
 
-/// Appends a line to `quick-translate.log` in the temp folder.
+/// Appends a line to `swipelate.log` in the temp folder.
 pub fn log(message: impl AsRef<str>) {
-    let path = std::env::temp_dir().join("quick-translate.log");
+    let path = std::env::temp_dir().join("swipelate.log");
     if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
         let secs = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -224,7 +224,7 @@ fn sync_tray(app: &AppHandle) {
     let icon = if on { app.default_window_icon().cloned() } else { Some(tauri::include_image!("icons/tray-off.png")) };
     let _ = tray.set_icon(icon);
     let state = if on { "đang bật" } else { "đang tắt" };
-    let _ = tray.set_tooltip(Some(format!("Quick Translate: {state} (bấm để đổi)")));
+    let _ = tray.set_tooltip(Some(format!("Swipelate: {state} (bấm để đổi)")));
 }
 
 /// Turns the selection icon on or off, like the E/V switch of an input method.
@@ -359,6 +359,16 @@ pub fn run() {
                 let _ = settings::save(&handle, &loaded);
                 // Runs in the background from sign-in by default; the settings can turn it off.
                 if !cfg!(debug_assertions) {
+                    use tauri_plugin_autostart::ManagerExt;
+                    let _ = handle.autolaunch().enable();
+                }
+            }
+            // Until 0.1.21 the app was "Quick Translate" and started with the system
+            // under that name. On Windows the installer moves it over.
+            #[cfg(target_os = "macos")]
+            if let Some(home) = std::env::var_os("HOME") {
+                let old = std::path::Path::new(&home).join("Library/LaunchAgents/Quick Translate.plist");
+                if std::fs::remove_file(old).is_ok() {
                     use tauri_plugin_autostart::ManagerExt;
                     let _ = handle.autolaunch().enable();
                 }

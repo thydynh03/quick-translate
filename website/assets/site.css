@@ -4,9 +4,9 @@
   --card: #ffffff;
   --ink: #15171c;
   --soft: #5a616d;
-  --accent: #1f4fd8;
+  --accent: #b3175a;
   --accent-ink: #ffffff;
-  --accent-soft: #dce5ff;
+  --accent-soft: #ffe0ee;
   --select: #b9ccff;
   --shadow: 0 24px 60px -28px rgba(20, 28, 60, 0.45);
   --radius: 14px;
@@ -21,9 +21,9 @@
     --card: #1d2029;
     --ink: #eef0f4;
     --soft: #9ba3b2;
-    --accent: #86a6ff;
+    --accent: #ff7ab8;
     --accent-ink: #0d1020;
-    --accent-soft: #212c52;
+    --accent-soft: #4a1f33;
     --select: #33488f;
     --shadow: 0 24px 60px -28px rgba(0, 0, 0, 0.8);
   }

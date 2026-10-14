@@ -11,8 +11,8 @@ import Vocab from "./Vocab";
 
 type Tab = "general" | "engine" | "subtitles" | "vocab" | "history" | "about";
 
-const SITE = "https://thydynh03.github.io/quick-translate/";
-const REPO = "https://github.com/thydynh03/quick-translate";
+const SITE = "https://thydynh03.github.io/swipelate/";
+const REPO = "https://github.com/thydynh03/swipelate";
 
 function About({ checkUpdates, setCheckUpdates }: { checkUpdates: boolean; setCheckUpdates: (on: boolean) => void }) {
   const [version, setVersion] = useState("");
@@ -42,7 +42,7 @@ function About({ checkUpdates, setCheckUpdates }: { checkUpdates: boolean; setCh
     try {
       await invoke("update_install");
       // Windows quits here to run the installer; macOS opens the disk image.
-      setStatus("Đã mở bộ cài. Kéo Quick Translate vào Applications để thay bản cũ, rồi mở lại app.");
+      setStatus("Đã mở bộ cài. Kéo Swipelate vào Applications để thay bản cũ, rồi mở lại app. Còn Quick Translate (tên cũ) trong Applications thì xoá đi.");
     } catch (error) {
       setStatus(`Không cập nhật được: ${error}`);
     } finally {
@@ -66,7 +66,7 @@ function About({ checkUpdates, setCheckUpdates }: { checkUpdates: boolean; setCh
   return (
     <section>
       <h2>Giới thiệu</h2>
-      <p>Quick Translate {version && `phiên bản ${version}`}</p>
+      <p>Swipelate {version && `phiên bản ${version}`}</p>
 
       <div className="update">
         {update?.available ? (
@@ -229,7 +229,7 @@ export default function Settings() {
   return (
     <div className="settings">
       <nav className="tabs">
-        <h1>Quick Translate</h1>
+        <h1>Swipelate</h1>
         {(
           [
             ["general", "Chung"],

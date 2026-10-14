@@ -1,4 +1,4 @@
-// Flashcards for words saved in Quick Translate. Cards arrive in the link (#d=…) from
+// Flashcards for words saved in Swipelate. Cards arrive in the link (#d=…) from
 // the desktop app (src/deck.ts packs them) and live in this browser's localStorage.
 (() => {
   const KEY = "qt-deck-v1";
@@ -267,7 +267,7 @@
     const blob = new Blob([JSON.stringify(db)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `quick-translate-flashcards-${today()}.json`;
+    a.download = `swipelate-flashcards-${today()}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }

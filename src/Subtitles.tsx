@@ -5,7 +5,7 @@ import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
 // Where the YouTube extension is offered. Point this at the store page once it is listed there.
-const EXTENSION_URL = "https://thydynh03.github.io/quick-translate/docs.html#youtube";
+const EXTENSION_URL = "https://thydynh03.github.io/swipelate/docs.html#youtube";
 
 type Job = { path: string; done: number; total: number; output?: string; error?: string };
 

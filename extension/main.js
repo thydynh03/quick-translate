@@ -1,4 +1,4 @@
-// Quick Translate for YouTube: shows the subtitles of the playing video in
+// Swipelate for YouTube: shows the subtitles of the playing video in
 // your language, fetched once for the whole video, so there is no delay.
 //
 // YouTube only hands out subtitles to its own player (the address carries a

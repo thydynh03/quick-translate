@@ -27,12 +27,12 @@ jobs:
           - os: windows-latest
             args: --bundles nsis
             source: src-tauri/target/release/bundle/nsis/*.exe
-            asset: QuickTranslate-Setup-x64.exe
+            asset: Swipelate-Setup-x64.exe
           - os: macos-latest
             args: --bundles dmg --target aarch64-apple-darwin
             rust_target: aarch64-apple-darwin
             source: src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
-            asset: QuickTranslate-macOS-AppleSilicon.dmg
+            asset: Swipelate-macOS-AppleSilicon.dmg
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -81,13 +81,20 @@ jobs:
           ref: ${{ env.TAG }}
       - name: Pack the browser extension
         working-directory: src/extension
-        run: zip -r ../../out/QuickTranslate-YouTube-extension.zip . -x README.md
+        run: |
+          zip -r ../../out/Swipelate-YouTube-extension.zip . -x README.md
+          # The name it had before the rename, for links already shared.
+          cp ../../out/Swipelate-YouTube-extension.zip ../../out/QuickTranslate-YouTube-extension.zip
       - name: Copies named after the version
         # The plain names stay: the website's "latest" links and the app's updater ask for them.
         working-directory: out
         run: |
-          for file in QuickTranslate-Setup-x64.exe QuickTranslate-macOS-AppleSilicon.dmg; do
-            if [ -f "$file" ]; then cp "$file" "QuickTranslate-${TAG#v}-${file#QuickTranslate-}"; fi
+          for file in Swipelate-Setup-x64.exe Swipelate-macOS-AppleSilicon.dmg; do
+            if [ -f "$file" ]; then
+              cp "$file" "Swipelate-${TAG#v}-${file#Swipelate-}"
+              # Versions up to 0.1.21, from when the app was Quick Translate, update from these names.
+              cp "$file" "QuickTranslate-${file#Swipelate-}"
+            fi
           done
       - name: Checksums
         working-directory: out
@@ -100,5 +107,5 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" out/* --clobber
           else
-            gh release create "$TAG" out/* --title "Quick Translate ${TAG#v}" --generate-notes
+            gh release create "$TAG" out/* --title "Swipelate ${TAG#v}" --generate-notes
           fi
