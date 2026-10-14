@@ -360,7 +360,7 @@ html[data-window="popup"] body {
   padding: 7px 0;
 }
 
-.row input:not([type="checkbox"]):not([type="radio"]),
+.row input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 .row select,
 .hotkey {
   width: 240px;

@@ -21,8 +21,7 @@ $parts = $Version.TrimStart("v").Split("-")[0].Split(".")
 if ($parts.Count -ne 3) { throw "Version must look like 1.2.3, got $Version" }
 $packageVersion = "$($parts -join '.').0"
 
-$layout = Join-Path ([System.IO.Path]::GetTempPath()) "swipelate-msix"
-Remove-Item $layout -Recurse -Force -ErrorAction SilentlyContinue
+$layout = Join-Path ([System.IO.Path]::GetTempPath()) "swipelate-msix-$([guid]::NewGuid().ToString('N'))"
 New-Item -ItemType Directory -Force "$layout/Assets" | Out-Null
 
 Copy-Item (Join-Path $root $Exe) "$layout/swipelate.exe"
@@ -47,4 +46,5 @@ $folder = Split-Path $Out -Parent
 if ($folder) { New-Item -ItemType Directory -Force $folder | Out-Null }
 & $makeappx.FullName pack /o /d $layout /p $Out
 if ($LASTEXITCODE -ne 0) { throw "makeappx failed ($LASTEXITCODE)" }
+Remove-Item $layout -Recurse -Force
 Write-Host "Packed $Out ($packageVersion)"

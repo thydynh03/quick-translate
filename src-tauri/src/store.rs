@@ -10,14 +10,14 @@ const STARTUP_TASK: &str = "SwipelateStartup";
 #[cfg(windows)]
 pub fn packaged() -> bool {
     use std::sync::OnceLock;
-    use windows::Win32::Foundation::APPMODEL_ERROR_NO_PACKAGE;
+    use windows::Win32::Foundation::ERROR_INSUFFICIENT_BUFFER;
     use windows::Win32::Storage::Packaging::Appx::GetCurrentPackageFullName;
     static PACKAGED: OnceLock<bool> = OnceLock::new();
     *PACKAGED.get_or_init(|| {
         let mut length = 0u32;
-        // With no buffer it only reports the length, or that there is no package.
+        // With no buffer it asks for one when there is a package (APPMODEL_ERROR_NO_PACKAGE otherwise).
         let result = unsafe { GetCurrentPackageFullName(&mut length, None) };
-        result != APPMODEL_ERROR_NO_PACKAGE
+        result == ERROR_INSUFFICIENT_BUFFER
     })
 }
 

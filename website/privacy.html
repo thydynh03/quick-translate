@@ -46,6 +46,7 @@
       <h2 id="van-ban">Văn bản bạn dịch</h2>
       <ul>
         <li>Khi bạn bôi đen hoặc chọn vùng màn hình để dịch, văn bản đó được gửi tới engine dịch bạn chọn trong Cài đặt: Google Translate (mặc định), DeepL, Anthropic Claude, hoặc địa chỉ API tương thích OpenAI do bạn nhập. Mỗi dịch vụ xử lý văn bản theo chính sách riêng của họ.</li>
+        <li>Nếu bật "tự dùng dự phòng khi engine chính lỗi" (bật sẵn), văn bản có thể được dịch bằng engine offline trên máy, rồi bằng engine khác mà bạn đã nhập API key (DeepL, Claude hoặc API tương thích OpenAI).</li>
         <li>Engine Offline dịch ngay trên máy, không gửi văn bản đi đâu.</li>
         <li>Nhận dạng chữ trên màn hình (OCR) chạy trên máy bằng Windows OCR hoặc Apple Vision. Ảnh chụp vùng màn hình không được lưu hay gửi đi.</li>
         <li>Khi bật tra nghĩa tiếng Anh, từ đang tra được gửi tới Free Dictionary API, và tới Oxford Dictionaries API nếu bạn nhập khoá của họ.</li>
@@ -53,11 +54,11 @@
       </ul>
 
       <h2 id="tren-may">Dữ liệu lưu trên máy</h2>
-      <p>Cài đặt, lịch sử dịch, sổ từ vựng, mục clipboard đã ghim và model dịch offline được lưu trong thư mục dữ liệu của ứng dụng trên máy bạn. Chúng không được gửi lên máy chủ nào. Bạn có thể tắt lưu lịch sử, xoá lịch sử trong Cài đặt, hoặc xoá toàn bộ khi gỡ ứng dụng.</p>
+      <p>Cài đặt, lịch sử dịch, sổ từ vựng, mục clipboard đã ghim và model dịch offline được lưu trong thư mục dữ liệu của ứng dụng trên máy bạn. Chúng không được gửi lên máy chủ nào. Bạn có thể tắt lưu lịch sử hoặc xoá lịch sử trong Cài đặt. Bản Microsoft Store xoá dữ liệu khi gỡ. Với bản cài từ GitHub, gỡ ứng dụng không xoá thư mục dữ liệu: xoá thư mục <code>com.quicktranslate.app</code> trong <code>%APPDATA%</code> (Windows) hoặc <code>~/Library/Application Support</code> (macOS).</p>
 
       <h2 id="thong-ke">Thống kê ẩn danh</h2>
-      <p>Để đếm số người dùng, ứng dụng gửi mỗi ngày một lần: một mã ngẫu nhiên tạo khi cài, số phiên bản và tên hệ điều hành. Không gửi văn bản bạn dịch, tên, email hay thông tin nhận dạng nào khác. Tắt bằng mục "Gửi thống kê ẩn danh" trong Cài đặt.</p>
-      <p>Trang web này đếm lượt truy cập theo cách tương tự (một mã ngẫu nhiên lưu trong trình duyệt, tối đa một lần mỗi ngày) và không gửi gì khi trình duyệt bật Do Not Track.</p>
+      <p>Để đếm số người dùng, ứng dụng gửi mỗi ngày một lần: một mã ngẫu nhiên tạo khi cài, số phiên bản và tên hệ điều hành. Không gửi văn bản bạn dịch, tên, email hay thông tin nhận dạng nào khác. Để chống spam, máy chủ thống kê lưu một giá trị băm (SHA-256, rút gọn) của dải mạng gửi yêu cầu theo từng ngày, không lưu địa chỉ IP gốc. Tắt bằng mục "Gửi thống kê ẩn danh" trong Cài đặt.</p>
+      <p>Trang web này đếm lượt truy cập theo cách tương tự (một mã ngẫu nhiên lưu trong trình duyệt, tối đa một lần mỗi ngày) và không gửi gì khi trình duyệt bật Do Not Track. Phông chữ của trang tải từ Google Fonts, nên trình duyệt gửi địa chỉ IP và thông tin trình duyệt tới Google khi mở trang.</p>
 
       <h2 id="mang">Kết nối mạng khác</h2>
       <ul>
@@ -73,7 +74,7 @@
 
       <h2 id="english" lang="en">Summary in English</h2>
       <div lang="en">
-        <p>Swipelate has no accounts, ads or data sales. Text you translate is sent only to the translation service you pick (Google Translate by default, DeepL, Anthropic Claude or an OpenAI-compatible API you enter); the Offline engine and OCR run on your device. Settings, history, vocabulary and API keys stay on your device. A daily anonymous ping (random install id, version, OS) counts users and can be turned off in Settings. The GitHub build checks GitHub for updates; the Microsoft Store build is updated by the Store. Contact: GitHub issues.</p>
+        <p>Swipelate has no accounts, ads or data sales. Text you translate is sent to the translation service you pick (Google Translate by default, DeepL, Anthropic Claude or an OpenAI-compatible API you enter); with fallback on (the default), a failed translation is retried offline, then with another engine you entered a key for. The Offline engine and OCR run on your device. Settings, history, vocabulary and API keys stay on your device. A daily anonymous ping (random install id, version, OS) counts users and can be turned off in Settings; for abuse protection the stats server keeps a truncated SHA-256 hash of the sender's network per day, never the IP address. The website loads fonts from Google Fonts. The GitHub build checks GitHub for updates; the Microsoft Store build is updated by the Store. Contact: GitHub issues.</p>
       </div>
     </main>
   </div>

@@ -245,6 +245,9 @@ fn launch(_app: &AppHandle, _installer: &Path) -> anyhow::Result<()> {
 
 #[tauri::command]
 pub async fn update_check(app: AppHandle) -> Result<UpdateInfo, String> {
+    if crate::store::packaged() {
+        return Err("Bản cài từ Microsoft Store được Store tự cập nhật.".into());
+    }
     check(&app).await.map_err(|e| e.to_string())
 }
 

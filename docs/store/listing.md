@@ -8,7 +8,7 @@ Product: Swipelate, Store ID `9NWX2CTRQ2RX`, MSIX. Screenshots: `screenshot-1-po
 - Website: https://thydynh03.github.io/swipelate/
 - Support contact: https://github.com/thydynh03/swipelate/issues
 - Product declarations: none needed (no in-app purchases, no ads).
-- System requirements: Windows 10 1809 or later, x64. Internet for online engines; offline engine needs a model download.
+- System requirements: Windows 10 1809 or later, x64, with the WebView2 Runtime (built into Windows 11; delivered to Windows 10 by Windows Update). Live caption translation needs Windows 11 22H2 or later. Internet for online engines; offline engine needs a model download.
 
 ## Age ratings (IARC questionnaire)
 Category "Utility, productivity, communication or other". Answer **No** to every content question (violence, sex, drugs, gambling, user-generated content shared with others, sharing location, digital purchases). Expected rating: 3+ / Everyone.
@@ -26,7 +26,7 @@ Swipelate dịch văn bản bạn bôi đen ở bất kỳ ứng dụng nào và
 - Dịch vùng màn hình bằng OCR (Alt+W): ảnh, video, game, PDF dạng ảnh.
 - Nhiều engine: Google (không cần key), DeepL, Claude, API tương thích OpenAI (ChatGPT, Gemini, Ollama, LM Studio).
 - Dịch offline ngay trên máy với model Opus-MT, không cần mạng.
-- Dịch phụ đề tiếng Anh thời gian thực, giải thích nghĩa của từ theo ngữ cảnh câu.
+- Dịch phụ đề tiếng Anh thời gian thực (Windows 11 22H2 trở lên), giải thích nghĩa của từ theo ngữ cảnh câu.
 - Sổ từ vựng, lịch sử dịch, bảng clipboard, hồ sơ ngôn ngữ theo từng ứng dụng.
 - Giao diện sáng/tối, chạy nền gọn trong khay hệ thống.
 
@@ -53,7 +53,7 @@ Swipelate translates the text you select in any app and shows the translation ri
 - Translate a region of the screen with OCR (Alt+W): images, videos, games, scanned PDFs.
 - Many engines: Google (no key needed), DeepL, Claude, any OpenAI-compatible API (ChatGPT, Gemini, Ollama, LM Studio).
 - Offline translation on your device with Opus-MT models.
-- Live translation of English captions, word meanings explained in the context of the sentence.
+- Live translation of English captions (Windows 11 22H2 or later), word meanings explained in the context of the sentence.
 - Vocabulary book, translation history, clipboard board, per-app language profiles.
 - Light and dark themes; runs quietly in the system tray.
 
