@@ -956,3 +956,13 @@ html[data-window="clipboard"] body {
   color: var(--ink-3);
   font: inherit;
 }
+
+/* Shown once after an update. */
+.updated {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--text);
+  cursor: pointer;
+}
