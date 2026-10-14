@@ -49,7 +49,7 @@
     "category": "Productivity",
     "shortDescription": "Bôi đen để dịch ở mọi ứng dụng",
     "longDescription": "Swipelate dịch văn bản bạn bôi đen ở bất kỳ ứng dụng nào và hiện bản dịch ngay tại chỗ. Dịch online, offline và OCR.",
-    "homepage": "https://thydynh03.github.io/swipelate/",
+    "homepage": "https://swipelate.com/",
     "macOS": {
       "signingIdentity": "-",
       "minimumSystemVersion": "11.0"

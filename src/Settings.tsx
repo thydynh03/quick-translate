@@ -10,7 +10,7 @@ import Vocab from "./Vocab";
 
 type Tab = "general" | "engine" | "subtitles" | "vocab" | "history" | "about";
 
-const SITE = "https://thydynh03.github.io/swipelate/";
+const SITE = "https://swipelate.com/";
 const REPO = "https://github.com/thydynh03/swipelate";
 
 function About({ checkUpdates, setCheckUpdates }: { checkUpdates: boolean; setCheckUpdates: (on: boolean) => void }) {

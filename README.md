@@ -4,7 +4,7 @@
 
 Trước bản 0.1.22 app có tên **Quick Translate**. Bản cài cũ tự cập nhật lên Swipelate và giữ nguyên cài đặt; trên macOS, kéo Swipelate vào Applications rồi xoá "Quick Translate" cũ.
 
-**Trang giới thiệu và tải về:** https://thydynh03.github.io/swipelate/ · [Tài liệu](https://thydynh03.github.io/swipelate/docs.html) · [Giấy phép](LICENSE)
+**Trang giới thiệu và tải về:** https://swipelate.com/ · [Tài liệu](https://swipelate.com/docs.html) · [Giấy phép](LICENSE)
 
 ## Tải về
 
