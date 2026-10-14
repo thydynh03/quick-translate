@@ -28,6 +28,15 @@
         const size = link.querySelector(".size");
         if (asset && size) size.textContent = megabytes(asset.size);
         if (!asset) link.href = release.html_url;
+        // The same file under a name that says which version it is.
+        const named = release.assets.find((item) => item.name === link.dataset.asset.replace("QuickTranslate-", `QuickTranslate-${version}-`));
+        if (named) link.href = named.browser_download_url;
+        if (asset || named) {
+          const label = document.createElement("span");
+          label.className = "version";
+          label.textContent = ` ${version} `;
+          link.insertBefore(label, size);
+        }
       });
     })
     .catch(() => {});

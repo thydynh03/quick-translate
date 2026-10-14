@@ -75,6 +75,19 @@ async fn subtitle_translate(app: AppHandle, path: String) -> Result<String, Stri
 }
 
 /// Lets the settings window offer the last used application for a new profile.
+/// The version that ran before this one, when the app has just been updated.
+struct UpdatedFrom(Mutex<Option<String>>);
+
+/// Asked once by the settings window, to tell the user about the update.
+#[tauri::command]
+fn updated_from(state: tauri::State<UpdatedFrom>) -> Option<String> {
+    let previous = state.0.lock().take();
+    if let Some(previous) = &previous {
+        log(format!("updated from {previous:?}"));
+    }
+    previous
+}
+
 #[tauri::command]
 fn last_app() -> Option<String> {
     LAST_APP.lock().clone()
@@ -319,6 +332,7 @@ pub fn run() {
             history::history_clear,
             updater::update_check,
             updater::update_install,
+            updated_from,
             vocab::vocab_add,
             vocab::vocab_list,
             vocab::vocab_remove,
@@ -330,6 +344,16 @@ pub fn run() {
         .setup(|app| {
             let handle = app.handle().clone();
             let first_run = !settings::data_dir(&handle).join("settings.json").exists();
+            // A version other than the one that ran last: the app was just updated.
+            // The installer starts it again without a window, so it has to say so itself.
+            // Managed first: the settings window may ask while the rest is still being set up.
+            let version_file = settings::data_dir(&handle).join("last-version");
+            let current = app.package_info().version.to_string();
+            let previous = std::fs::read_to_string(&version_file).map(|text| text.trim().to_string()).ok();
+            // Without the note of this version, every start would look like an update.
+            let noted = std::fs::write(&version_file, &current).is_ok();
+            let updated = noted && !first_run && previous.as_deref() != Some(current.as_str());
+            app.manage(UpdatedFrom(Mutex::new(updated.then(|| previous.unwrap_or_default()))));
             let loaded = settings::load(&handle);
             if first_run {
                 let _ = settings::save(&handle, &loaded);
@@ -356,6 +380,7 @@ pub fn run() {
             register_hotkeys(&handle);
             telemetry::start(handle.clone());
             app.manage(updater::UpdateState(Mutex::new(None)));
+
             updater::start(handle.clone());
             engine::warm(&handle.state::<AppState>().settings.read());
 
@@ -368,7 +393,7 @@ pub fn run() {
 
             let hidden = std::env::args().any(|arg| arg == "--hidden");
             let open_settings = std::env::args().any(|arg| arg == "--settings");
-            if (first_run && !hidden) || open_settings {
+            if ((first_run || updated) && !hidden) || open_settings {
                 show_settings(&handle);
             }
             Ok(())

@@ -145,6 +145,17 @@ function shortcutFrom(event: React.KeyboardEvent): string | null {
 
 export default function Settings() {
   const [tab, setTab] = useState<Tab>("general");
+  // The version the app was updated from, until the notice about it is dismissed.
+  const [updatedFrom, setUpdatedFrom] = useState<string | null>(null);
+  const [version, setVersion] = useState("");
+  useEffect(() => {
+    getVersion().then(setVersion);
+    invoke<string | null>("updated_from").then((previous) => {
+      if (previous === null) return;
+      setUpdatedFrom(previous);
+      setTab("about");
+    });
+  }, []);
   const [config, setConfig] = useState<Config | null>(null);
   const [autostart, setAutostart] = useState(false);
   const [status, setStatus] = useState("");
@@ -237,6 +248,11 @@ export default function Settings() {
       </nav>
 
       <main className="pane">
+        {updatedFrom !== null && (
+          <button className="updated" title="Bấm để ẩn" onClick={() => setUpdatedFrom(null)}>
+            Đã cập nhật{updatedFrom ? ` từ ${updatedFrom}` : ""} lên phiên bản {version}. Ứng dụng đang chạy ở khay hệ thống.
+          </button>
+        )}
         {tab === "general" && (
           <>
             <section>
