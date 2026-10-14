@@ -155,8 +155,24 @@ Xem `DECISIONS.md`. Cambridge không có API công khai → chỉ mở link. Oxf
   - Đổi màu chính `#b3175a` sang bảng màu mới chuẩn WCAG AA: `--accent: #c03546` (đạt 5,5:1 trên trắng, 5,0:1 trên paper, 4,55:1 trên tone; chữ trắng trên nút đạt 5,5:1), dark mode `--accent: #ff8577` (đạt 6,8–8,1:1; chữ nút `#0d1020` đạt 8,0:1). Nút phụ ghost: `#ffe8e5` (sáng), `#451c1e` (tối).
   - Gradient trang trí: `#ff5f6d → #ffc371` trong `site.css` (`--brand-gradient`, thanh tiến trình `.s-bar i`, hình nền `.s-clip`).
   - Cập nhật `theme-color` và liên kết icon trên toàn bộ 7 trang (`index`, `docs`, `learn`, `license`, `privacy`, `stats`, `404`) và 2 webmanifest (`site`, `learn`).
-  - Đã kiểm tra giao diện trên server tĩnh ở khổ 375 px và 1280 px, cả chế độ sáng và tối.
 - 14/10: Bản 0.1.25:
   - Bỏ tab "GitHub" trên header navigation của các trang web (`website/index.html`, `docs.html`, `license.html`, `privacy.html`, `stats.html`).
   - Kiểm tra và chẩn đoán nhận diện tiếng Việt qua VietOCR: thêm bài test `#[ignore]` `test_vietnamese_font_rendering` trong `ocr_vi.rs` kết xuất 5 font chữ Windows (Segoe UI, Arial, Times New Roman, Tahoma, Calibri) kiểm tra và assert nhận diện đầy đủ dấu tiếng Việt khi đã cài model.
   - Tăng version lên 0.1.25 ở `package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`, `website/index.html`.
+- 14/10: Tối ưu hoá & quản lý linh hoạt Lịch sử và Từ vựng:
+  - Rust backend:
+    - Thêm in-memory HashSet cache cho `vocab_has` (loại bỏ hoàn toàn I/O đọc ổ cứng mỗi khi bật popup dịch; tra cứu tức thì O(1) 0 ms).
+    - Cài đặt thời gian lưu trữ `history_retention_days` (7, 14, 30, 60, 90, 180 ngày hoặc 0 - mãi mãi) và giới hạn số lượng `history_max_entries` (100, 300, 500, 1000, 2000 hoặc 0 - không giới hạn).
+    - Tự động cắt tỉa (prune) lịch sử theo ngày và theo giới hạn khi app khởi động (`prune_on_start`) và sau mỗi bản dịch mới (`push_with_limits`).
+    - Lệnh dọn dẹp hàng loạt: `history_clear_older_than`, `history_clear_matches`, `vocab_clear_matches`.
+    - Lệnh sao lưu/khôi phục: `vocab_export_csv` (tương thích Anki / Excel với định dạng CSV UTF-8 BOM chuẩn), `vocab_import_cards` (nhập thẻ JSON sao lưu chống trùng lặp).
+  - Frontend React & Giao diện:
+    - Tab Lịch sử: thêm các tuỳ chọn thời hạn lưu trữ & số lượng tối đa trong Cài đặt; nút dọn dẹp nhanh mục cũ > 30 ngày, xoá kết quả tìm kiếm, phân trang lazy loading (40 mục/lần) giảm tải DOM khi danh sách lớn.
+    - Tab Từ vựng: thêm nút "Xuất CSV (Anki)", "Sao lưu JSON", "Nhập JSON…", "Xoá kết quả tìm kiếm", phân trang lazy loading (40 thẻ/lần).
+    - CSS: hỗ trợ đầy đủ 2 chế độ sáng (light) và tối (dark) cho các nút hành động, nút cảnh báo `.danger`, và phân trang `.pagination`.
+  - Kiểm thử: toàn bộ 89 unit tests Rust pass; `pnpm build` biên dịch sạch 0 lỗi.
+- 14/10: Bản 0.1.26:
+  - Tăng version lên 0.1.26 ở `package.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock`, `src-tauri/tauri.conf.json`, `website/index.html`.
+  - Tối ưu linh hoạt lưu trữ lịch sử và từ vựng: cache in-memory `HashSet` O(1) cho kiểm tra từ vựng trong popup; cấu hình thời gian lưu trữ & giới hạn số lượng mục; tự động dọn dẹp khi khởi động; xuất CSV tương thích Anki; sao lưu và nhập dữ liệu JSON; phân trang lazy loading giảm tải DOM.
+  - Đại tu toàn diện giao diện (UI) đẳng cấp, hiện đại: popup kính mờ Glassmorphism, chuyển đổi theme Sáng/Tối với hiệu ứng vòng tròn sóng lan toả ở thanh sidebar Settings, thẻ Flashcard xoay lật vật lý 3D, website Bento grid và hiệu ứng cuộn mượt mà native. Giữ nguyên 100% logic ứng dụng.
+  - Kiểm thử: toàn bộ 89 unit tests Rust pass; `pnpm build` TypeScript biên dịch sạch 0 lỗi. Đóng gói và phát hành tag `v0.1.26`.

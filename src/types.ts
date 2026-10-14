@@ -41,6 +41,8 @@ export type Settings = {
   anthropic_key: string;
   excluded_apps: string[];
   save_history: boolean;
+  history_retention_days: number;
+  history_max_entries: number;
   usage_stats: boolean;
   theme: "system" | "light" | "dark";
   english_definitions: boolean;

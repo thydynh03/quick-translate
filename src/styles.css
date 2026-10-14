@@ -87,6 +87,16 @@ html[data-window="popup"] body {
   color: var(--accent-text);
   cursor: pointer;
   padding: 0;
+  animation: subtle-bounce 2s ease-in-out infinite;
+}
+
+@keyframes subtle-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2.5px);
+  }
 }
 
 .trigger:hover {
@@ -96,10 +106,13 @@ html[data-window="popup"] body {
 .card {
   max-height: 100vh;
   overflow-y: auto;
-  background: color-mix(in srgb, var(--bg) var(--popup-opacity, 100%), transparent);
+  background: color-mix(in srgb, var(--bg) var(--popup-opacity, 92%), transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 8px 12px 12px;
+  box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.35);
 }
 
 .bar {
@@ -156,6 +169,16 @@ html[data-window="popup"] body {
   color: var(--accent);
 }
 
+.tool.on svg {
+  animation: bookmark-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes bookmark-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
 .source {
   margin: 6px 0 0;
   color: var(--muted);
@@ -178,7 +201,16 @@ html[data-window="popup"] body {
 }
 
 .phonetic {
-  opacity: 0.8;
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--muted);
+  font-family: inherit;
+  opacity: 0.9;
 }
 
 .result {
@@ -208,9 +240,15 @@ html[data-window="popup"] body {
 }
 
 .dict dt {
-  flex: 0 0 76px;
+  flex: 0 0 68px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--surface);
   color: var(--muted);
-  font-style: italic;
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+  height: fit-content;
 }
 
 .dict dd {
@@ -292,27 +330,40 @@ html[data-window="popup"] body {
 }
 
 .tabs {
-  flex: 0 0 190px;
+  flex: 0 0 195px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 18px 10px;
+  justify-content: space-between;
+  padding: 16px 10px 12px;
   background: var(--surface);
   border-right: 1px solid var(--border);
 }
 
 .tabs h1 {
-  margin: 0 8px 14px;
-  font-size: 16px;
+  margin: 0 8px 12px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.tab-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .tab {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   text-align: left;
-  padding: 8px 10px;
+  padding: 7px 10px;
   border: 0;
   border-radius: 6px;
   background: transparent;
   cursor: pointer;
+  font-size: 13px;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .tab:hover {
@@ -322,12 +373,64 @@ html[data-window="popup"] body {
 .tab.active {
   background: var(--accent);
   color: var(--accent-text);
+  font-weight: 600;
+}
+
+.tab-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.theme-toggle:hover {
+  background: var(--border);
+  border-color: var(--muted);
+}
+
+.theme-ripple {
+  position: fixed;
+  width: 80px;
+  height: 80px;
+  margin-left: -40px;
+  margin-top: -40px;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: scale(0);
+  animation: theme-ripple-spread 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  z-index: 99999;
+}
+
+@keyframes theme-ripple-spread {
+  to {
+    transform: scale(35);
+    opacity: 0;
+  }
 }
 
 .status {
-  margin: auto 8px 0;
+  margin: 0;
+  padding: 0 4px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .pane {
@@ -406,6 +509,16 @@ html[data-window="popup"] body {
 .pane button:disabled {
   opacity: 0.6;
   cursor: default;
+}
+
+.pane button.danger {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+  color: var(--danger);
+}
+
+.pane button.danger:hover:not(:disabled) {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 12%, var(--bg));
 }
 
 .choice {
@@ -704,6 +817,31 @@ html[data-window="capture"] body {
   padding: 0;
   border: 0;
   background: none;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin: 16px 0 8px;
+}
+
+.pagination button {
+  padding: 8px 18px;
+  font-weight: 500;
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+.pagination button:hover {
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  border-color: var(--accent);
+}
+
+.count-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+  margin-bottom: 2px;
 }
 
 .update {

@@ -7,8 +7,18 @@ import { ENGINE_NAMES, HistoryEntry, UpdateInfo, LANGUAGES, Profile, Settings as
 import OfflineModels from "./OfflineModels";
 import Subtitles from "./Subtitles";
 import Vocab from "./Vocab";
+import { IconAbout, IconEngine, IconGeneral, IconHistory, IconMoon, IconSubtitles, IconSun, IconVocab } from "./icons";
 
 type Tab = "general" | "engine" | "subtitles" | "vocab" | "history" | "about";
+
+const TAB_ICONS: Record<Tab, React.ReactNode> = {
+  general: <IconGeneral size={15} />,
+  engine: <IconEngine size={15} />,
+  subtitles: <IconSubtitles size={15} />,
+  vocab: <IconVocab size={15} />,
+  history: <IconHistory size={15} />,
+  about: <IconAbout size={15} />,
+};
 
 const SITE = "https://swipelate.com/";
 const REPO = "https://github.com/thydynh03/swipelate";
@@ -174,6 +184,7 @@ export default function Settings() {
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [historyQuery, setHistoryQuery] = useState("");
+  const [historyVisibleCount, setHistoryVisibleCount] = useState(40);
 
   const load = () => invoke<Config>("get_settings").then(setConfig);
 
@@ -194,7 +205,10 @@ export default function Settings() {
   }, []);
 
   useEffect(() => {
-    if (tab === "history") invoke<HistoryEntry[]>("history_list").then(setHistory);
+    if (tab === "history") {
+      invoke<HistoryEntry[]>("history_list").then(setHistory);
+      setHistoryVisibleCount(40);
+    }
   }, [tab]);
 
   if (!config) return null;
@@ -234,25 +248,57 @@ export default function Settings() {
     }
   };
 
+  const isDark =
+    config.theme === "dark" ||
+    (config.theme === "system" &&
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+  const toggleTheme = (e: React.MouseEvent) => {
+    const next = isDark ? "light" : "dark";
+    const ripple = document.createElement("div");
+    ripple.className = "theme-ripple";
+    ripple.style.left = `${e.clientX}px`;
+    ripple.style.top = `${e.clientY}px`;
+    ripple.style.background = next === "dark" ? "radial-gradient(circle, #1d1f24 35%, transparent 70%)" : "radial-gradient(circle, #ffffff 35%, transparent 70%)";
+    document.body.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 700);
+    update({ theme: next });
+  };
+
   return (
     <div className="settings">
       <nav className="tabs">
         <h1>Swipelate</h1>
-        {(
-          [
-            ["general", "Chung"],
-            ["engine", "Engine dịch"],
-            ["subtitles", "Phụ đề"],
-            ["vocab", "Từ vựng"],
-            ["history", "Lịch sử"],
-            ["about", "Giới thiệu"],
-          ] as [Tab, string][]
-        ).map(([id, name]) => (
-          <button key={id} className={tab === id ? "tab active" : "tab"} onClick={() => setTab(id)}>
-            {name}
+        <div className="tab-list">
+          {(
+            [
+              ["general", "Chung"],
+              ["engine", "Engine dịch"],
+              ["subtitles", "Phụ đề"],
+              ["vocab", "Từ vựng"],
+              ["history", "Lịch sử"],
+              ["about", "Giới thiệu"],
+            ] as [Tab, string][]
+          ).map(([id, name]) => (
+            <button key={id} className={tab === id ? "tab active" : "tab"} onClick={() => setTab(id)}>
+              {TAB_ICONS[id]}
+              <span>{name}</span>
+            </button>
+          ))}
+        </div>
+        <div className="tab-bottom">
+          <button
+            className="theme-toggle"
+            onClick={toggleTheme}
+            title={`Chế độ hiện tại: ${isDark ? "Tối" : "Sáng"}. Bấm để chuyển đổi giao diện`}
+          >
+            {isDark ? <IconMoon size={15} /> : <IconSun size={15} />}
+            <span>{isDark ? "Chế độ tối" : "Chế độ sáng"}</span>
           </button>
-        ))}
-        <p className="status">{status}</p>
+          <p className="status">{status}</p>
+        </div>
       </nav>
 
       <main className="pane">
@@ -624,38 +670,117 @@ export default function Settings() {
               <span>Lưu lịch sử dịch</span>
               <input type="checkbox" checked={config.save_history} onChange={(e) => update({ save_history: e.target.checked })} />
             </label>
+            {config.save_history && (
+              <>
+                <label className="row">
+                  <span>Tự động xoá sau thời gian</span>
+                  <select
+                    value={config.history_retention_days ?? 30}
+                    onChange={(e) => update({ history_retention_days: Number(e.target.value) })}
+                  >
+                    <option value={7}>7 ngày</option>
+                    <option value={14}>14 ngày</option>
+                    <option value={30}>30 ngày (Mặc định)</option>
+                    <option value={60}>60 ngày</option>
+                    <option value={90}>90 ngày</option>
+                    <option value={180}>180 ngày</option>
+                    <option value={0}>Không bao giờ (Lưu mãi mãi)</option>
+                  </select>
+                </label>
+                <label className="row">
+                  <span>Số lượng bản dịch tối đa</span>
+                  <select
+                    value={config.history_max_entries ?? 500}
+                    onChange={(e) => update({ history_max_entries: Number(e.target.value) })}
+                  >
+                    <option value={100}>100 mục</option>
+                    <option value={300}>300 mục</option>
+                    <option value={500}>500 mục (Mặc định)</option>
+                    <option value={1000}>1.000 mục</option>
+                    <option value={2000}>2.000 mục</option>
+                    <option value={0}>Không giới hạn số lượng</option>
+                  </select>
+                </label>
+                <p className="help">
+                  Lịch sử được tự động dọn dẹp theo các giới hạn trên khi mở ứng dụng và sau mỗi bản dịch mới để ứng dụng luôn nhanh và nhẹ.
+                </p>
+              </>
+            )}
             {history.length === 0 ? (
               <p className="help">Chưa có bản dịch nào.</p>
             ) : (
               <>
-                <button
-                  onClick={async () => {
-                    await invoke("history_clear");
-                    setHistory([]);
-                  }}
-                >
-                  Xoá toàn bộ lịch sử
-                </button>
+                <div className="row-buttons">
+                  <button
+                    onClick={async () => {
+                      const count = await invoke<number>("history_clear_older_than", { days: 30 });
+                      setStatus(`Đã dọn dẹp ${count} mục cũ hơn 30 ngày.`);
+                      setHistory(await invoke<HistoryEntry[]>("history_list"));
+                    }}
+                  >
+                    Dọn mục &gt; 30 ngày
+                  </button>
+                  {historyNeedle && (
+                    <button
+                      className="danger"
+                      onClick={async () => {
+                        const count = await invoke<number>("history_clear_matches", { query: historyQuery.trim() });
+                        setStatus(`Đã xoá ${count} mục tìm kiếm.`);
+                        setHistory(await invoke<HistoryEntry[]>("history_list"));
+                      }}
+                    >
+                      Xoá {filteredHistory.length} kết quả tìm kiếm
+                    </button>
+                  )}
+                  <button
+                    className="danger"
+                    onClick={async () => {
+                      await invoke("history_clear");
+                      setHistory([]);
+                      setStatus("Đã xoá toàn bộ lịch sử.");
+                    }}
+                  >
+                    Xoá toàn bộ ({history.length})
+                  </button>
+                </div>
                 <input
                   className="search"
                   type="search"
-                  placeholder="Tìm trong lịch sử"
+                  placeholder={`Tìm trong ${history.length} bản dịch…`}
                   value={historyQuery}
-                  onChange={(e) => setHistoryQuery(e.target.value)}
+                  onChange={(e) => {
+                    setHistoryQuery(e.target.value);
+                    setHistoryVisibleCount(40);
+                  }}
                 />
-                {filteredHistory.length === 0 && <p className="help">Không có mục nào khớp.</p>}
-                <ul className="history">
-                  {filteredHistory.map((entry) => (
-                    <li key={`${entry.at}-${entry.source}`}>
-                      <small>
-                        {new Date(entry.at * 1000).toLocaleString("vi-VN")} · {entry.from.toUpperCase()} → {entry.to.toUpperCase()} ·{" "}
-                        {ENGINE_NAMES[entry.engine] ?? entry.engine}
-                      </small>
-                      <p className="from">{entry.source}</p>
-                      <p>{entry.text}</p>
-                    </li>
-                  ))}
-                </ul>
+                {filteredHistory.length === 0 ? (
+                  <p className="help">Không có mục nào khớp.</p>
+                ) : (
+                  <>
+                    <p className="help count-hint">
+                      Đang hiển thị {Math.min(historyVisibleCount, filteredHistory.length)} trên {filteredHistory.length} mục
+                    </p>
+                    <ul className="history">
+                      {filteredHistory.slice(0, historyVisibleCount).map((entry) => (
+                        <li key={`${entry.at}-${entry.source}`}>
+                          <small>
+                            {new Date(entry.at * 1000).toLocaleString("vi-VN")} · {entry.from.toUpperCase()} → {entry.to.toUpperCase()} ·{" "}
+                            {ENGINE_NAMES[entry.engine] ?? entry.engine}
+                          </small>
+                          <p className="from">{entry.source}</p>
+                          <p>{entry.text}</p>
+                        </li>
+                      ))}
+                    </ul>
+                    {filteredHistory.length > historyVisibleCount && (
+                      <div className="pagination">
+                        <button onClick={() => setHistoryVisibleCount((c) => c + 40)}>
+                          Tải thêm 40 mục ({filteredHistory.length - historyVisibleCount} mục còn lại)
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
               </>
             )}
           </section>

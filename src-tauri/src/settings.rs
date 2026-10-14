@@ -40,6 +40,10 @@ pub struct Settings {
     /// Executable names (lower-case) where the auto trigger stays off.
     pub excluded_apps: Vec<String>,
     pub save_history: bool,
+    /// Keep translation history for this many days (0 = keep forever).
+    pub history_retention_days: u32,
+    /// Maximum number of history entries to keep.
+    pub history_max_entries: usize,
     /// Add English definitions and IPA when a single English word is looked up.
     pub english_definitions: bool,
     /// Oxford Dictionaries API credentials (optional).
@@ -111,6 +115,8 @@ impl Default for Settings {
             anthropic_key: String::new(),
             excluded_apps: Vec::new(),
             save_history: true,
+            history_retention_days: 30,
+            history_max_entries: 500,
             english_definitions: true,
             oxford_app_id: String::new(),
             oxford_app_key: String::new(),

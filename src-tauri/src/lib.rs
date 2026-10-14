@@ -336,6 +336,8 @@ pub fn run() {
             subtitle_translate,
             history::history_list,
             history::history_clear,
+            history::history_clear_older_than,
+            history::history_clear_matches,
             updater::update_check,
             updater::update_install,
             updated_from,
@@ -346,6 +348,9 @@ pub fn run() {
             vocab::vocab_list,
             vocab::vocab_remove,
             vocab::vocab_has,
+            vocab::vocab_clear_matches,
+            vocab::vocab_export_csv,
+            vocab::vocab_import_cards,
             engine::offline::offline_models,
             engine::offline::offline_download,
             engine::offline::offline_remove,
@@ -403,6 +408,7 @@ pub fn run() {
 
             updater::start(handle.clone());
             engine::warm(&handle.state::<AppState>().settings.read());
+            history::prune_on_start(&handle);
 
             let (tx, rx) = std::sync::mpsc::channel();
             platform::start_mouse_hook(tx);

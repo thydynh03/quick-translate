@@ -27,3 +27,7 @@ dist-ssr
 
 # wrangler local state
 server/.wrangler/
+
+# Store packages
+*.msix
+docs/store/package/

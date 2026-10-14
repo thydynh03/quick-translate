@@ -11,3 +11,4 @@
 | 2026-10-12 | Web tĩnh trong `website/`, GitHub Pages | Không tốn phí, tải nhanh, dễ SEO |
 | 2026-10-12 | Bộ cài chưa ký số; macOS ký ad-hoc | Chứng chỉ ký là tài nguyên trả phí của chủ dự án |
 | 2026-10-12 | Commit dùng email noreply của GitHub | Không công khai email cá nhân |
+| 2026-10-14 | Quản lý linh hoạt Lịch sử & Từ vựng | Caching in-memory `vocab_has` (0 ms, zero disk I/O); tự động prune lịch sử theo số ngày & dung lượng; thêm công cụ dọn dẹp, sao lưu/phục hồi JSON và xuất CSV Anki; phân trang lazy loading giảm tải DOM. |
