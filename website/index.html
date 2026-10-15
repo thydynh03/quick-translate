@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="vi">
 <head>
   <meta charset="utf-8">
@@ -77,7 +77,32 @@
     "@type": "WebSite",
     "name": "Swipelate",
     "url": "https://swipelate.com/",
-    "inLanguage": ["vi", "en"]
+    "inLanguage": ["vi", "en"],
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": "https://swipelate.com/docs.html#{search_term_string}"
+      },
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Swipelate",
+    "url": "https://swipelate.com/",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://swipelate.com/assets/logo-search.png",
+      "width": 512,
+      "height": 512
+    },
+    "sameAs": [
+      "https://github.com/thydynh03/swipelate"
+    ]
   }
   </script>
   <script type="application/ld+json">

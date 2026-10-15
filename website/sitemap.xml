@@ -37,4 +37,22 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://swipelate.com/privacy.html"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://swipelate.com/privacy.html"/>
   </url>
+  <url>
+    <loc>https://swipelate.com/learn.html</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://swipelate.com/learn.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://swipelate.com/learn.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://swipelate.com/learn.html"/>
+  </url>
+  <url>
+    <loc>https://swipelate.com/stats.html</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.4</priority>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://swipelate.com/stats.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://swipelate.com/stats.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://swipelate.com/stats.html"/>
+  </url>
 </urlset>
