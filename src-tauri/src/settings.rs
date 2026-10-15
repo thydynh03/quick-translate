@@ -105,8 +105,8 @@ impl Settings {
 impl Default for Settings {
     fn default() -> Self {
         Settings {
-            hotkey: "Alt+Q".into(),
-            ocr_hotkey: "Alt+W".into(),
+            hotkey: if cfg!(target_os = "macos") { "Option+Q".into() } else { "Alt+Q".into() },
+            ocr_hotkey: if cfg!(target_os = "macos") { "Option+W".into() } else { "Alt+W".into() },
             auto_trigger: true,
             hover_translate: false,
             engine: "google".into(),
@@ -122,10 +122,10 @@ impl Default for Settings {
             english_definitions: true,
             oxford_app_id: String::new(),
             oxford_app_key: String::new(),
-            window_hotkey: "Alt+E".into(),
-            live_hotkey: "Alt+R".into(),
+            window_hotkey: if cfg!(target_os = "macos") { "Option+E".into() } else { "Alt+E".into() },
+            live_hotkey: if cfg!(target_os = "macos") { "Option+R".into() } else { "Alt+R".into() },
             // Windows has its own (Win+V).
-            clipboard_hotkey: if cfg!(target_os = "macos") { "Super+Shift+V".into() } else { String::new() },
+            clipboard_hotkey: if cfg!(target_os = "macos") { "Cmd+Shift+V".into() } else { String::new() },
             instant_translate: false,
             hover_sentence: true,
             listen_hide_captions: false,
@@ -158,10 +158,26 @@ fn path(app: &AppHandle) -> PathBuf {
 }
 
 pub fn load(app: &AppHandle) -> Settings {
-    fs::read_to_string(path(app))
+    let settings: Settings = fs::read_to_string(path(app))
         .ok()
         .and_then(|raw| serde_json::from_str(&raw).ok())
-        .unwrap_or_default()
+        .unwrap_or_default();
+
+    #[cfg(target_os = "macos")]
+    let settings = {
+        let mut settings = settings;
+        let migrate = |s: &str| -> String {
+            s.replace("Alt+", "Option+").replace("Super+", "Cmd+")
+        };
+        settings.hotkey = migrate(&settings.hotkey);
+        settings.ocr_hotkey = migrate(&settings.ocr_hotkey);
+        settings.window_hotkey = migrate(&settings.window_hotkey);
+        settings.live_hotkey = migrate(&settings.live_hotkey);
+        settings.clipboard_hotkey = migrate(&settings.clipboard_hotkey);
+        settings
+    };
+
+    settings
 }
 
 pub fn save(app: &AppHandle, settings: &Settings) -> anyhow::Result<()> {
@@ -192,4 +208,24 @@ mod tests {
         assert_eq!(settings.for_app(Some("notepad.exe")).engine, "google");
         assert_eq!(settings.for_app(None).primary_lang, "vi");
     }
+
+    #[test]
+    fn parses_shortcut() {
+        use std::str::FromStr;
+        let s1 = tauri_plugin_global_shortcut::Shortcut::from_str("Alt+Q");
+        let s2 = tauri_plugin_global_shortcut::Shortcut::from_str("Option+Q");
+        let s3 = tauri_plugin_global_shortcut::Shortcut::from_str("Cmd+Q");
+        let s4 = tauri_plugin_global_shortcut::Shortcut::from_str("Super+Q");
+        let s5 = tauri_plugin_global_shortcut::Shortcut::from_str("Command+Q");
+        let s6 = tauri_plugin_global_shortcut::Shortcut::from_str("Cmd+Shift+V");
+        let s7 = tauri_plugin_global_shortcut::Shortcut::from_str("Option+Shift+V");
+        assert!(s1.is_ok(), "Alt+Q: {:?}", s1.err());
+        assert!(s2.is_ok(), "Option+Q: {:?}", s2.err());
+        assert!(s3.is_ok(), "Cmd+Q: {:?}", s3.err());
+        assert!(s4.is_ok(), "Super+Q: {:?}", s4.err());
+        assert!(s5.is_ok(), "Command+Q: {:?}", s5.err());
+        assert!(s6.is_ok(), "Cmd+Shift+V: {:?}", s6.err());
+        assert!(s7.is_ok(), "Option+Shift+V: {:?}", s7.err());
+    }
 }
+

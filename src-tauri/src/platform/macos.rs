@@ -849,13 +849,24 @@ pub fn activate(handle: isize) {
 
 /// Presses Cmd+V in the application in front.
 pub fn send_paste() {
-    std::thread::sleep(Duration::from_millis(150));
-    let Ok(source) = CGEventSource::new(CGEventSourceStateID::CombinedSessionState) else { return };
-    for down in [true, false] {
-        if let Ok(event) = CGEvent::new_keyboard_event(source.clone(), KEY_V, down) {
-            event.set_flags(CGEventFlags::CGEventFlagCommand);
-            event.post(CGEventTapLocation::HID);
-        }
+    std::thread::sleep(Duration::from_millis(60));
+    if !accessibility_granted(false) {
+        crate::log("clipboard: auto-paste requires Accessibility permission; paste left to user");
+        return;
+    }
+    let Ok(source) = CGEventSource::new(CGEventSourceStateID::CombinedSessionState) else {
+        crate::log("clipboard: failed to create CGEventSource for paste");
+        return;
+    };
+    if let (Ok(down), Ok(up)) = (
+        CGEvent::new_keyboard_event(source.clone(), KEY_V, true),
+        CGEvent::new_keyboard_event(source, KEY_V, false),
+    ) {
+        down.set_flags(CGEventFlags::CGEventFlagCommand);
+        up.set_flags(CGEventFlags::CGEventFlagCommand);
+        down.post(CGEventTapLocation::HID);
+        up.post(CGEventTapLocation::HID);
+        crate::log("clipboard: Cmd+V event posted successfully");
     }
 }
 

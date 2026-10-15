@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 
 use anyhow::{anyhow, bail, Context};
 use futures_util::StreamExt;
@@ -72,16 +72,63 @@ struct Model {
     pad_token: i64,
 }
 
-static LOADED: OnceLock<Mutex<HashMap<PathBuf, Arc<Mutex<Model>>>>> = OnceLock::new();
+use std::sync::LazyLock;
+use std::time::{Duration, Instant};
 
-fn loaded() -> &'static Mutex<HashMap<PathBuf, Arc<Mutex<Model>>>> {
-    LOADED.get_or_init(|| Mutex::new(HashMap::new()))
+struct CachedModel {
+    model: Arc<Mutex<Model>>,
+    last_used: Instant,
+    active: usize,
 }
 
-fn load(dir: &Path) -> anyhow::Result<Arc<Mutex<Model>>> {
-    if let Some(model) = loaded().lock().get(dir) {
-        return Ok(model.clone());
+#[derive(Default)]
+struct ModelManager {
+    models: HashMap<PathBuf, CachedModel>,
+}
+
+static MANAGER: LazyLock<Mutex<ModelManager>> = LazyLock::new(|| Mutex::new(ModelManager::default()));
+
+pub struct ModelGuard {
+    path: PathBuf,
+}
+
+impl Drop for ModelGuard {
+    fn drop(&mut self) {
+        let mut mgr = MANAGER.lock();
+        if let Some(entry) = mgr.models.get_mut(&self.path) {
+            entry.active = entry.active.saturating_sub(1);
+            entry.last_used = Instant::now();
+        }
     }
+}
+
+/// Unloads any offline model that has not been used for `max_idle` and has no active inference.
+pub fn prune_idle_models(max_idle: Duration) {
+    let mut mgr = MANAGER.lock();
+    let now = Instant::now();
+    mgr.models.retain(|path, entry| {
+        let is_idle = entry.active == 0 && now.duration_since(entry.last_used) >= max_idle;
+        if is_idle {
+            crate::log(format!("offline: unloaded idle model {}", path.display()));
+            false
+        } else {
+            true
+        }
+    });
+}
+
+fn acquire_model(dir: &Path) -> anyhow::Result<(Arc<Mutex<Model>>, ModelGuard)> {
+    let now = Instant::now();
+    {
+        let mut mgr = MANAGER.lock();
+        if let Some(entry) = mgr.models.get_mut(dir) {
+            entry.active += 1;
+            entry.last_used = now;
+            return Ok((entry.model.clone(), ModelGuard { path: dir.to_path_buf() }));
+        }
+    }
+
+    prune_idle_models(Duration::from_secs(300));
     let config: Value = serde_json::from_str(&fs::read_to_string(dir.join("config.json"))?)?;
     let id = |key: &str| config.get(key).and_then(Value::as_i64).ok_or_else(|| anyhow!("config.json thiếu {key}"));
     let session = |file: &str| -> anyhow::Result<Session> {
@@ -99,8 +146,16 @@ fn load(dir: &Path) -> anyhow::Result<Arc<Mutex<Model>>> {
         pad_token: id("pad_token_id")?,
     };
     let model = Arc::new(Mutex::new(model));
-    loaded().lock().insert(dir.to_path_buf(), model.clone());
-    Ok(model)
+    let mut mgr = MANAGER.lock();
+    mgr.models.insert(
+        dir.to_path_buf(),
+        CachedModel {
+            model: model.clone(),
+            last_used: now,
+            active: 1,
+        },
+    );
+    Ok((model, ModelGuard { path: dir.to_path_buf() }))
 }
 
 /// The converted repos ship a SentencePiece "Precompiled" normalizer with an
@@ -218,7 +273,7 @@ pub fn sentences(line: &str) -> Vec<String> {
 }
 
 fn translate_with(dir: &Path, text: &str) -> anyhow::Result<String> {
-    let model = load(dir)?;
+    let (model, _guard) = acquire_model(dir)?;
     let mut model = model.lock();
     let mut lines = Vec::new();
     for line in text.lines() {
@@ -411,7 +466,7 @@ pub fn offline_download(app: AppHandle, id: String) -> Result<(), String> {
 pub fn offline_remove(app: AppHandle, id: String) -> Result<(), String> {
     let (from, to) = pair_of(&id)?;
     let dir = model_dir(&models_dir(&app), from, to);
-    loaded().lock().remove(&dir);
+    MANAGER.lock().models.remove(&dir);
     super::ocr_vi::unload();
     if dir.exists() {
         fs::remove_dir_all(&dir).map_err(|e| e.to_string())?;

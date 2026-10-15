@@ -9,6 +9,7 @@ import Subtitles from "./Subtitles";
 import Vocab from "./Vocab";
 import { IconAbout, IconEngine, IconGeneral, IconGlobe, IconHistory, IconMoon, IconSubtitles, IconSun, IconVocab } from "./icons";
 import { AppLanguage, useT } from "./i18n";
+import { formatHotkey, shortcutFrom } from "./hotkey";
 
 type Tab = "general" | "engine" | "subtitles" | "vocab" | "history" | "about";
 
@@ -170,25 +171,6 @@ function getEngines(lang: AppLanguage = "vi"): { id: string; hint: string }[] {
   ];
 }
 
-/** Builds a shortcut string such as "Ctrl+Shift+D" from a key event. */
-function shortcutFrom(event: React.KeyboardEvent): string | null {
-  const key = event.key;
-  if (["Control", "Shift", "Alt", "Meta"].includes(key)) return null;
-  const parts: string[] = [];
-  if (event.ctrlKey) parts.push("Ctrl");
-  if (event.altKey) parts.push("Alt");
-  if (event.shiftKey) parts.push("Shift");
-  if (event.metaKey) parts.push("Super");
-  if (parts.length === 0) return null;
-  const code = event.code;
-  let name: string;
-  if (code.startsWith("Key")) name = code.slice(3);
-  else if (code.startsWith("Digit")) name = code.slice(5);
-  else if (/^F\d{1,2}$/.test(code)) name = code;
-  else if (code === "Space") name = "Space";
-  else return null;
-  return [...parts, name].join("+");
-}
 
 export default function Settings() {
   const [tab, setTab] = useState<Tab>("general");
@@ -263,7 +245,7 @@ export default function Settings() {
     setConfig(next);
     try {
       const failed = await invoke<string[]>("save_settings", { settings: next });
-      setStatus(failed.length ? t.status_hotkey_conflict(failed.join(", ")) : t.status_saved);
+      setStatus(failed.length ? t.status_hotkey_conflict(failed.map((s) => formatHotkey(s)).join(", ")) : t.status_saved);
     } catch (error) {
       setStatus(String(error));
     }
@@ -421,7 +403,7 @@ export default function Settings() {
                 <span>{t.hotkey_selection}</span>
                 <input
                   className="hotkey"
-                  value={config.hotkey}
+                  value={formatHotkey(config.hotkey)}
                   readOnly
                   onKeyDown={(event) => {
                     event.preventDefault();
@@ -435,7 +417,7 @@ export default function Settings() {
                 <span>{t.hotkey_ocr}</span>
                 <input
                   className="hotkey"
-                  value={config.ocr_hotkey}
+                  value={formatHotkey(config.ocr_hotkey)}
                   readOnly
                   onKeyDown={(event) => {
                     event.preventDefault();
@@ -506,7 +488,7 @@ export default function Settings() {
                       className="hotkey"
                       title={t.hotkey_hint}
                       readOnly
-                      value={config.window_hotkey}
+                      value={formatHotkey(config.window_hotkey)}
                       onKeyDown={(e) => {
                         e.preventDefault();
                         const shortcut = shortcutFrom(e);
@@ -520,7 +502,7 @@ export default function Settings() {
                       className="hotkey"
                       title={t.hotkey_hint}
                       readOnly
-                      value={config.live_hotkey}
+                      value={formatHotkey(config.live_hotkey)}
                       onKeyDown={(e) => {
                         e.preventDefault();
                         const shortcut = shortcutFrom(e);
@@ -535,7 +517,7 @@ export default function Settings() {
                       title={t.clipboard_hotkey_hint}
                       readOnly
                       placeholder={t.clipboard_off}
-                      value={config.clipboard_hotkey}
+                      value={formatHotkey(config.clipboard_hotkey)}
                       onKeyDown={(e) => {
                         e.preventDefault();
                         if (e.key === "Backspace" || e.key === "Delete") return update({ clipboard_hotkey: "" });

@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { AppLanguage, useT } from "./i18n";
+import { formatHotkey } from "./hotkey";
 
 type Box = { x0: number; y0: number; x1: number; y1: number };
 
@@ -107,7 +108,7 @@ export default function Capture() {
   if (blocks) {
     const scale = window.devicePixelRatio;
     const status = live !== null
-      ? t.capture_live_status(live)
+      ? t.capture_live_status(formatHotkey(live))
       : !done
       ? t.capture_window_translating(blocks.length, expected)
       : blocks.length === 0

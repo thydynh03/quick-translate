@@ -55,7 +55,7 @@ fn rgba_to_png_data_url(width: u32, height: u32, rgba: &[u8]) -> Option<String> 
     use base64::Engine;
 
     let img: ImageBuffer<Rgba<u8>, _> = ImageBuffer::from_raw(width, height, rgba.to_vec())?;
-    let max_dim = 960;
+    let max_dim = 160;
     let preview = if width > max_dim || height > max_dim {
         let (nw, nh) = if width > height {
             (max_dim, (height * max_dim / width).max(1))
@@ -266,7 +266,11 @@ fn watch(app: AppHandle) {
             own = own_now;
             continue;
         }
-        if !enabled(&app) || platform::clipboard_concealed() {
+        if !enabled(&app) {
+            std::thread::sleep(Duration::from_millis(800));
+            continue;
+        }
+        if platform::clipboard_concealed() {
             continue;
         }
         // Texts the app itself puts there (a copied translation) have no source to show.
@@ -311,7 +315,11 @@ pub fn toggle(app: &AppHandle) {
         hide(app);
         return;
     }
-    TARGET.store(platform::foreground_handle(), Ordering::SeqCst);
+    let front = platform::foreground_handle();
+    let own_pid = std::process::id() as isize;
+    if front != own_pid && front != 0 {
+        TARGET.store(front, Ordering::SeqCst);
+    }
     let (x, y) = platform::cursor_pos();
     let monitor = app.monitor_from_point(x as f64, y as f64).ok().flatten().or_else(|| app.primary_monitor().ok().flatten());
     if let Some(monitor) = monitor {
@@ -339,6 +347,42 @@ pub fn clipboard_list() -> Vec<Item> {
     STORE.lock().items.clone()
 }
 
+fn auto_paste(app: AppHandle, target: isize) {
+    std::thread::spawn(move || {
+        hide(&app);
+        if target == 0 {
+            log("clipboard: no target window recorded, paste left to user");
+            return;
+        }
+
+        platform::activate(target);
+
+        let start = std::time::Instant::now();
+        let deadline = start + Duration::from_millis(350);
+        let mut focused = false;
+        let mut elapsed = Duration::ZERO;
+
+        while std::time::Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(30));
+            if platform::foreground_handle() == target {
+                focused = true;
+                elapsed = start.elapsed();
+                break;
+            }
+        }
+
+        if !focused {
+            let current = platform::foreground_handle();
+            log(format!("clipboard: target {target} not frontmost after 350ms (current: {current}), paste left to user"));
+            return;
+        }
+
+        log(format!("clipboard: focus restored to {target} in {}ms, sending paste", elapsed.as_millis()));
+        std::thread::sleep(Duration::from_millis(40));
+        platform::send_paste();
+    });
+}
+
 /// Puts a text of the list back on the clipboard and pastes it where the user was.
 #[tauri::command]
 pub fn clipboard_paste(app: AppHandle, id: u64) -> Result<(), String> {
@@ -349,16 +393,7 @@ pub fn clipboard_paste(app: AppHandle, id: u64) -> Result<(), String> {
         if let Some(ref data_url) = item.image_data {
             let _ = own(|| set_clipboard_image_from_data_url(data_url).map_err(|e| arboard::Error::Unknown { description: e.to_string() }));
         }
-        std::thread::spawn(move || {
-            platform::activate(target);
-            hide(&app);
-            std::thread::sleep(Duration::from_millis(150));
-            if target != 0 && platform::foreground_handle() != target {
-                log("clipboard: target not in front, paste left to the user");
-                return;
-            }
-            platform::send_paste();
-        });
+        auto_paste(app, target);
     } else {
         // If rich text HTML was copied, restore HTML format so target apps receive font & style
         if let Some(ref html) = item.html {
@@ -367,19 +402,7 @@ pub fn clipboard_paste(app: AppHandle, id: u64) -> Result<(), String> {
             // As a copy of our own, so the list keeps its order.
             own(|| arboard::Clipboard::new().and_then(|mut clipboard| clipboard.set_text(item.text))).map_err(|error| error.to_string())?;
         }
-        std::thread::spawn(move || {
-            // In this order: once the board is gone, the system picks the next window by itself.
-            platform::activate(target);
-            hide(&app);
-            std::thread::sleep(Duration::from_millis(150));
-            // The system may refuse to bring the target back; pasting would then land elsewhere.
-            // The text stays on the clipboard for the user to paste.
-            if target != 0 && platform::foreground_handle() != target {
-                log("clipboard: target not in front, paste left to the user");
-                return;
-            }
-            platform::send_paste();
-        });
+        auto_paste(app, target);
     }
     Ok(())
 }

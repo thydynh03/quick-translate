@@ -245,11 +245,22 @@ fn toggle_auto(app: &AppHandle) {
     sync_tray(app);
 }
 
+fn format_tray_hotkey(hotkey: &str) -> String {
+    #[cfg(target_os = "macos")]
+    {
+        hotkey.replace("Alt+", "⌥").replace("Option+", "⌥").replace("Super+", "⌘").replace("Cmd+", "⌘")
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        hotkey.to_string()
+    }
+}
+
 fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     let settings = app.state::<AppState>().settings.read().clone();
-    let translate = MenuItemBuilder::with_id("translate", format!("Dịch vùng bôi đen ({})", settings.hotkey)).build(app)?;
-    let ocr = MenuItemBuilder::with_id("ocr", format!("Dịch vùng màn hình ({})", settings.ocr_hotkey)).build(app)?;
-    let live = MenuItemBuilder::with_id("live", format!("Bật/tắt dịch thời gian thực ({})", settings.live_hotkey)).build(app)?;
+    let translate = MenuItemBuilder::with_id("translate", format!("Dịch vùng bôi đen ({})", format_tray_hotkey(&settings.hotkey))).build(app)?;
+    let ocr = MenuItemBuilder::with_id("ocr", format!("Dịch vùng màn hình ({})", format_tray_hotkey(&settings.ocr_hotkey))).build(app)?;
+    let live = MenuItemBuilder::with_id("live", format!("Bật/tắt dịch thời gian thực ({})", format_tray_hotkey(&settings.live_hotkey))).build(app)?;
     let auto = CheckMenuItemBuilder::with_id("auto", "Tự hiện khi bôi đen")
         .checked(settings.auto_trigger)
         .build(app)?;
@@ -405,10 +416,14 @@ pub fn run() {
             register_hotkeys(&handle);
             telemetry::start(handle.clone());
             app.manage(updater::UpdateState(Mutex::new(None)));
-
             updater::start(handle.clone());
             engine::warm(&handle.state::<AppState>().settings.read());
             history::prune_on_start(&handle);
+
+            std::thread::spawn(|| loop {
+                std::thread::sleep(std::time::Duration::from_secs(120));
+                engine::offline::prune_idle_models(std::time::Duration::from_secs(300));
+            });
 
             let (tx, rx) = std::sync::mpsc::channel();
             platform::start_mouse_hook(tx);
