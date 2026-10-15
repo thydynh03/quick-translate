@@ -89,7 +89,10 @@
       const showTable = tableEl.hidden;
       tableEl.hidden = !showTable;
       chartEl.hidden = showTable;
-      button.textContent = showTable ? "Xem dạng biểu đồ" : "Xem dạng bảng";
+      const isEn = window.SwipelateI18n?.getActiveLang?.() === "en";
+      button.textContent = showTable
+        ? (isEn ? "View as chart" : "Xem dạng biểu đồ")
+        : (isEn ? "View as table" : "Xem dạng bảng");
     });
   });
 
@@ -338,7 +341,10 @@
     button.disabled = true;
     const results = await Promise.allSettled([loadDownloads(), loadUsers()]);
     if (results[0].status === "fulfilled") {
-      $("updated").textContent = `Cập nhật lúc ${new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}.`;
+      const isEn = window.SwipelateI18n?.getActiveLang?.() === "en";
+      $("updated").textContent = isEn
+        ? `Updated at ${new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}.`
+        : `Cập nhật lúc ${new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}.`;
     } else {
       // Old numbers would look current, so clear them.
       $("dl-tiles").querySelectorAll("[data-k]").forEach((el) => (el.textContent = "–"));
@@ -346,10 +352,16 @@
       $("dl-table").replaceChildren();
       delete redraws.downloads;
       $("dl-tiles").setAttribute("aria-busy", "false");
-      $("dl-state").textContent = `Không tải được lượt tải: ${results[0].reason.message}`;
+      const isEn = window.SwipelateI18n?.getActiveLang?.() === "en";
+      $("dl-state").textContent = isEn
+        ? `Failed to load downloads: ${results[0].reason.message}`
+        : `Không tải được lượt tải: ${results[0].reason.message}`;
       $("dl-state").hidden = false;
     }
-    if (results[1].status === "rejected") usersEmpty("Không kết nối được máy chủ thống kê", results[1].reason.message);
+    if (results[1].status === "rejected") {
+      const isEn = window.SwipelateI18n?.getActiveLang?.() === "en";
+      usersEmpty(isEn ? "Cannot connect to stats server" : "Không kết nối được máy chủ thống kê", results[1].reason.message);
+    }
     button.disabled = false;
   }
 
@@ -358,6 +370,19 @@
   addEventListener("resize", () => {
     clearTimeout(resizing);
     resizing = setTimeout(() => Object.values(redraws).forEach((draw) => draw()), 200);
+  });
+
+  window.addEventListener("swipelate-lang-changed", () => {
+    document.querySelectorAll("[data-table]").forEach((button) => {
+      const id = button.dataset.table;
+      const tableEl = $(`${id}-table`);
+      const showTable = !tableEl.hidden;
+      const isEn = window.SwipelateI18n?.getActiveLang?.() === "en";
+      button.textContent = showTable
+        ? (isEn ? "View as chart" : "Xem dạng biểu đồ")
+        : (isEn ? "View as table" : "Xem dạng bảng");
+    });
+    Object.values(redraws).forEach((draw) => draw());
   });
 
   $("refresh").addEventListener("click", load);

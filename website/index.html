@@ -52,7 +52,7 @@
     "applicationCategory": "UtilitiesApplication",
     "operatingSystem": "Windows 10, Windows 11, macOS 11+",
     "inLanguage": ["vi", "en"],
-    "softwareVersion": "0.1.27",
+    "softwareVersion": "0.1.30",
     "fileSize": "7.2MB",
     "license": "https://swipelate.com/license.html",
     "url": "https://swipelate.com/",
@@ -135,7 +135,7 @@
   </script>
   <script src="assets/theme-i18n.js?v=0.1.27" defer></script>
 </head>
-<body>
+<body data-page="index">
   <a class="skip" href="#main" data-i18n="nav-skip">Bỏ qua điều hướng</a>
 
   <header class="top">
@@ -165,14 +165,14 @@
   <main id="main">
     <section class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">Phần mềm dịch cho Windows và macOS</p>
-        <h1>Bôi đen là dịch.<br>Ở mọi ứng dụng.</h1>
-        <p class="lead">Đang đọc email, PDF hay một đoạn chat tiếng Anh? Bôi đen đoạn cần hiểu, bản dịch hiện ngay bên dưới. Không phải chuyển cửa sổ, không phải sao chép sang trình duyệt.</p>
+        <p class="eyebrow" data-i18n="hero-eyebrow">Phần mềm dịch cho Windows và macOS</p>
+        <h1 data-i18n="hero-title">Bôi đen là dịch.<br>Ở mọi ứng dụng.</h1>
+        <p class="lead" data-i18n="hero-desc">Đang đọc email, PDF hay một đoạn chat tiếng Anh? Bôi đen đoạn cần hiểu, bản dịch hiện ngay bên dưới. Không phải chuyển cửa sổ, không phải sao chép sang trình duyệt.</p>
         <div class="cta">
           <a class="btn" data-hero="windows" data-asset="Swipelate-Setup-x64.exe" data-i18n="hero-win" href="https://github.com/thydynh03/swipelate/releases/latest/download/Swipelate-Setup-x64.exe">Tải cho Windows</a>
           <a class="btn ghost" data-hero="mac" data-asset="Swipelate-macOS-AppleSilicon.dmg" data-i18n="hero-mac" href="https://github.com/thydynh03/swipelate/releases/latest/download/Swipelate-macOS-AppleSilicon.dmg">Tải cho macOS</a>
         </div>
-        <p class="fine" id="release-line">Miễn phí, mã nguồn mở. Không cần tài khoản.</p>
+        <p class="fine" id="release-line" data-i18n="hero-release">Miễn phí, mã nguồn mở. Không cần tài khoản.</p>
       </div>
 
       <div class="demo" id="demo">
@@ -195,29 +195,29 @@
           </div>
           <svg class="cursor" viewBox="0 0 20 24" width="20" height="24"><path d="M2 1.5v18l4.6-4.3 3 7 2.9-1.3-3-6.8h6.3z" fill="#111" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>
         </div>
-        <p class="demo-caption" aria-live="polite">Bôi đen một đoạn văn bản, bấm biểu tượng vừa hiện ra, bản dịch nằm ngay bên dưới.</p>
+        <p class="demo-caption" aria-live="polite" data-i18n="demo-caption">Bôi đen một đoạn văn bản, bấm biểu tượng vừa hiện ra, bản dịch nằm ngay bên dưới.</p>
       </div>
     </section>
 
     <section class="band" id="cach-dung">
       <div class="wrap">
-        <h2>Ba cách gọi bản dịch</h2>
-        <p class="section-lead">Chọn cách hợp với việc bạn đang làm. Cả ba đều giữ nguyên vùng bôi đen và trả lại clipboard như cũ.</p>
+        <h2 data-i18n="ways-title">Ba cách gọi bản dịch</h2>
+        <p class="section-lead" data-i18n="ways-lead">Chọn cách hợp với việc bạn đang làm. Cả ba đều giữ nguyên vùng bôi đen và trả lại clipboard như cũ.</p>
         <div class="ways">
           <article>
-            <p class="way-key">Kéo chuột</p>
-            <h3>Bôi đen rồi bấm biểu tượng</h3>
-            <p>Kéo chuột, nhấp đúp vào một từ hoặc nhấp ba lần vào một đoạn. Một biểu tượng nhỏ hiện cạnh con trỏ; bấm vào đó để xem bản dịch. Không bấm thì nó tự biến mất.</p>
+            <p class="way-key" data-i18n="way1-key">Kéo chuột</p>
+            <h3 data-i18n="way1-title">Bôi đen rồi bấm biểu tượng</h3>
+            <p data-i18n="way1-desc">Kéo chuột, nhấp đúp vào một từ hoặc nhấp ba lần vào một đoạn. Một biểu tượng nhỏ hiện cạnh con trỏ; bấm vào đó để xem bản dịch. Không bấm thì nó tự biến mất.</p>
           </article>
           <article>
             <p class="way-key"><kbd>Alt</kbd><kbd>Q</kbd></p>
-            <h3>Phím tắt, không cần chuột</h3>
-            <p>Bôi đen bằng bàn phím rồi nhấn phím tắt. Bạn đổi được tổ hợp phím trong Cài đặt nếu nó trùng với phần mềm khác.</p>
+            <h3 data-i18n="way2-title">Phím tắt, không cần chuột</h3>
+            <p data-i18n="way2-desc">Bôi đen bằng bàn phím rồi nhấn phím tắt. Bạn đổi được tổ hợp phím trong Cài đặt nếu nó trùng với phần mềm khác.</p>
           </article>
           <article>
             <p class="way-key"><kbd>Alt</kbd><kbd>W</kbd></p>
-            <h3>Quét một vùng màn hình</h3>
-            <p>Dành cho chữ không bôi đen được: ảnh chụp, PDF scan, video đang dừng. Kéo một hình chữ nhật quanh chữ, ứng dụng nhận dạng rồi dịch.</p>
+            <h3 data-i18n="way3-title">Quét một vùng màn hình</h3>
+            <p data-i18n="way3-desc">Dành cho chữ không bôi đen được: ảnh chụp, PDF scan, video đang dừng. Kéo một hình chữ nhật quanh chữ, ứng dụng nhận dạng rồi dịch.</p>
           </article>
         </div>
       </div>
@@ -225,9 +225,9 @@
 
     <section class="fresh" id="moi">
       <div class="wrap">
-        <p class="eyebrow">Mới trong các bản gần đây</p>
-        <h2>Không chỉ là bôi đen để dịch</h2>
-        <p class="section-lead">Bốn việc mới cho những lúc chữ không đứng yên để bạn bôi đen: game, phim, video không có phụ đề, và cả những đoạn bạn vừa copy.</p>
+        <p class="eyebrow" data-i18n="fresh-eyebrow">Mới trong các bản gần đây</p>
+        <h2 data-i18n="fresh-title">Không chỉ là bôi đen để dịch</h2>
+        <p class="section-lead" data-i18n="fresh-lead">Bốn việc mới cho những lúc chữ không đứng yên để bạn bôi đen: game, phim, video không có phụ đề, và cả những đoạn bạn vừa copy.</p>
         <div class="feats">
           <article class="feat" style="--i:0">
             <div class="scene s-live" aria-hidden="true">
@@ -241,8 +241,8 @@
               <span class="s-scan"></span>
             </div>
             <p class="way-key"><kbd>Alt</kbd><kbd>R</kbd></p>
-            <h3>Dịch thời gian thực trên màn hình</h3>
-            <p>Chọn cả màn hình hoặc kéo một vùng. Chữ đổi thì bản dịch đổi theo, phủ ngay lên chỗ cũ. Hợp với game, phụ đề cứng trong video và phần mềm chỉ có tiếng Anh. Câu đã gặp được nhớ lại, lần sau hiện ngay.</p>
+            <h3 data-i18n="feat1-title">Dịch thời gian thực trên màn hình</h3>
+            <p data-i18n="feat1-desc">Chọn cả màn hình hoặc kéo một vùng. Chữ đổi thì bản dịch đổi theo, phủ ngay lên chỗ cũ. Hợp với game, phụ đề cứng trong video và phần mềm chỉ có tiếng Anh. Câu đã gặp được nhớ lại, lần sau hiện ngay.</p>
           </article>
           <article class="feat" style="--i:1">
             <div class="scene s-film" aria-hidden="true">
@@ -252,9 +252,9 @@
               <p class="s-cue c3">Vậy thì đừng quay lại nữa.</p>
               <span class="s-bar"><i></i></span>
             </div>
-            <p class="way-key">Kéo thả file</p>
-            <h3>Phụ đề dịch sẵn cho cả bộ phim</h3>
-            <p>Thả file <code>.srt</code> hoặc <code>.vtt</code> vào tab Phụ đề, nhận lại file tiếng Việt nằm cạnh file gốc. VLC hay MPV tự nhận, xem không có độ trễ nào. Với YouTube có <a href="docs.html#youtube">extension riêng cho Chrome và Edge</a>.</p>
+            <p class="way-key" data-i18n="feat2-key">Kéo thả file</p>
+            <h3 data-i18n="feat2-title">Phụ đề dịch sẵn cho cả bộ phim</h3>
+            <p data-i18n="feat2-desc">Thả file <code>.srt</code> hoặc <code>.vtt</code> vào tab Phụ đề, nhận lại file tiếng Việt nằm cạnh file gốc. VLC hay MPV tự nhận, xem không có độ trễ nào. Với YouTube có <a href="docs.html#youtube">extension riêng cho Chrome và Edge</a>.</p>
           </article>
           <article class="feat" style="--i:2">
             <div class="scene s-hear" aria-hidden="true">
@@ -262,14 +262,14 @@
               <p class="s-heard">Please send me the report today.</p>
               <p class="s-said">Hãy gửi cho tôi bản báo cáo hôm nay.</p>
             </div>
-            <p class="way-key"><kbd>Alt</kbd><kbd>R</kbd> rồi <kbd>3</kbd> <span class="tag">Windows 11 22H2+</span></p>
-            <h3>Nghe tiếng rồi dịch</h3>
-            <p>Video không có phụ đề? Swipelate đọc phụ đề trực tiếp mà Windows tạo ra từ âm thanh của máy, rồi dịch từng câu. Có thể ẩn phụ đề tiếng Anh để chỉ còn bản dịch ở đáy màn hình. Hiện chỉ nghe được tiếng Anh.</p>
+            <p class="way-key"><kbd>Alt</kbd><kbd>R</kbd> <span data-i18n="feat3-then">rồi</span> <kbd>3</kbd> <span class="tag">Windows 11 22H2+</span></p>
+            <h3 data-i18n="feat3-title">Nghe tiếng rồi dịch</h3>
+            <p data-i18n="feat3-desc">Video không có phụ đề? Swipelate đọc phụ đề trực tiếp mà Windows tạo ra từ âm thanh của máy, rồi dịch từng câu. Có thể ẩn phụ đề tiếng Anh để chỉ còn bản dịch ở đáy màn hình. Hiện chỉ nghe được tiếng Anh.</p>
           </article>
           <article class="feat" style="--i:3">
             <div class="scene s-clip" aria-hidden="true">
               <div class="s-glass">
-                <p class="s-find">Tìm trong clipboard</p>
+                <p class="s-find" data-i18n="feat4-find">Tìm trong clipboard</p>
                 <span class="s-pick"></span>
                 <p class="s-row">The meeting was moved<b>⌘1</b></p>
                 <p class="s-row">github.com/thydynh03<b>⌘2</b></p>
@@ -277,9 +277,9 @@
                 <p class="s-row">Cảm ơn bạn đã phản hồi<b>⌘4</b></p>
               </div>
             </div>
-            <p class="way-key"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>V</kbd> <span class="tag">macOS, thử nghiệm</span></p>
-            <h3>Bảng clipboard cho macOS</h3>
-            <p>Những đoạn bạn đã copy, mở giữa màn hình như Spotlight với nền kính theo chế độ sáng tối của máy. Chọn để dán lại, ghim đoạn hay dùng, hoặc dịch luôn đoạn đó. Những gì trình quản lý mật khẩu đánh dấu là bí mật thì không bị ghi lại.</p>
+            <p class="way-key"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>V</kbd> <span class="tag" data-i18n="feat4-tag">macOS, thử nghiệm</span></p>
+            <h3 data-i18n="feat4-title">Bảng clipboard cho macOS</h3>
+            <p data-i18n="feat4-desc">Những đoạn bạn đã copy, mở giữa màn hình như Spotlight với nền kính theo chế độ sáng tối của máy. Chọn để dán lại, ghim đoạn hay dùng, hoặc dịch luôn đoạn đó. Những gì trình quản lý mật khẩu đánh dấu là bí mật thì không bị ghi lại.</p>
           </article>
         </div>
       </div>
@@ -288,15 +288,15 @@
     <section class="split" id="tu-dien">
       <div class="wrap two">
         <div>
-          <h2>Tra một từ thì ra cả mục từ điển</h2>
-          <p>Nhấp đúp vào một từ tiếng Anh, popup cho bạn nghĩa tiếng Việt xếp theo từ loại, phiên âm, và định nghĩa bằng tiếng Anh. Muốn đọc kỹ hơn, có nút mở thẳng mục từ đó trên Cambridge hoặc Oxford Learner’s.</p>
-          <p>Trong popup, mỗi từ của câu gốc đều bấm được. Gặp một từ lạ giữa câu, bấm vào nó để tra riêng mà không cần bôi đen lại.</p>
+          <h2 data-i18n="dict-title">Tra một từ thì ra cả mục từ điển</h2>
+          <p data-i18n="dict-p1">Nhấp đúp vào một từ tiếng Anh, popup cho bạn nghĩa tiếng Việt xếp theo từ loại, phiên âm, và định nghĩa bằng tiếng Anh. Muốn đọc kỹ hơn, có nút mở thẳng mục từ đó trên Cambridge hoặc Oxford Learner’s.</p>
+          <p data-i18n="dict-p2">Trong popup, mỗi từ của câu gốc đều bấm được. Gặp một từ lạ giữa câu, bấm vào nó để tra riêng mà không cần bôi đen lại.</p>
         </div>
         <figure class="entry" aria-label="Ví dụ mục từ trong popup">
           <p class="entry-word">attend <span>/əˈtend/</span></p>
           <dl>
-            <div><dt>động từ</dt><dd>tham dự, có mặt, đi học</dd></div>
-            <div><dt>định nghĩa</dt><dd>to be present at an event, or to go regularly to a place</dd></div>
+            <div><dt data-i18n="dict-pos">động từ</dt><dd data-i18n="dict-mean">tham dự, có mặt, đi học</dd></div>
+            <div><dt data-i18n="dict-def-label">định nghĩa</dt><dd>to be present at an event, or to go regularly to a place</dd></div>
           </dl>
           <p class="entry-links">Cambridge · Oxford Learner’s</p>
         </figure>
@@ -305,20 +305,20 @@
 
     <section class="band" id="offline">
       <div class="wrap">
-        <h2>Mất mạng vẫn dịch được</h2>
-        <p class="section-lead">Swipelate thử lần lượt ba nguồn dịch. Bạn không cần cấu hình gì để hai nguồn đầu hoạt động.</p>
+        <h2 data-i18n="off-title">Mất mạng vẫn dịch được</h2>
+        <p class="section-lead" data-i18n="off-lead">Swipelate thử lần lượt ba nguồn dịch. Bạn không cần cấu hình gì để hai nguồn đầu hoạt động.</p>
         <ol class="chain">
           <li>
             <h3>Google Translate</h3>
-            <p>Mặc định khi có mạng. Không cần tài khoản, không cần API key.</p>
+            <p data-i18n="off-g-desc">Mặc định khi có mạng. Không cần tài khoản, không cần API key.</p>
           </li>
           <li>
-            <h3>Model chạy trên máy</h3>
-            <p>Khi mất mạng hoặc Google không phản hồi, ứng dụng tự chuyển sang model Opus-MT đã tải sẵn. Văn bản không rời khỏi máy. Mỗi chiều dịch nặng khoảng 107 MB, tải một lần trong Cài đặt.</p>
+            <h3 data-i18n="off-local-title">Model chạy trên máy</h3>
+            <p data-i18n="off-local-desc">Khi mất mạng hoặc Google không phản hồi, ứng dụng tự chuyển sang model Opus-MT đã tải sẵn. Văn bản không rời khỏi máy. Mỗi chiều dịch nặng khoảng 107 MB, tải một lần trong Cài đặt.</p>
           </li>
           <li>
-            <h3>Claude hoặc DeepL</h3>
-            <p>Chỉ dùng khi bạn tự nhập API key. Hợp với câu dài cần văn phong tự nhiên hơn; hoàn toàn không bắt buộc.</p>
+            <h3 data-i18n="off-ai-title">Claude hoặc DeepL</h3>
+            <p data-i18n="off-ai-desc">Chỉ dùng khi bạn tự nhập API key. Hợp với câu dài cần văn phong tự nhiên hơn; hoàn toàn không bắt buộc.</p>
           </li>
         </ol>
       </div>
@@ -327,64 +327,64 @@
     <section class="split" id="rieng-tu">
       <div class="wrap two">
         <div>
-          <h2>Biết rõ văn bản của mình đi đâu</h2>
-          <p>Ứng dụng không có máy chủ riêng, không yêu cầu đăng nhập và không gửi số liệu sử dụng về đâu cả. Mã nguồn công khai trên GitHub để bất kỳ ai cũng kiểm tra được.</p>
+          <h2 data-i18n="priv-title">Biết rõ văn bản của mình đi đâu</h2>
+          <p data-i18n="priv-lead">Ứng dụng không có máy chủ riêng, không yêu cầu đăng nhập và không gửi số liệu sử dụng về đâu cả. Mã nguồn công khai trên GitHub để bất kỳ ai cũng kiểm tra được.</p>
         </div>
         <ul class="facts">
-          <li><strong>Dịch online:</strong> đoạn bạn bôi đen được gửi tới dịch vụ dịch đang chọn, mặc định là Google.</li>
-          <li><strong>Dịch offline:</strong> mọi thứ xử lý trên máy bạn.</li>
-          <li><strong>Lịch sử và API key:</strong> lưu trong thư mục dữ liệu của ứng dụng trên máy. Tắt được lịch sử trong Cài đặt.</li>
-          <li><strong>Ứng dụng nhạy cảm:</strong> thêm trình quản lý mật khẩu hay ngân hàng vào danh sách loại trừ để biểu tượng dịch không xuất hiện ở đó.</li>
+          <li data-i18n="priv-f1"><strong>Dịch online:</strong> đoạn bạn bôi đen được gửi tới dịch vụ dịch đang chọn, mặc định là Google.</li>
+          <li data-i18n="priv-f2"><strong>Dịch offline:</strong> mọi thứ xử lý trên máy bạn.</li>
+          <li data-i18n="priv-f3"><strong>Lịch sử và API key:</strong> lưu trong thư mục dữ liệu của ứng dụng trên máy. Tắt được lịch sử trong Cài đặt.</li>
+          <li data-i18n="priv-f4"><strong>Ứng dụng nhạy cảm:</strong> thêm trình quản lý mật khẩu hay ngân hàng vào danh sách loại trừ để biểu tượng dịch không xuất hiện ở đó.</li>
         </ul>
       </div>
     </section>
 
     <section class="download" id="tai-ve">
       <div class="wrap">
-        <h2>Tải Swipelate</h2>
-        <p class="section-lead" id="release-meta">Bản mới nhất, miễn phí theo <a href="license.html">giấy phép MIT</a>.</p>
+        <h2 data-i18n="dl-title">Tải Swipelate</h2>
+        <p class="section-lead" id="release-meta" data-i18n="dl-lead">Bản mới nhất, miễn phí theo <a href="license.html">giấy phép MIT</a>.</p>
         <div class="platforms">
           <article data-os="windows">
             <h3>Windows</h3>
-            <p>Windows 10 hoặc 11, 64-bit. Đầy đủ tính năng: bôi đen, phím tắt, OCR, rê chuột để tra từ.</p>
-            <a class="btn" href="https://github.com/thydynh03/swipelate/releases/latest/download/Swipelate-Setup-x64.exe" data-asset="Swipelate-Setup-x64.exe">Tải cho Windows <span class="size"></span></a>
+            <p data-i18n="dl-win-p">Windows 10 hoặc 11, 64-bit. Đầy đủ tính năng: bôi đen, phím tắt, OCR, rê chuột để tra từ.</p>
+            <a class="btn" href="https://github.com/thydynh03/swipelate/releases/latest/download/Swipelate-Setup-x64.exe" data-asset="Swipelate-Setup-x64.exe" data-i18n="dl-win-btn">Tải cho Windows <span class="size"></span></a>
           </article>
           <article data-os="mac">
-            <h3>macOS <span class="tag">thử nghiệm</span></h3>
-            <p>macOS 11 trở lên, máy chip Apple (M1 trở đi). Có bôi đen để dịch, phím tắt, quét chữ trên màn hình và dịch thời gian thực; rê chuột để dịch chưa có trên macOS.</p>
-            <a class="btn" href="https://github.com/thydynh03/swipelate/releases/latest/download/Swipelate-macOS-AppleSilicon.dmg" data-asset="Swipelate-macOS-AppleSilicon.dmg">Tải cho macOS <span class="size"></span></a>
+            <h3>macOS <span class="tag" data-i18n="dl-mac-tag">thử nghiệm</span></h3>
+            <p data-i18n="dl-mac-p">macOS 11 trở lên, máy chip Apple (M1 trở đi). Có bôi đen để dịch, phím tắt, quét chữ trên màn hình và dịch thời gian thực; rê chuột để dịch chưa có trên macOS.</p>
+            <a class="btn" href="https://github.com/thydynh03/swipelate/releases/latest/download/Swipelate-macOS-AppleSilicon.dmg" data-asset="Swipelate-macOS-AppleSilicon.dmg" data-i18n="dl-mac-btn">Tải cho macOS <span class="size"></span></a>
           </article>
         </div>
-        <p class="fine">Bộ cài chưa có chữ ký số trả phí nên hệ điều hành sẽ hỏi lại khi mở lần đầu. Xem <a href="docs.html#cai-dat">hướng dẫn cài đặt</a>, <a href="https://github.com/thydynh03/swipelate/releases/latest">mã SHA-256 và các bản trước</a>.</p>
+        <p class="fine" data-i18n="dl-fine">Bộ cài chưa có chữ ký số trả phí nên hệ điều hành sẽ hỏi lại khi mở lần đầu. Xem <a href="docs.html#cai-dat">hướng dẫn cài đặt</a>, <a href="https://github.com/thydynh03/swipelate/releases/latest">mã SHA-256 và các bản trước</a>.</p>
       </div>
     </section>
 
     <section class="faq" id="hoi-dap">
       <div class="wrap narrow">
-        <h2>Câu hỏi thường gặp</h2>
+        <h2 data-i18n="faq-title">Câu hỏi thường gặp</h2>
         <details>
-          <summary>Swipelate có miễn phí không?</summary>
-          <p>Có. Ứng dụng miễn phí và mã nguồn mở theo giấy phép MIT. Dịch bằng Google và dịch offline đều không cần tài khoản hay API key.</p>
+          <summary data-i18n="faq-q1">Swipelate có miễn phí không?</summary>
+          <p data-i18n="faq-a1">Có. Ứng dụng miễn phí và mã nguồn mở theo giấy phép MIT. Dịch bằng Google và dịch offline đều không cần tài khoản hay API key.</p>
         </details>
         <details>
-          <summary>Không có mạng thì có dịch được không?</summary>
-          <p>Được, sau khi bạn tải model offline trong Cài đặt → Engine dịch (khoảng 107 MB cho mỗi chiều). Khi mất mạng, ứng dụng tự chuyển sang dịch trên máy và ghi chú điều đó trong popup.</p>
+          <summary data-i18n="faq-q2">Không có mạng thì có dịch được không?</summary>
+          <p data-i18n="faq-a2">Được, sau khi bạn tải model offline trong Cài đặt → Engine dịch (khoảng 107 MB cho mỗi chiều). Khi mất mạng, ứng dụng tự chuyển sang dịch trên máy và ghi chú điều đó trong popup.</p>
         </details>
         <details>
-          <summary>Dùng được trong những ứng dụng nào?</summary>
-          <p>Mọi ứng dụng cho phép bôi đen và sao chép văn bản: trình duyệt, Word, trình đọc PDF, Claude, Slack, Zalo, VS Code. Với ảnh hoặc PDF scan, dùng chế độ quét vùng màn hình.</p>
+          <summary data-i18n="faq-q3">Dùng được trong những ứng dụng nào?</summary>
+          <p data-i18n="faq-a3">Mọi ứng dụng cho phép bôi đen và sao chép văn bản: trình duyệt, Word, trình đọc PDF, Claude, Slack, Zalo, VS Code. Với ảnh hoặc PDF scan, dùng chế độ quét vùng màn hình.</p>
         </details>
         <details>
-          <summary>Dịch được những ngôn ngữ nào?</summary>
-          <p>Khi online, ứng dụng dịch được các ngôn ngữ Google Translate hỗ trợ và tự nhận ngôn ngữ nguồn. Mặc định là Anh ↔ Việt: gặp tiếng Việt thì dịch sang tiếng Anh, còn lại dịch sang tiếng Việt. Dịch offline hiện có các cặp đi qua tiếng Anh như Việt, Nhật, Trung, Pháp, Đức.</p>
+          <summary data-i18n="faq-q4">Dịch được những ngôn ngữ nào?</summary>
+          <p data-i18n="faq-a4">Khi online, ứng dụng dịch được các ngôn ngữ Google Translate hỗ trợ và tự nhận ngôn ngữ nguồn. Mặc định là Anh ↔ Việt: gặp tiếng Việt thì dịch sang tiếng Anh, còn lại dịch sang tiếng Việt. Dịch offline hiện có các cặp đi qua tiếng Anh như Việt, Nhật, Trung, Pháp, Đức.</p>
         </details>
         <details>
-          <summary>Văn bản tôi bôi đen được gửi đi đâu?</summary>
-          <p>Khi dịch online, đoạn văn bản được gửi tới dịch vụ dịch bạn chọn. Khi dịch offline, nó không rời khỏi máy. Ứng dụng không có máy chủ riêng và không thu thập dữ liệu.</p>
+          <summary data-i18n="faq-q5">Văn bản tôi bôi đen được gửi đi đâu?</summary>
+          <p data-i18n="faq-a5">Khi dịch online, đoạn văn bản được gửi tới dịch vụ dịch bạn chọn. Khi dịch offline, nó không rời khỏi máy. Ứng dụng không có máy chủ riêng và không thu thập dữ liệu.</p>
         </details>
         <details>
-          <summary>Vì sao Windows hoặc macOS cảnh báo khi cài?</summary>
-          <p>Vì bộ cài chưa được ký bằng chứng chỉ trả phí. <a href="docs.html#cai-dat">Trang tài liệu</a> hướng dẫn từng bước và cách đối chiếu mã SHA-256 của tệp tải về.</p>
+          <summary data-i18n="faq-q6">Vì sao Windows hoặc macOS cảnh báo khi cài?</summary>
+          <p data-i18n="faq-a6">Vì bộ cài chưa được ký bằng chứng chỉ trả phí. <a href="docs.html#cai-dat">Trang tài liệu</a> hướng dẫn từng bước và cách đối chiếu mã SHA-256 của tệp tải về.</p>
         </details>
       </div>
     </section>
@@ -392,21 +392,20 @@
 
   <footer class="foot">
     <div class="wrap foot-row">
-      <p>© 2026 thydynh03. Phát hành theo <a href="license.html">giấy phép MIT</a>. Trước đây có tên Quick Translate.</p>
+      <p data-i18n="footer-copy">© 2026 thydynh03. Phát hành theo <a href="license.html">giấy phép MIT</a>. Trước đây có tên Quick Translate.</p>
       <nav aria-label="Liên kết cuối trang">
-        <a href="docs.html">Tài liệu</a>
-        <a href="license.html">Giấy phép</a>
-        <a href="stats.html">Thống kê</a>
-        <a href="https://github.com/thydynh03/swipelate/issues" rel="noopener">Báo lỗi</a>
-        <a href="privacy.html">Quyền riêng tư</a>
-        <a href="https://github.com/thydynh03/swipelate" rel="noopener">Mã nguồn</a>
+        <a href="docs.html" data-i18n="footer-doc">Tài liệu</a>
+        <a href="license.html" data-i18n="footer-license">Giấy phép</a>
+        <a href="stats.html" data-i18n="footer-stats">Thống kê</a>
+        <a href="https://github.com/thydynh03/swipelate/issues" rel="noopener" data-i18n="footer-issues">Báo lỗi</a>
+        <a href="privacy.html" data-i18n="footer-privacy">Quyền riêng tư</a>
+        <a href="https://github.com/thydynh03/swipelate" rel="noopener" data-i18n="footer-source">Mã nguồn</a>
       </nav>
     </div>
-    <p class="wrap fine">Swipelate không liên kết với Google, Cambridge University Press, Oxford University Press, DeepL hay Anthropic. Tên các dịch vụ thuộc về chủ sở hữu tương ứng.</p>
+    <p class="wrap fine" data-i18n="footer-disclaimer">Swipelate không liên kết với Google, Cambridge University Press, Oxford University Press, DeepL hay Anthropic. Tên các dịch vụ thuộc về chủ sở hữu tương ứng.</p>
   </footer>
 
   <script src="assets/site.js?v=0.1.27" defer></script>
   <script src="assets/stats-config.js?v=0.1.27" defer></script>
 </body>
 </html>
-

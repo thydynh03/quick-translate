@@ -213,6 +213,17 @@ export default function Settings() {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [historyQuery, setHistoryQuery] = useState("");
   const [historyVisibleCount, setHistoryVisibleCount] = useState(40);
+  const [enhancedMode, setEnhancedMode] = useState<boolean>(() => {
+    return localStorage.getItem("swipelate-enhanced-mode") === "true";
+  });
+
+  const toggleEnhancedMode = () => {
+    setEnhancedMode((prev) => {
+      const next = !prev;
+      localStorage.setItem("swipelate-enhanced-mode", String(next));
+      return next;
+    });
+  };
 
   const load = () => invoke<Config>("get_settings").then(setConfig);
 
@@ -341,20 +352,71 @@ export default function Settings() {
       </nav>
 
       <main className="pane">
+        <div className="pane-top">
+          <h2 className="pane-title">
+            {tab === "general" && t.tab_general}
+            {tab === "engine" && t.tab_engine}
+            {tab === "subtitles" && t.tab_subtitles}
+            {tab === "vocab" && t.tab_vocab}
+            {tab === "history" && t.tab_history}
+            {tab === "about" && t.tab_about}
+          </h2>
+          <button
+            type="button"
+            className={enhancedMode ? "enhanced-btn active" : "enhanced-btn"}
+            onClick={toggleEnhancedMode}
+            title={t.enhanced_mode_desc}
+          >
+            <span>✨</span>
+            <span>{t.enhanced_mode}</span>
+            <span className={enhancedMode ? "badge-tag accent" : "badge-tag"}>
+              {enhancedMode ? "ON" : "OFF"}
+            </span>
+          </button>
+        </div>
+
         {updatedFrom !== null && (
           <button className="updated" title={appLang === "en" ? "Click to dismiss" : "Bấm để ẩn"} onClick={() => setUpdatedFrom(null)}>
             {t.app_updated_notice(updatedFrom, version)}
           </button>
         )}
+
         {tab === "general" && (
           <>
-            <section>
-              <h2>{t.usage_title}</h2>
-              <p className="help">{t.usage_desc}</p>
-            </section>
+            {/* Card 1: Ngôn ngữ dịch */}
+            <div className="card-box">
+              <h3>
+                <span>{t.lang_section}</span>
+                <span className="badge-tag">{t.default_mode_badge}</span>
+              </h3>
+              <label className="row">
+                <span>{t.translate_to}</span>
+                <select value={config.primary_lang} onChange={(e) => update({ primary_lang: e.target.value })}>
+                  {LANGUAGES.map(([code]) => (
+                    <option key={code} value={code}>
+                      {langName(code, appLang)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="row">
+                <span>{t.secondary_to(langName(config.primary_lang, appLang))}</span>
+                <select value={config.secondary_lang} onChange={(e) => update({ secondary_lang: e.target.value })}>
+                  {LANGUAGES.filter(([code]) => code !== config.primary_lang).map(([code]) => (
+                    <option key={code} value={code}>
+                      {langName(code, appLang)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
 
-            <section>
-              <h2>{t.trigger_title}</h2>
+            {/* Card 2: Thao tác nhanh */}
+            <div className="card-box">
+              <h3>
+                <span>{t.section_quick_trigger}</span>
+                <span className="badge-tag">{t.default_mode_badge}</span>
+              </h3>
               <label className="row">
                 <span>{t.hotkey_selection}</span>
                 <input
@@ -387,102 +449,14 @@ export default function Settings() {
                 <span>{t.auto_trigger}</span>
                 <input type="checkbox" checked={config.auto_trigger} onChange={(e) => update({ auto_trigger: e.target.checked })} />
               </label>
-              <label className="row">
-                <span>{t.instant_translate}</span>
-                <input
-                  type="checkbox"
-                  checked={config.instant_translate}
-                  disabled={!config.auto_trigger}
-                  onChange={(e) => update({ instant_translate: e.target.checked })}
-                />
-              </label>
-              <label className="row">
-                <span>{t.hover_translate}</span>
-                <input type="checkbox" checked={config.hover_translate} onChange={(e) => update({ hover_translate: e.target.checked })} />
-              </label>
-              <label className="row">
-                <span>{t.hover_sentence}</span>
-                <input
-                  type="checkbox"
-                  checked={config.hover_sentence}
-                  disabled={!config.hover_translate}
-                  onChange={(e) => update({ hover_sentence: e.target.checked })}
-                />
-              </label>
-              <label className="row">
-                <span>{t.listen_hide_captions}</span>
-                <input type="checkbox" checked={config.listen_hide_captions} onChange={(e) => update({ listen_hide_captions: e.target.checked })} />
-              </label>
-              <label className="row">
-                <span>{t.explain_in_context}</span>
-                <input type="checkbox" checked={config.explain_in_context} onChange={(e) => update({ explain_in_context: e.target.checked })} />
-              </label>
-              <p className="help">{t.explain_help}</p>
-              <label className="row">
-                <span>{t.window_hotkey}</span>
-                <input
-                  className="hotkey"
-                  title={t.hotkey_hint}
-                  readOnly
-                  value={config.window_hotkey}
-                  onKeyDown={(e) => {
-                    e.preventDefault();
-                    const shortcut = shortcutFrom(e);
-                    if (shortcut) update({ window_hotkey: shortcut });
-                  }}
-                />
-              </label>
-              <label className="row">
-                <span>{t.live_hotkey}</span>
-                <input
-                  className="hotkey"
-                  title={t.hotkey_hint}
-                  readOnly
-                  value={config.live_hotkey}
-                  onKeyDown={(e) => {
-                    e.preventDefault();
-                    const shortcut = shortcutFrom(e);
-                    if (shortcut) update({ live_hotkey: shortcut });
-                  }}
-                />
-              </label>
-              <label className="row">
-                <span>{t.clipboard_hotkey}</span>
-                <input
-                  className="hotkey"
-                  title={t.clipboard_hotkey_hint}
-                  readOnly
-                  placeholder={t.clipboard_off}
-                  value={config.clipboard_hotkey}
-                  onKeyDown={(e) => {
-                    e.preventDefault();
-                    if (e.key === "Backspace" || e.key === "Delete") return update({ clipboard_hotkey: "" });
-                    const shortcut = shortcutFrom(e);
-                    if (shortcut) update({ clipboard_hotkey: shortcut });
-                  }}
-                />
-              </label>
-              <label className="row">
-                <span>{t.popup_size(config.popup_font_size)}</span>
-                <input
-                  type="range"
-                  min={12}
-                  max={22}
-                  value={config.popup_font_size}
-                  onChange={(e) => update({ popup_font_size: Number(e.target.value) })}
-                />
-              </label>
-              <label className="row">
-                <span>{t.popup_opacity(config.popup_opacity)}</span>
-                <input
-                  type="range"
-                  min={60}
-                  max={100}
-                  step={5}
-                  value={config.popup_opacity}
-                  onChange={(e) => update({ popup_opacity: Number(e.target.value) })}
-                />
-              </label>
+            </div>
+
+            {/* Card 3: Hệ thống & Giao diện */}
+            <div className="card-box">
+              <h3>
+                <span>{t.theme} &amp; {t.section_system}</span>
+                <span className="badge-tag">{t.default_mode_badge}</span>
+              </h3>
               <label className="row">
                 <span>{t.autostart}</span>
                 <input type="checkbox" checked={autostart} onChange={(e) => toggleAutostart(e.target.checked)} />
@@ -505,239 +479,389 @@ export default function Settings() {
                   <option value="en">English</option>
                 </select>
               </label>
-              <label className="row">
-                <span>{t.stats_label}</span>
-                <input type="checkbox" checked={config.usage_stats} onChange={(e) => update({ usage_stats: e.target.checked })} />
-              </label>
-              <p className="help">{t.stats_help}</p>
-            </section>
+            </div>
 
-            <section>
-              <h2>{t.lang_section}</h2>
-              <label className="row">
-                <span>{t.translate_to}</span>
-                <select value={config.primary_lang} onChange={(e) => update({ primary_lang: e.target.value })}>
-                  {LANGUAGES.map(([code]) => (
-                    <option key={code} value={code}>
-                      {langName(code, appLang)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="row">
-                <span>{t.secondary_to(langName(config.primary_lang, appLang))}</span>
-                <select value={config.secondary_lang} onChange={(e) => update({ secondary_lang: e.target.value })}>
-                  {LANGUAGES.filter(([code]) => code !== config.primary_lang).map(([code]) => (
-                    <option key={code} value={code}>
-                      {langName(code, appLang)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </section>
+            {/* Banner gợi ý chuyển sang nâng cao khi đang ở chế độ mặc định */}
+            {!enhancedMode && (
+              <div className="card-banner">
+                <span>{t.advanced_settings_hint}</span>
+                <button type="button" onClick={toggleEnhancedMode}>
+                  ✨ {t.switch_to_enhanced}
+                </button>
+              </div>
+            )}
 
-            <section>
-              <h2>{t.excluded_title}</h2>
-              <p className="help">{t.excluded_help}</p>
-              <textarea
-                rows={3}
-                defaultValue={config.excluded_apps.join("\n")}
-                onBlur={(e) =>
-                  update({
-                    excluded_apps: e.target.value
-                      .split("\n")
-                      .map((line) => line.trim().toLowerCase())
-                      .filter(Boolean),
-                  })
-                }
-              />
-            </section>
-
-            <section>
-              <h2>{t.profiles_title}</h2>
-              <p className="help">{t.profiles_help}</p>
-              {config.profiles.map((profile, index) => {
-                const change = (patch: Partial<Profile>) =>
-                  update({ profiles: config.profiles.map((item, at) => (at === index ? { ...item, ...patch } : item)) });
-                return (
-                  <div className="profile" key={index}>
+            {/* CÁC MỤC NÂNG CAO (ENHANCED MODE) */}
+            {enhancedMode && (
+              <>
+                {/* Card 4: Phím tắt nâng cao */}
+                <div className="card-box">
+                  <h3>
+                    <span>{t.section_advanced_shortcuts}</span>
+                    <span className="badge-tag accent">{t.enhanced_mode_badge}</span>
+                  </h3>
+                  <label className="row">
+                    <span>{t.window_hotkey}</span>
                     <input
-                      aria-label="Tên file chạy"
-                      placeholder="chrome.exe"
-                      defaultValue={profile.app}
-                      onBlur={(e) => change({ app: e.target.value.trim().toLowerCase() })}
+                      className="hotkey"
+                      title={t.hotkey_hint}
+                      readOnly
+                      value={config.window_hotkey}
+                      onKeyDown={(e) => {
+                        e.preventDefault();
+                        const shortcut = shortcutFrom(e);
+                        if (shortcut) update({ window_hotkey: shortcut });
+                      }}
                     />
-                    <select aria-label="Nguồn dịch" value={profile.engine} onChange={(e) => change({ engine: e.target.value })}>
-                      <option value="">{t.default_engine}</option>
-                      {Object.entries(ENGINE_NAMES).map(([id, name]) => (
-                        <option key={id} value={id}>
-                          {name}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      aria-label="Dịch sang"
-                      value={profile.primary_lang}
-                      onChange={(e) => change({ primary_lang: e.target.value })}
-                    >
-                      <option value="">{t.default_lang}</option>
-                      {LANGUAGES.map(([code]) => (
-                        <option key={code} value={code}>
-                          {langName(code, appLang)}
-                        </option>
-                      ))}
-                    </select>
-                    <button onClick={() => update({ profiles: config.profiles.filter((_, at) => at !== index) })}>{t.remove_profile}</button>
-                  </div>
-                );
-              })}
-              <button
-                onClick={async () => {
-                  // Start from the application the user was just in, when known.
-                  const app = (await invoke<string | null>("last_app")) ?? "";
-                  const known = config.profiles.some((profile) => profile.app === app);
-                  update({ profiles: [...config.profiles, { app: known ? "" : app, engine: "", primary_lang: "" }] });
-                }}
-              >
-                {t.add_profile}
-              </button>
-            </section>
+                  </label>
+                  <label className="row">
+                    <span>{t.live_hotkey}</span>
+                    <input
+                      className="hotkey"
+                      title={t.hotkey_hint}
+                      readOnly
+                      value={config.live_hotkey}
+                      onKeyDown={(e) => {
+                        e.preventDefault();
+                        const shortcut = shortcutFrom(e);
+                        if (shortcut) update({ live_hotkey: shortcut });
+                      }}
+                    />
+                  </label>
+                  <label className="row">
+                    <span>{t.clipboard_hotkey}</span>
+                    <input
+                      className="hotkey"
+                      title={t.clipboard_hotkey_hint}
+                      readOnly
+                      placeholder={t.clipboard_off}
+                      value={config.clipboard_hotkey}
+                      onKeyDown={(e) => {
+                        e.preventDefault();
+                        if (e.key === "Backspace" || e.key === "Delete") return update({ clipboard_hotkey: "" });
+                        const shortcut = shortcutFrom(e);
+                        if (shortcut) update({ clipboard_hotkey: shortcut });
+                      }}
+                    />
+                  </label>
+                </div>
+
+                {/* Card 5: Cơ chế thông minh */}
+                <div className="card-box">
+                  <h3>
+                    <span>{t.section_smart_behavior}</span>
+                    <span className="badge-tag accent">{t.enhanced_mode_badge}</span>
+                  </h3>
+                  <label className="row">
+                    <span>{t.instant_translate}</span>
+                    <input
+                      type="checkbox"
+                      checked={config.instant_translate}
+                      disabled={!config.auto_trigger}
+                      onChange={(e) => update({ instant_translate: e.target.checked })}
+                    />
+                  </label>
+                  <label className="row">
+                    <span>{t.hover_translate}</span>
+                    <input type="checkbox" checked={config.hover_translate} onChange={(e) => update({ hover_translate: e.target.checked })} />
+                  </label>
+                  <label className="row">
+                    <span>{t.hover_sentence}</span>
+                    <input
+                      type="checkbox"
+                      checked={config.hover_sentence}
+                      disabled={!config.hover_translate}
+                      onChange={(e) => update({ hover_sentence: e.target.checked })}
+                    />
+                  </label>
+                  <label className="row">
+                    <span>{t.listen_hide_captions}</span>
+                    <input type="checkbox" checked={config.listen_hide_captions} onChange={(e) => update({ listen_hide_captions: e.target.checked })} />
+                  </label>
+                  <label className="row">
+                    <span>{t.explain_in_context}</span>
+                    <input type="checkbox" checked={config.explain_in_context} onChange={(e) => update({ explain_in_context: e.target.checked })} />
+                  </label>
+                </div>
+
+                {/* Card 6: Tuỳ biến Popup & Thống kê */}
+                <div className="card-box">
+                  <h3>
+                    <span>{t.section_popup_tuning}</span>
+                    <span className="badge-tag accent">{t.enhanced_mode_badge}</span>
+                  </h3>
+                  <label className="row">
+                    <span>{t.popup_size(config.popup_font_size)}</span>
+                    <input
+                      type="range"
+                      min={12}
+                      max={22}
+                      value={config.popup_font_size}
+                      onChange={(e) => update({ popup_font_size: Number(e.target.value) })}
+                    />
+                  </label>
+                  <label className="row">
+                    <span>{t.popup_opacity(config.popup_opacity)}</span>
+                    <input
+                      type="range"
+                      min={60}
+                      max={100}
+                      step={5}
+                      value={config.popup_opacity}
+                      onChange={(e) => update({ popup_opacity: Number(e.target.value) })}
+                    />
+                  </label>
+                  <label className="row">
+                    <span>{t.stats_label}</span>
+                    <input type="checkbox" checked={config.usage_stats} onChange={(e) => update({ usage_stats: e.target.checked })} />
+                  </label>
+                </div>
+
+                {/* Card 7: Ứng dụng loại trừ */}
+                <div className="card-box">
+                  <h3>
+                    <span>{t.excluded_title}</span>
+                    <span className="badge-tag accent">{t.enhanced_mode_badge}</span>
+                  </h3>
+                  <p className="help" style={{ margin: "0 0 8px", fontSize: "12px" }}>{t.excluded_help}</p>
+                  <textarea
+                    rows={3}
+                    defaultValue={config.excluded_apps.join("\n")}
+                    onBlur={(e) =>
+                      update({
+                        excluded_apps: e.target.value
+                          .split("\n")
+                          .map((line) => line.trim().toLowerCase())
+                          .filter(Boolean),
+                      })
+                    }
+                  />
+                </div>
+
+                {/* Card 8: Hồ sơ theo ứng dụng */}
+                <div className="card-box">
+                  <h3>
+                    <span>{t.profiles_title}</span>
+                    <span className="badge-tag accent">{t.enhanced_mode_badge}</span>
+                  </h3>
+                  {config.profiles.map((profile, index) => {
+                    const change = (patch: Partial<Profile>) =>
+                      update({ profiles: config.profiles.map((item, at) => (at === index ? { ...item, ...patch } : item)) });
+                    return (
+                      <div className="profile" key={index} style={{ marginBottom: "8px" }}>
+                        <input
+                          aria-label="Tên file chạy"
+                          placeholder="chrome.exe"
+                          defaultValue={profile.app}
+                          onBlur={(e) => change({ app: e.target.value.trim().toLowerCase() })}
+                        />
+                        <select aria-label="Nguồn dịch" value={profile.engine} onChange={(e) => change({ engine: e.target.value })}>
+                          <option value="">{t.default_engine}</option>
+                          {Object.entries(ENGINE_NAMES).map(([id, name]) => (
+                            <option key={id} value={id}>
+                              {name}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          aria-label="Dịch sang"
+                          value={profile.primary_lang}
+                          onChange={(e) => change({ primary_lang: e.target.value })}
+                        >
+                          <option value="">{t.default_lang}</option>
+                          {LANGUAGES.map(([code]) => (
+                            <option key={code} value={code}>
+                              {langName(code, appLang)}
+                            </option>
+                          ))}
+                        </select>
+                        <button onClick={() => update({ profiles: config.profiles.filter((_, at) => at !== index) })}>{t.remove_profile}</button>
+                      </div>
+                    );
+                  })}
+                  <button
+                    onClick={async () => {
+                      const app = (await invoke<string | null>("last_app")) ?? "";
+                      const known = config.profiles.some((profile) => profile.app === app);
+                      update({ profiles: [...config.profiles, { app: known ? "" : app, engine: "", primary_lang: "" }] });
+                    }}
+                  >
+                    {t.add_profile}
+                  </button>
+                </div>
+              </>
+            )}
           </>
         )}
 
         {tab === "engine" && (
           <>
-            <section>
-              <h2>{t.engine_default_title}</h2>
-              {getEngines(appLang).map((engine) => (
-                <label key={engine.id} className="choice">
-                  <input type="radio" name="engine" checked={config.engine === engine.id} onChange={() => update({ engine: engine.id })} />
-                  <span>
-                    <strong>{ENGINE_NAMES[engine.id]}</strong>
-                    <small>{engine.hint}</small>
-                  </span>
-                </label>
-              ))}
+            {/* Thẻ Engine đang dùng */}
+            <div className="card-box">
+              <h3>
+                <span>{t.engine_current}</span>
+                <span className="badge-tag success">{ENGINE_NAMES[config.engine] ?? config.engine}</span>
+              </h3>
+              <p style={{ margin: "0 0 10px", fontSize: "12.5px", color: "var(--muted)" }}>
+                {config.engine === "google" ? t.engine_ready_hint : (getEngines(appLang).find((e) => e.id === config.engine)?.hint ?? "")}
+              </p>
               <label className="row">
                 <span>{t.fallback_offline}</span>
                 <input type="checkbox" checked={config.fallback_offline} onChange={(e) => update({ fallback_offline: e.target.checked })} />
               </label>
-            </section>
+            </div>
 
-            <section>
-              <h2>{t.api_keys_title}</h2>
-              <p className="help">{t.api_keys_help}</p>
-              <label className="row">
-                <span>DeepL</span>
-                <input type="password" defaultValue={config.deepl_key} onBlur={(e) => update({ deepl_key: e.target.value.trim() })} />
-              </label>
-              <label className="row">
-                <span>Anthropic (Claude)</span>
-                <input type="password" defaultValue={config.anthropic_key} onBlur={(e) => update({ anthropic_key: e.target.value.trim() })} />
-              </label>
-            </section>
+            {/* Thẻ Model Offline */}
+            <div className="card-box">
+              <h3>
+                <span>{t.offline_title}</span>
+                <span className="badge-tag">{t.default_mode_badge}</span>
+              </h3>
+              <OfflineModels lang={appLang} />
+            </div>
 
-            <section>
-              <h2>{t.dict_sources}</h2>
-              <p className="help">{t.dict_help}</p>
-              <label className="row">
-                <span>{t.english_definitions}</span>
-                <input type="checkbox" checked={config.english_definitions} onChange={(e) => update({ english_definitions: e.target.checked })} />
-              </label>
-            </section>
+            {/* Banner gợi ý nâng cao khi ở chế độ mặc định */}
+            {!enhancedMode && (
+              <div className="card-banner">
+                <span>{t.engine_advanced_hint}</span>
+                <button type="button" onClick={toggleEnhancedMode}>
+                  ✨ {t.switch_to_enhanced}
+                </button>
+              </div>
+            )}
 
-            <section>
-              <h2>{t.openai_title}</h2>
-              <p className="help">{t.openai_help}</p>
-              <label className="row">
-                <span>{t.api_url}</span>
-                <input defaultValue={config.openai_base} onBlur={(e) => update({ openai_base: e.target.value.trim() })} />
-              </label>
-              <label className="row">
-                <span>{t.model_name}</span>
-                <input defaultValue={config.openai_model} onBlur={(e) => update({ openai_model: e.target.value.trim() })} />
-              </label>
-              <label className="row">
-                <span>{t.api_key}</span>
-                <input type="password" defaultValue={config.openai_key} onBlur={(e) => update({ openai_key: e.target.value.trim() })} />
-              </label>
-            </section>
+            {/* Các thiết lập nâng cao của Engine */}
+            {enhancedMode && (
+              <>
+                <section>
+                  <h2>{t.engine_select_title}</h2>
+                  {getEngines(appLang).map((engine) => (
+                    <label key={engine.id} className="choice">
+                      <input type="radio" name="engine" checked={config.engine === engine.id} onChange={() => update({ engine: engine.id })} />
+                      <span>
+                        <strong>{ENGINE_NAMES[engine.id]}</strong>
+                        <small>{engine.hint}</small>
+                      </span>
+                    </label>
+                  ))}
+                </section>
 
-            <section>
-              <h2>{t.oxford_title}</h2>
-              <label className="row">
-                <span>App ID</span>
-                <input type="password" defaultValue={config.oxford_app_id} onBlur={(e) => update({ oxford_app_id: e.target.value.trim() })} />
-              </label>
-              <label className="row">
-                <span>App Key</span>
-                <input type="password" defaultValue={config.oxford_app_key} onBlur={(e) => update({ oxford_app_key: e.target.value.trim() })} />
-              </label>
-            </section>
+                <section>
+                  <h2>{t.api_keys_title}</h2>
+                  <label className="row">
+                    <span>DeepL API Key</span>
+                    <input type="password" defaultValue={config.deepl_key} onBlur={(e) => update({ deepl_key: e.target.value.trim() })} />
+                  </label>
+                  <label className="row">
+                    <span>Anthropic (Claude) API Key</span>
+                    <input type="password" defaultValue={config.anthropic_key} onBlur={(e) => update({ anthropic_key: e.target.value.trim() })} />
+                  </label>
+                </section>
 
-            <OfflineModels lang={appLang} />
+                <section>
+                  <h2>{t.dict_sources}</h2>
+                  <label className="row">
+                    <span>{t.english_definitions}</span>
+                    <input type="checkbox" checked={config.english_definitions} onChange={(e) => update({ english_definitions: e.target.checked })} />
+                  </label>
+                </section>
 
-            <section>
-              <h2>{t.test_title}</h2>
-              <textarea rows={3} value={sample} onChange={(e) => setSample(e.target.value)} />
-              <button className="primary" onClick={runSample} disabled={busy || !sample.trim()}>
-                {busy ? t.test_busy : t.test_btn}
-              </button>
-              {sampleResult && (
-                <p className="sample">
-                  <small>
-                    {sampleResult.from.toUpperCase()} → {sampleResult.to.toUpperCase()} · {ENGINE_NAMES[sampleResult.engine] ?? sampleResult.engine}
-                  </small>
-                  {sampleResult.text}
-                  {sampleResult.note && <small>{sampleResult.note}</small>}
-                </p>
-              )}
-              {sampleError && <p className="error">{sampleError}</p>}
-            </section>
+                <section>
+                  <h2>{t.openai_title}</h2>
+                  <label className="row">
+                    <span>{t.api_url}</span>
+                    <input defaultValue={config.openai_base} onBlur={(e) => update({ openai_base: e.target.value.trim() })} />
+                  </label>
+                  <label className="row">
+                    <span>{t.model_name}</span>
+                    <input defaultValue={config.openai_model} onBlur={(e) => update({ openai_model: e.target.value.trim() })} />
+                  </label>
+                  <label className="row">
+                    <span>{t.api_key}</span>
+                    <input type="password" defaultValue={config.openai_key} onBlur={(e) => update({ openai_key: e.target.value.trim() })} />
+                  </label>
+                </section>
+
+                <section>
+                  <h2>{t.oxford_title}</h2>
+                  <label className="row">
+                    <span>App ID</span>
+                    <input type="password" defaultValue={config.oxford_app_id} onBlur={(e) => update({ oxford_app_id: e.target.value.trim() })} />
+                  </label>
+                  <label className="row">
+                    <span>App Key</span>
+                    <input type="password" defaultValue={config.oxford_app_key} onBlur={(e) => update({ oxford_app_key: e.target.value.trim() })} />
+                  </label>
+                </section>
+
+                <section>
+                  <h2>{t.test_title}</h2>
+                  <textarea rows={3} value={sample} onChange={(e) => setSample(e.target.value)} />
+                  <button className="primary" onClick={runSample} disabled={busy || !sample.trim()}>
+                    {busy ? t.test_busy : t.test_btn}
+                  </button>
+                  {sampleResult && (
+                    <p className="sample">
+                      <small>
+                        {sampleResult.from.toUpperCase()} → {sampleResult.to.toUpperCase()} · {ENGINE_NAMES[sampleResult.engine] ?? sampleResult.engine}
+                      </small>
+                      {sampleResult.text}
+                      {sampleResult.note && <small>{sampleResult.note}</small>}
+                    </p>
+                  )}
+                  {sampleError && <p className="error">{sampleError}</p>}
+                </section>
+              </>
+            )}
           </>
         )}
 
         {tab === "history" && (
           <section>
-            <h2>{t.history_title}</h2>
-            <label className="row">
-              <span>{t.save_history}</span>
-              <input type="checkbox" checked={config.save_history} onChange={(e) => update({ save_history: e.target.checked })} />
-            </label>
-            {config.save_history && (
-              <>
-                <label className="row">
-                  <span>{t.retention_days}</span>
-                  <select
-                    value={config.history_retention_days ?? 30}
-                    onChange={(e) => update({ history_retention_days: Number(e.target.value) })}
-                  >
-                    <option value={7}>{t.days_7}</option>
-                    <option value={14}>{t.days_14}</option>
-                    <option value={30}>{t.days_30}</option>
-                    <option value={60}>{t.days_60}</option>
-                    <option value={90}>{t.days_90}</option>
-                    <option value={180}>{t.days_180}</option>
-                    <option value={0}>{t.days_forever}</option>
-                  </select>
-                </label>
-                <label className="row">
-                  <span>{t.max_entries}</span>
-                  <select
-                    value={config.history_max_entries ?? 500}
-                    onChange={(e) => update({ history_max_entries: Number(e.target.value) })}
-                  >
-                    <option value={100}>{t.entries_100}</option>
-                    <option value={300}>{t.entries_300}</option>
-                    <option value={500}>{t.entries_500}</option>
-                    <option value={1000}>{t.entries_1000}</option>
-                    <option value={2000}>{t.entries_2000}</option>
-                    <option value={0}>{t.entries_unlimited}</option>
-                  </select>
-                </label>
-                <p className="help">{t.history_help}</p>
-              </>
-            )}
+            <div className="card-box" style={{ marginBottom: "16px" }}>
+              <h3>
+                <span>{t.history_title}</span>
+                <span className="badge-tag">{t.default_mode_badge}</span>
+              </h3>
+              <label className="row">
+                <span>{t.save_history}</span>
+                <input type="checkbox" checked={config.save_history} onChange={(e) => update({ save_history: e.target.checked })} />
+              </label>
+
+              {config.save_history && enhancedMode && (
+                <>
+                  <label className="row">
+                    <span>{t.retention_days}</span>
+                    <select
+                      value={config.history_retention_days ?? 30}
+                      onChange={(e) => update({ history_retention_days: Number(e.target.value) })}
+                    >
+                      <option value={7}>{t.days_7}</option>
+                      <option value={14}>{t.days_14}</option>
+                      <option value={30}>{t.days_30}</option>
+                      <option value={60}>{t.days_60}</option>
+                      <option value={90}>{t.days_90}</option>
+                      <option value={180}>{t.days_180}</option>
+                      <option value={0}>{t.days_forever}</option>
+                    </select>
+                  </label>
+                  <label className="row">
+                    <span>{t.max_entries}</span>
+                    <select
+                      value={config.history_max_entries ?? 500}
+                      onChange={(e) => update({ history_max_entries: Number(e.target.value) })}
+                    >
+                      <option value={100}>{t.entries_100}</option>
+                      <option value={300}>{t.entries_300}</option>
+                      <option value={500}>{t.entries_500}</option>
+                      <option value={1000}>{t.entries_1000}</option>
+                      <option value={2000}>{t.entries_2000}</option>
+                      <option value={0}>{t.entries_unlimited}</option>
+                    </select>
+                  </label>
+                </>
+              )}
+            </div>
             {history.length === 0 ? (
               <p className="help">{t.no_history}</p>
             ) : (

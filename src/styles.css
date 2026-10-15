@@ -449,6 +449,132 @@ html[data-window="popup"] body {
   font-size: 15px;
 }
 
+.pane-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.pane-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+}
+
+.enhanced-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.enhanced-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.enhanced-btn.active {
+  background: color-mix(in srgb, var(--accent) 15%, var(--bg));
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.card-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  transition: border-color 0.15s ease;
+}
+
+.card-box:hover {
+  border-color: color-mix(in srgb, var(--border) 60%, var(--accent));
+}
+
+.card-box h3 {
+  margin: 0 0 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--text);
+}
+
+.badge-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: 10.5px;
+  font-weight: 600;
+  background: var(--border);
+  color: var(--muted);
+}
+
+.badge-tag.accent {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  color: var(--accent);
+}
+
+.badge-tag.success {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.card-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  border: 1px dashed color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-top: 18px;
+  margin-bottom: 12px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.card-banner button {
+  padding: 6px 14px;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: var(--bg);
+  color: var(--accent);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.card-banner button:hover {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
 .help {
   margin: 0 0 10px;
   color: var(--muted);

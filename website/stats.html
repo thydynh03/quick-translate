@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="vi">
 <head>
   <meta charset="utf-8">
@@ -32,7 +32,7 @@
   </script>
   <script src="assets/theme-i18n.js?v=0.1.27" defer></script>
 </head>
-<body>
+<body data-page="stats">
   <header class="top">
     <a class="brand" href="./" aria-label="Swipelate, trang chủ">
       <img src="assets/icon.svg" alt="Swipelate Logo" width="28" height="28" decoding="async">
@@ -78,9 +78,9 @@
 
       <figure class="card">
         <figcaption>
-          <span class="card-title">Lượt tải theo phiên bản</span>
+          <span class="card-title" data-i18n="stats-dl-version-title">Lượt tải theo phiên bản</span>
           <span class="legend" aria-hidden="true"><i class="sw s1"></i>Windows <i class="sw s2"></i>macOS</span>
-          <button class="link-btn" type="button" data-table="dl">Xem dạng bảng</button>
+          <button class="link-btn" type="button" data-table="dl" data-i18n="stats-view-table">Xem dạng bảng</button>
         </figcaption>
         <div class="chart" id="dl-chart" role="img" aria-label="Biểu đồ cột lượt tải theo phiên bản"></div>
         <div class="table-wrap" id="dl-table" hidden></div>
@@ -91,29 +91,29 @@
     <!-- Users -->
     <section class="block" aria-labelledby="h-users">
       <div class="block-head">
-        <h2 id="h-users">Người dùng</h2>
-        <span class="source">Nguồn: máy chủ thống kê ẩn danh</span>
+        <h2 id="h-users" data-i18n="stats-users-title">Người dùng</h2>
+        <span class="source" data-i18n="stats-users-source">Nguồn: Máy chủ thống kê ẩn danh</span>
       </div>
 
       <div id="users-live" hidden>
         <div class="tiles">
-          <div class="tile"><span class="label">Dùng app hôm nay</span><b class="value" data-k="app-today"></b><span class="meta">số máy, theo giờ UTC</span></div>
-          <div class="tile"><span class="label">Dùng app 30 ngày</span><b class="value" data-k="app-30"></b><span class="meta">số máy khác nhau</span></div>
-          <div class="tile"><span class="label">Máy đã từng dùng</span><b class="value" data-k="app-all"></b><span class="meta">từ khi bắt đầu đếm</span></div>
-          <div class="tile"><span class="label">Khách web 30 ngày</span><b class="value" data-k="web-30"></b><span class="meta">số trình duyệt khác nhau</span></div>
+          <div class="tile"><span class="label" data-i18n="stats-app-today">Dùng app hôm nay</span><b class="value" data-k="app-today"></b><span class="meta" data-k="app-today-meta" data-i18n="stats-app-today-meta">số máy, theo giờ UTC</span></div>
+          <div class="tile"><span class="label" data-i18n="stats-app-30">Dùng app 30 ngày</span><b class="value" data-k="app-30"></b><span class="meta" data-k="app-30-meta" data-i18n="stats-app-30-meta">số máy khác nhau</span></div>
+          <div class="tile"><span class="label" data-i18n="stats-app-all">Máy đã từng dùng</span><b class="value" data-k="app-all"></b><span class="meta" data-k="app-all-meta" data-i18n="stats-app-all-meta">từ khi bắt đầu đếm</span></div>
+          <div class="tile"><span class="label" data-i18n="stats-web-30">Khách web 30 ngày</span><b class="value" data-k="web-30"></b><span class="meta" data-k="web-30-meta" data-i18n="stats-web-30-meta">số trình duyệt khác nhau</span></div>
         </div>
         <figure class="card">
           <figcaption>
-            <span class="card-title">Người dùng mỗi ngày, 30 ngày gần nhất</span>
+            <span class="card-title" data-i18n="stats-chart-users-title">Người dùng mỗi ngày, 30 ngày gần nhất</span>
             <span class="legend" aria-hidden="true"><i class="sw s1 line"></i>App <i class="sw s3 line"></i>Web</span>
-            <button class="link-btn" type="button" data-table="users">Xem dạng bảng</button>
+            <button class="link-btn" type="button" data-table="users" data-i18n="stats-view-table">Xem dạng bảng</button>
           </figcaption>
           <div class="chart" id="users-chart" role="img" aria-label="Biểu đồ đường số người dùng app và web theo ngày"></div>
           <div class="table-wrap" id="users-table" hidden></div>
         </figure>
         <div class="split">
-          <figure class="card"><figcaption><span class="card-title">Phiên bản đang dùng</span></figcaption><div class="bars" id="versions"></div></figure>
-          <figure class="card"><figcaption><span class="card-title">Hệ điều hành</span></figcaption><div class="bars" id="systems"></div></figure>
+          <figure class="card"><figcaption><span class="card-title" data-i18n="stats-versions-title">Phiên bản đang dùng</span></figcaption><div class="bars" id="versions"></div></figure>
+          <figure class="card"><figcaption><span class="card-title" data-i18n="stats-systems-title">Hệ điều hành</span></figcaption><div class="bars" id="systems"></div></figure>
         </div>
       </div>
 
@@ -123,7 +123,7 @@
       </div>
     </section>
 
-    <p class="fine">Lượt tải đếm số lần tải bộ cài Windows và macOS (không tính tệp mã kiểm tra). Người dùng đếm theo mã ngẫu nhiên của máy hoặc trình duyệt, mỗi ngày một lần; máy chủ không lưu IP. <a href="docs.html#thong-ke">Chi tiết</a>.</p>
+    <p class="fine" data-i18n="stats-footnote">Lượt tải đếm số lần tải bộ cài Windows và macOS (không tính tệp mã kiểm tra). Người dùng đếm theo mã ngẫu nhiên của máy hoặc trình duyệt, mỗi ngày một lần; máy chủ không lưu IP. <a href="docs.html#thong-ke">Chi tiết</a>.</p>
   </main>
 
   <div class="tip" id="tip" role="status" hidden></div>
@@ -132,4 +132,3 @@
   <script src="assets/stats.js?v=0.1.27" defer></script>
 </body>
 </html>
-

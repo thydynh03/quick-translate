@@ -780,6 +780,8 @@ pub fn copy_screenshot(rect: Rect) -> anyhow::Result<()> {
         CGImageRelease(image);
         Ok(())
     }
+}
+
 /// Reads rich text (HTML) from the clipboard if available.
 pub fn clipboard_html() -> Option<String> {
     autoreleasepool(|_| unsafe {

@@ -22,6 +22,23 @@ export const DICTIONARY = {
     theme_toggle_title: (dark: boolean) => `Chế độ hiện tại: ${dark ? "Tối" : "Sáng"}. Bấm để chuyển đổi giao diện`,
     lang_toggle_title: (lang: string) => `Ngôn ngữ giao diện hiện tại: ${lang === "vi" ? "Tiếng Việt" : "English"}. Bấm để đổi`,
 
+    // Enhanced Mode
+    enhanced_mode: "Nâng cao",
+    enhanced_mode_desc: "Mở toàn bộ tuỳ biến phím tắt, giao diện popup, API key và hồ sơ riêng",
+    default_mode_badge: "Cơ bản",
+    enhanced_mode_badge: "Nâng cao",
+    switch_to_enhanced: "Tuỳ chỉnh nâng cao",
+    section_quick_trigger: "Thao tác nhanh",
+    section_advanced_shortcuts: "Phím tắt nâng cao",
+    section_smart_behavior: "Cơ chế thông minh",
+    section_popup_tuning: "Tuỳ biến Popup",
+    section_system: "Hệ thống",
+    engine_current: "Nguồn dịch hiện tại",
+    engine_ready_hint: "Mặc định miễn phí, không cần tài khoản hay cấu hình.",
+    engine_advanced_hint: "Muốn dùng Claude, DeepL, OpenAI hoặc Oxford? Bật chế độ Nâng cao.",
+    engine_select_title: "Chọn nguồn dịch chính",
+    advanced_settings_hint: "Cần chỉnh phím tắt khác, độ mờ popup hay hồ sơ ứng dụng?",
+
     // General tab
     usage_title: "Cách dùng",
     usage_desc:
@@ -242,6 +259,23 @@ export const DICTIONARY = {
     theme_light: "Light theme",
     theme_toggle_title: (dark: boolean) => `Current theme: ${dark ? "Dark" : "Light"}. Click to toggle`,
     lang_toggle_title: (lang: string) => `Current language: ${lang === "vi" ? "Tiếng Việt" : "English"}. Click to switch`,
+
+    // Enhanced Mode
+    enhanced_mode: "Enhanced",
+    enhanced_mode_desc: "Unlock all advanced hotkeys, popup styles, API keys, and custom profiles",
+    default_mode_badge: "Simple",
+    enhanced_mode_badge: "Enhanced",
+    switch_to_enhanced: "Advanced customization",
+    section_quick_trigger: "Quick Trigger",
+    section_advanced_shortcuts: "Advanced Shortcuts",
+    section_smart_behavior: "Smart Behaviors",
+    section_popup_tuning: "Popup Customization",
+    section_system: "System",
+    engine_current: "Active Translation Engine",
+    engine_ready_hint: "Default free engine, ready out-of-the-box with no setup required.",
+    engine_advanced_hint: "Want to configure Claude, DeepL, OpenAI, or Oxford? Turn on Enhanced mode.",
+    engine_select_title: "Select Primary Engine",
+    advanced_settings_hint: "Need custom hotkeys, popup opacity, or app profiles?",
 
     // General tab
     usage_title: "How to use",
