@@ -144,13 +144,24 @@
 .lmain section { padding: 0; }
 
 @media (prefers-color-scheme: dark) {
-  .flash {
+  :root:not([data-theme="light"]) .flash {
     box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.45);
   }
-  .grades [data-grade="0"] { color: #fb7185; }
-  .grades [data-grade="1"] { color: #fbbf24; }
-  .grades [data-grade="2"] { color: #38bdf8; }
-  .grades [data-grade="3"] { color: #34d399; }
-  .choices .right { border-color: #22c55e; }
-  .choices .wrong { border-color: #ef4444; }
+  :root:not([data-theme="light"]) .grades [data-grade="0"] { color: #fb7185; }
+  :root:not([data-theme="light"]) .grades [data-grade="1"] { color: #fbbf24; }
+  :root:not([data-theme="light"]) .grades [data-grade="2"] { color: #38bdf8; }
+  :root:not([data-theme="light"]) .grades [data-grade="3"] { color: #34d399; }
+  :root:not([data-theme="light"]) .choices .right { border-color: #22c55e; }
+  :root:not([data-theme="light"]) .choices .wrong { border-color: #ef4444; }
 }
+
+:root[data-theme="dark"] .flash {
+  box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.45);
+}
+:root[data-theme="dark"] .grades [data-grade="0"] { color: #fb7185; }
+:root[data-theme="dark"] .grades [data-grade="1"] { color: #fbbf24; }
+:root[data-theme="dark"] .grades [data-grade="2"] { color: #38bdf8; }
+:root[data-theme="dark"] .grades [data-grade="3"] { color: #34d399; }
+:root[data-theme="dark"] .choices .right { border-color: #22c55e; }
+:root[data-theme="dark"] .choices .wrong { border-color: #ef4444; }
+

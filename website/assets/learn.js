@@ -66,7 +66,13 @@
     return { reps: reps + 1, ivl, ease, due: now + ivl * DAY };
   }
 
-  const label = (srs) => (srs.ivl === 0 ? "<1 phút" : srs.ivl < 30 ? `${Math.round(srs.ivl)} ngày` : `${Math.round(srs.ivl / 30)} tháng`);
+  const isEn = () => window.SwipelateI18n?.getActiveLang?.() === "en";
+  const label = (srs) => {
+    if (isEn()) {
+      return srs.ivl === 0 ? "<1 min" : srs.ivl < 30 ? `${Math.round(srs.ivl)}d` : `${Math.round(srs.ivl / 30)}mo`;
+    }
+    return srs.ivl === 0 ? "<1 phút" : srs.ivl < 30 ? `${Math.round(srs.ivl)} ngày` : `${Math.round(srs.ivl / 30)} tháng`;
+  };
 
   const all = () => Object.values(db.cards);
   const isDue = (c) => c.srs && c.srs.due <= Date.now();
@@ -99,9 +105,11 @@
     $("s-total").textContent = cards.length;
     $("empty").hidden = cards.length > 0;
     $("start-study").disabled = $("start-quiz").disabled = !cards.length;
-    $("reverse").textContent = db.reverse ? "Mặt trước: bản dịch" : "Mặt trước: từ gốc";
+    $("reverse").textContent = isEn()
+      ? (db.reverse ? "Front: translation" : "Front: source word")
+      : (db.reverse ? "Mặt trước: bản dịch" : "Mặt trước: từ gốc");
     const s = streak();
-    $("streak").textContent = s ? `🔥 ${s} ngày` : "";
+    $("streak").textContent = s ? `🔥 ${s} ${isEn() ? "days" : "ngày"}` : "";
     renderList();
     show("home");
   }
@@ -338,6 +346,7 @@
       toast("Liên kết bộ thẻ bị hỏng. Quét lại mã QR trên máy tính.");
     }
   }
+  window.addEventListener("swipelate-lang-changed", () => home());
   addEventListener("hashchange", load);
   load();
 })();

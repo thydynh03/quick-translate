@@ -7,7 +7,8 @@ import { ENGINE_NAMES, HistoryEntry, UpdateInfo, LANGUAGES, Profile, Settings as
 import OfflineModels from "./OfflineModels";
 import Subtitles from "./Subtitles";
 import Vocab from "./Vocab";
-import { IconAbout, IconEngine, IconGeneral, IconHistory, IconMoon, IconSubtitles, IconSun, IconVocab } from "./icons";
+import { IconAbout, IconEngine, IconGeneral, IconGlobe, IconHistory, IconMoon, IconSubtitles, IconSun, IconVocab } from "./icons";
+import { AppLanguage, useT } from "./i18n";
 
 type Tab = "general" | "engine" | "subtitles" | "vocab" | "history" | "about";
 
@@ -23,7 +24,16 @@ const TAB_ICONS: Record<Tab, React.ReactNode> = {
 const SITE = "https://swipelate.com/";
 const REPO = "https://github.com/thydynh03/swipelate";
 
-function About({ checkUpdates, setCheckUpdates }: { checkUpdates: boolean; setCheckUpdates: (on: boolean) => void }) {
+function About({
+  checkUpdates,
+  setCheckUpdates,
+  lang = "vi",
+}: {
+  checkUpdates: boolean;
+  setCheckUpdates: (on: boolean) => void;
+  lang?: AppLanguage;
+}) {
+  const t = useT(lang);
   const [version, setVersion] = useState("");
   const [update, setUpdate] = useState<UpdateInfo | null>(null);
   const [status, setStatus] = useState("");
@@ -34,13 +44,13 @@ function About({ checkUpdates, setCheckUpdates }: { checkUpdates: boolean; setCh
 
   const check = async () => {
     setBusy(true);
-    setStatus("Đang kiểm tra…");
+    setStatus(t.checking);
     try {
       const info = await invoke<UpdateInfo>("update_check");
       setUpdate(info);
-      setStatus(info.available ? "" : `Bạn đang dùng bản mới nhất (${info.current}).`);
+      setStatus(info.available ? "" : t.up_to_date(info.current));
     } catch (error) {
-      setStatus(`Không kiểm tra được: ${error}`);
+      setStatus(lang === "en" ? `Check failed: ${error}` : `Không kiểm tra được: ${error}`);
     } finally {
       setBusy(false);
     }
@@ -49,13 +59,17 @@ function About({ checkUpdates, setCheckUpdates }: { checkUpdates: boolean; setCh
   const install = async () => {
     setBusy(true);
     setProgress(0);
-    setStatus("Đang tải bộ cài…");
+    setStatus(lang === "en" ? "Downloading installer…" : "Đang tải bộ cài…");
     try {
       await invoke("update_install");
       // Windows quits here to run the installer; macOS opens the disk image.
-      setStatus("Đã mở bộ cài. Kéo Swipelate vào Applications để thay bản cũ, rồi mở lại app. Còn Quick Translate (tên cũ) trong Applications thì xoá đi.");
+      setStatus(
+        lang === "en"
+          ? "Installer opened. Drag Swipelate to Applications to replace older version, then restart app."
+          : "Đã mở bộ cài. Kéo Swipelate vào Applications để thay bản cũ, rồi mở lại app. Còn Quick Translate (tên cũ) trong Applications thì xoá đi."
+      );
     } catch (error) {
-      setStatus(`Không cập nhật được: ${error}`);
+      setStatus(lang === "en" ? `Update failed: ${error}` : `Không cập nhật được: ${error}`);
     } finally {
       setBusy(false);
       setProgress(null);
@@ -79,68 +93,82 @@ function About({ checkUpdates, setCheckUpdates }: { checkUpdates: boolean; setCh
 
   return (
     <section>
-      <h2>Giới thiệu</h2>
-      <p>Swipelate {version && `phiên bản ${version}`}</p>
+      <h2>{t.about_title}</h2>
+      <p>{t.about_version(version)}</p>
 
       {store ? (
-        <p className="help">Bản cài từ Microsoft Store: Store tự cập nhật Swipelate.</p>
+        <p className="help">{t.store_notice}</p>
       ) : (
         <div className="update">
           {update?.available ? (
             <>
               <p>
-                <strong>Có bản mới {update.latest}</strong>
-                {update.published && <small> · {new Date(update.published).toLocaleDateString("vi-VN")}</small>}
+                <strong>{t.new_version_available(update.latest)}</strong>
+                {update.published && (
+                  <small> · {new Date(update.published).toLocaleDateString(lang === "en" ? "en-US" : "vi-VN")}</small>
+                )}
               </p>
               {update.notes && <pre className="notes">{update.notes}</pre>}
               <div className="actions">
                 <button className="primary" onClick={install} disabled={busy}>
-                  {progress !== null ? `Đang tải ${progress}%` : "Cập nhật ngay"}
+                  {t.downloading_installer(progress)}
                 </button>
-                <button onClick={() => openUrl(update.page)}>Xem trên GitHub</button>
+                <button onClick={() => openUrl(update.page)}>{t.view_github}</button>
               </div>
-              <p className="help">Bộ cài được kiểm tra mã SHA-256 trước khi chạy. Trên Windows app tự đóng, cài bản mới rồi mở lại.</p>
+              <p className="help">{t.about_notice}</p>
             </>
           ) : (
             <div className="actions">
               <button onClick={check} disabled={busy}>
-                Kiểm tra cập nhật
+                {t.check_btn}
               </button>
             </div>
           )}
           {status && <p className="help">{status}</p>}
           <label className="row">
-            <span>Tự kiểm tra bản mới khi mở app và mỗi ngày</span>
+            <span>{t.auto_check_update}</span>
             <input type="checkbox" checked={checkUpdates} onChange={(e) => setCheckUpdates(e.target.checked)} />
           </label>
         </div>
       )}
 
-      <p className="help">
-        Bản quyền © 2026 thydynh03. Phần mềm phát hành theo giấy phép MIT: bạn được dùng, sao chép và sửa đổi miễn phí, kèm
-        theo thông báo bản quyền. Phần mềm được cung cấp nguyên trạng, không có bảo hành.
-      </p>
-      <p className="help">
-        Danh sách từ Anh–Việt lấy từ Wiktionary (CC BY-SA 3.0). Model dịch offline Opus-MT của Helsinki-NLP (CC BY 4.0) được
-        tải về khi bạn yêu cầu.
-      </p>
+      <p className="help">{t.about_license_text}</p>
+      <p className="help">{t.about_dict_license}</p>
       <div className="actions">
-        <button onClick={() => openUrl(`${SITE}docs.html`)}>Hướng dẫn sử dụng</button>
-        <button onClick={() => openUrl(`${SITE}license.html`)}>Giấy phép</button>
-        <button onClick={() => openUrl(`${SITE}privacy.html`)}>Quyền riêng tư</button>
-        <button onClick={() => openUrl(`${REPO}/issues`)}>Báo lỗi</button>
+        <button onClick={() => openUrl(`${SITE}docs.html`)}>{t.about_docs}</button>
+        <button onClick={() => openUrl(`${SITE}license.html`)}>{t.about_license}</button>
+        <button onClick={() => openUrl(`${SITE}privacy.html`)}>{t.about_privacy}</button>
+        <button onClick={() => openUrl(`${REPO}/issues`)}>{t.about_report}</button>
       </div>
     </section>
   );
 }
 
-const ENGINES: { id: string; hint: string }[] = [
-  { id: "google", hint: "Không cần key. Dùng endpoint web không chính thức, có thể bị giới hạn." },
-  { id: "deepl", hint: "Cần API key của DeepL." },
-  { id: "claude", hint: "Cần API key của Anthropic. Dịch tự nhiên hơn với câu dài, chậm hơn." },
-  { id: "offline", hint: "Chạy trên máy, không cần mạng. Cần tải model trước." },
-  { id: "openai", hint: "ChatGPT, Gemini hoặc model chạy trên máy (Ollama, LM Studio). Điền địa chỉ API và model bên dưới." },
-];
+function getEngines(lang: AppLanguage = "vi"): { id: string; hint: string }[] {
+  const isEn = lang === "en";
+  return [
+    {
+      id: "google",
+      hint: isEn
+        ? "No key needed. Uses unofficial web endpoint, may be rate limited."
+        : "Không cần key. Dùng endpoint web không chính thức, có thể bị giới hạn.",
+    },
+    { id: "deepl", hint: isEn ? "Requires DeepL API key." : "Cần API key của DeepL." },
+    {
+      id: "claude",
+      hint: isEn
+        ? "Requires Anthropic API key. More natural for long sentences, slightly slower."
+        : "Cần API key của Anthropic. Dịch tự nhiên hơn với câu dài, chậm hơn.",
+    },
+    { id: "offline", hint: isEn ? "Runs locally, no internet needed. Download models first." : "Chạy trên máy, không cần mạng. Cần tải model trước." },
+    {
+      id: "openai",
+      hint: isEn
+        ? "ChatGPT, Gemini or local models (Ollama, LM Studio). Fill in API address & model below."
+        : "ChatGPT, Gemini hoặc model chạy trên máy (Ollama, LM Studio). Điền địa chỉ API và model bên dưới.",
+    },
+  ];
+}
 
 /** Builds a shortcut string such as "Ctrl+Shift+D" from a key event. */
 function shortcutFrom(event: React.KeyboardEvent): string | null {
@@ -213,6 +241,9 @@ export default function Settings() {
 
   if (!config) return null;
 
+  const appLang: AppLanguage = (config.app_language as AppLanguage) || "vi";
+  const t = useT(appLang);
+
   const historyNeedle = historyQuery.trim().toLowerCase();
   const filteredHistory = history.filter((entry) => `${entry.source}\n${entry.text}`.toLowerCase().includes(historyNeedle));
 
@@ -221,7 +252,7 @@ export default function Settings() {
     setConfig(next);
     try {
       const failed = await invoke<string[]>("save_settings", { settings: next });
-      setStatus(failed.length ? `Phím tắt ${failed.join(", ")} đang bị ứng dụng khác dùng.` : "Đã lưu");
+      setStatus(failed.length ? t.status_hotkey_conflict(failed.join(", ")) : t.status_saved);
     } catch (error) {
       setStatus(String(error));
     }
@@ -274,12 +305,12 @@ export default function Settings() {
         <div className="tab-list">
           {(
             [
-              ["general", "Chung"],
-              ["engine", "Engine dịch"],
-              ["subtitles", "Phụ đề"],
-              ["vocab", "Từ vựng"],
-              ["history", "Lịch sử"],
-              ["about", "Giới thiệu"],
+              ["general", t.tab_general],
+              ["engine", t.tab_engine],
+              ["subtitles", t.tab_subtitles],
+              ["vocab", t.tab_vocab],
+              ["history", t.tab_history],
+              ["about", t.tab_about],
             ] as [Tab, string][]
           ).map(([id, name]) => (
             <button key={id} className={tab === id ? "tab active" : "tab"} onClick={() => setTab(id)}>
@@ -291,11 +322,19 @@ export default function Settings() {
         <div className="tab-bottom">
           <button
             className="theme-toggle"
+            onClick={() => update({ app_language: appLang === "en" ? "vi" : "en" })}
+            title={t.lang_toggle_title(appLang)}
+          >
+            <IconGlobe size={15} />
+            <span>{appLang === "en" ? "English" : "Tiếng Việt"}</span>
+          </button>
+          <button
+            className="theme-toggle"
             onClick={toggleTheme}
-            title={`Chế độ hiện tại: ${isDark ? "Tối" : "Sáng"}. Bấm để chuyển đổi giao diện`}
+            title={t.theme_toggle_title(isDark)}
           >
             {isDark ? <IconMoon size={15} /> : <IconSun size={15} />}
-            <span>{isDark ? "Chế độ tối" : "Chế độ sáng"}</span>
+            <span>{isDark ? t.theme_dark : t.theme_light}</span>
           </button>
           <p className="status">{status}</p>
         </div>
@@ -303,24 +342,21 @@ export default function Settings() {
 
       <main className="pane">
         {updatedFrom !== null && (
-          <button className="updated" title="Bấm để ẩn" onClick={() => setUpdatedFrom(null)}>
-            Đã cập nhật{updatedFrom ? ` từ ${updatedFrom}` : ""} lên phiên bản {version}. Ứng dụng đang chạy ở khay hệ thống.
+          <button className="updated" title={appLang === "en" ? "Click to dismiss" : "Bấm để ẩn"} onClick={() => setUpdatedFrom(null)}>
+            {t.app_updated_notice(updatedFrom, version)}
           </button>
         )}
         {tab === "general" && (
           <>
             <section>
-              <h2>Cách dùng</h2>
-              <p className="help">
-                Bôi đen văn bản ở bất kỳ ứng dụng nào rồi bấm vào biểu tượng nhỏ hiện cạnh con trỏ, hoặc nhấn phím tắt.
-                Double-click để dịch một từ, triple-click để dịch một câu.
-              </p>
+              <h2>{t.usage_title}</h2>
+              <p className="help">{t.usage_desc}</p>
             </section>
 
             <section>
-              <h2>Kích hoạt</h2>
+              <h2>{t.trigger_title}</h2>
               <label className="row">
-                <span>Phím tắt dịch vùng bôi đen</span>
+                <span>{t.hotkey_selection}</span>
                 <input
                   className="hotkey"
                   value={config.hotkey}
@@ -330,11 +366,11 @@ export default function Settings() {
                     const shortcut = shortcutFrom(event);
                     if (shortcut) update({ hotkey: shortcut });
                   }}
-                  title="Bấm vào rồi nhấn tổ hợp phím mới"
+                  title={t.hotkey_hint}
                 />
               </label>
               <label className="row">
-                <span>Phím tắt dịch vùng màn hình (OCR)</span>
+                <span>{t.hotkey_ocr}</span>
                 <input
                   className="hotkey"
                   value={config.ocr_hotkey}
@@ -344,15 +380,15 @@ export default function Settings() {
                     const shortcut = shortcutFrom(event);
                     if (shortcut) update({ ocr_hotkey: shortcut });
                   }}
-                  title="Bấm vào rồi nhấn tổ hợp phím mới"
+                  title={t.hotkey_hint}
                 />
               </label>
               <label className="row">
-                <span>Tự hiện biểu tượng khi bôi đen</span>
+                <span>{t.auto_trigger}</span>
                 <input type="checkbox" checked={config.auto_trigger} onChange={(e) => update({ auto_trigger: e.target.checked })} />
               </label>
               <label className="row">
-                <span>Bôi đen là dịch ngay, không cần bấm biểu tượng hay phím tắt</span>
+                <span>{t.instant_translate}</span>
                 <input
                   type="checkbox"
                   checked={config.instant_translate}
@@ -361,11 +397,11 @@ export default function Settings() {
                 />
               </label>
               <label className="row">
-                <span>Giữ Ctrl và rê chuột lên văn bản để dịch (thử nghiệm, chỉ ở ứng dụng hỗ trợ)</span>
+                <span>{t.hover_translate}</span>
                 <input type="checkbox" checked={config.hover_translate} onChange={(e) => update({ hover_translate: e.target.checked })} />
               </label>
               <label className="row">
-                <span>Khi rê chuột: dịch cả câu (từ đầu câu đến dấu chấm) thay vì một từ</span>
+                <span>{t.hover_sentence}</span>
                 <input
                   type="checkbox"
                   checked={config.hover_sentence}
@@ -374,22 +410,19 @@ export default function Settings() {
                 />
               </label>
               <label className="row">
-                <span>Nghe tiếng: ẩn phụ đề tiếng Anh của Windows, chỉ hiện bản dịch ở đáy màn hình</span>
+                <span>{t.listen_hide_captions}</span>
                 <input type="checkbox" checked={config.listen_hide_captions} onChange={(e) => update({ listen_hide_captions: e.target.checked })} />
               </label>
               <label className="row">
-                <span>Bôi đen 1–4 từ: giải thích nghĩa theo ngữ cảnh câu chứa chúng</span>
+                <span>{t.explain_in_context}</span>
                 <input type="checkbox" checked={config.explain_in_context} onChange={(e) => update({ explain_in_context: e.target.checked })} />
               </label>
-              <p className="help">
-                Có Claude hoặc API tương thích OpenAI (tab Engine dịch) thì app giải thích nghĩa của từ trong câu đó. Không có thì app
-                dịch cả câu để bạn thấy ngữ cảnh.
-              </p>
+              <p className="help">{t.explain_help}</p>
               <label className="row">
-                <span>Phím tắt dịch cả cửa sổ đang mở</span>
+                <span>{t.window_hotkey}</span>
                 <input
                   className="hotkey"
-                  title="Bấm vào rồi nhấn tổ hợp phím mới"
+                  title={t.hotkey_hint}
                   readOnly
                   value={config.window_hotkey}
                   onKeyDown={(e) => {
@@ -400,10 +433,10 @@ export default function Settings() {
                 />
               </label>
               <label className="row">
-                <span>Phím tắt bật/tắt dịch thời gian thực</span>
+                <span>{t.live_hotkey}</span>
                 <input
                   className="hotkey"
-                  title="Bấm vào rồi nhấn tổ hợp phím mới"
+                  title={t.hotkey_hint}
                   readOnly
                   value={config.live_hotkey}
                   onKeyDown={(e) => {
@@ -414,12 +447,12 @@ export default function Settings() {
                 />
               </label>
               <label className="row">
-                <span>Phím tắt bảng clipboard (Backspace để tắt)</span>
+                <span>{t.clipboard_hotkey}</span>
                 <input
                   className="hotkey"
-                  title="Bấm vào rồi nhấn tổ hợp phím mới; Backspace để tắt bảng clipboard"
+                  title={t.clipboard_hotkey_hint}
                   readOnly
-                  placeholder="Đang tắt"
+                  placeholder={t.clipboard_off}
                   value={config.clipboard_hotkey}
                   onKeyDown={(e) => {
                     e.preventDefault();
@@ -430,7 +463,7 @@ export default function Settings() {
                 />
               </label>
               <label className="row">
-                <span>Cỡ chữ popup ({config.popup_font_size}px)</span>
+                <span>{t.popup_size(config.popup_font_size)}</span>
                 <input
                   type="range"
                   min={12}
@@ -440,7 +473,7 @@ export default function Settings() {
                 />
               </label>
               <label className="row">
-                <span>Độ đậm nền popup ({config.popup_opacity}%)</span>
+                <span>{t.popup_opacity(config.popup_opacity)}</span>
                 <input
                   type="range"
                   min={60}
@@ -451,42 +484,52 @@ export default function Settings() {
                 />
               </label>
               <label className="row">
-                <span>Khởi động cùng máy</span>
+                <span>{t.autostart}</span>
                 <input type="checkbox" checked={autostart} onChange={(e) => toggleAutostart(e.target.checked)} />
               </label>
               <label className="row">
-                <span>Giao diện</span>
+                <span>{t.theme}</span>
                 <select value={config.theme} onChange={(e) => update({ theme: e.target.value as Config["theme"] })}>
-                  <option value="system">Theo hệ thống</option>
-                  <option value="light">Sáng</option>
-                  <option value="dark">Tối</option>
+                  <option value="system">{t.theme_system}</option>
+                  <option value="light">{t.theme_light_opt}</option>
+                  <option value="dark">{t.theme_dark_opt}</option>
                 </select>
               </label>
               <label className="row">
-                <span>Gửi thống kê ẩn danh (đếm số người dùng)</span>
+                <span>{t.app_language}</span>
+                <select
+                  value={config.app_language || "vi"}
+                  onChange={(e) => update({ app_language: e.target.value as AppLanguage })}
+                >
+                  <option value="vi">Tiếng Việt</option>
+                  <option value="en">English</option>
+                </select>
+              </label>
+              <label className="row">
+                <span>{t.stats_label}</span>
                 <input type="checkbox" checked={config.usage_stats} onChange={(e) => update({ usage_stats: e.target.checked })} />
               </label>
-              <p className="help">Mỗi ngày một lần: mã ngẫu nhiên của máy, phiên bản, hệ điều hành. Không gửi nội dung dịch.</p>
+              <p className="help">{t.stats_help}</p>
             </section>
 
             <section>
-              <h2>Ngôn ngữ</h2>
+              <h2>{t.lang_section}</h2>
               <label className="row">
-                <span>Dịch sang</span>
+                <span>{t.translate_to}</span>
                 <select value={config.primary_lang} onChange={(e) => update({ primary_lang: e.target.value })}>
-                  {LANGUAGES.map(([code, name]) => (
+                  {LANGUAGES.map(([code]) => (
                     <option key={code} value={code}>
-                      {name}
+                      {langName(code, appLang)}
                     </option>
                   ))}
                 </select>
               </label>
               <label className="row">
-                <span>Khi văn bản đã là {langName(config.primary_lang)}, dịch sang</span>
+                <span>{t.secondary_to(langName(config.primary_lang, appLang))}</span>
                 <select value={config.secondary_lang} onChange={(e) => update({ secondary_lang: e.target.value })}>
-                  {LANGUAGES.filter(([code]) => code !== config.primary_lang).map(([code, name]) => (
+                  {LANGUAGES.filter(([code]) => code !== config.primary_lang).map(([code]) => (
                     <option key={code} value={code}>
-                      {name}
+                      {langName(code, appLang)}
                     </option>
                   ))}
                 </select>
@@ -494,8 +537,8 @@ export default function Settings() {
             </section>
 
             <section>
-              <h2>Ứng dụng không tự hiện biểu tượng</h2>
-              <p className="help">Mỗi dòng một tên file chạy, ví dụ: photoshop.exe</p>
+              <h2>{t.excluded_title}</h2>
+              <p className="help">{t.excluded_help}</p>
               <textarea
                 rows={3}
                 defaultValue={config.excluded_apps.join("\n")}
@@ -511,11 +554,8 @@ export default function Settings() {
             </section>
 
             <section>
-              <h2>Hồ sơ theo ứng dụng</h2>
-              <p className="help">
-                Dùng nguồn dịch hoặc ngôn ngữ đích khác khi một ứng dụng đang mở, ví dụ dịch offline trong game. Nhập tên file chạy
-                như chrome.exe; ô nào để “Mặc định” thì theo cài đặt chung.
-              </p>
+              <h2>{t.profiles_title}</h2>
+              <p className="help">{t.profiles_help}</p>
               {config.profiles.map((profile, index) => {
                 const change = (patch: Partial<Profile>) =>
                   update({ profiles: config.profiles.map((item, at) => (at === index ? { ...item, ...patch } : item)) });
@@ -528,7 +568,7 @@ export default function Settings() {
                       onBlur={(e) => change({ app: e.target.value.trim().toLowerCase() })}
                     />
                     <select aria-label="Nguồn dịch" value={profile.engine} onChange={(e) => change({ engine: e.target.value })}>
-                      <option value="">Nguồn dịch: mặc định</option>
+                      <option value="">{t.default_engine}</option>
                       {Object.entries(ENGINE_NAMES).map(([id, name]) => (
                         <option key={id} value={id}>
                           {name}
@@ -540,14 +580,14 @@ export default function Settings() {
                       value={profile.primary_lang}
                       onChange={(e) => change({ primary_lang: e.target.value })}
                     >
-                      <option value="">Dịch sang: mặc định</option>
-                      {LANGUAGES.map(([code, name]) => (
+                      <option value="">{t.default_lang}</option>
+                      {LANGUAGES.map(([code]) => (
                         <option key={code} value={code}>
-                          {name}
+                          {langName(code, appLang)}
                         </option>
                       ))}
                     </select>
-                    <button onClick={() => update({ profiles: config.profiles.filter((_, at) => at !== index) })}>Xoá</button>
+                    <button onClick={() => update({ profiles: config.profiles.filter((_, at) => at !== index) })}>{t.remove_profile}</button>
                   </div>
                 );
               })}
@@ -559,7 +599,7 @@ export default function Settings() {
                   update({ profiles: [...config.profiles, { app: known ? "" : app, engine: "", primary_lang: "" }] });
                 }}
               >
-                Thêm hồ sơ
+                {t.add_profile}
               </button>
             </section>
           </>
@@ -568,8 +608,8 @@ export default function Settings() {
         {tab === "engine" && (
           <>
             <section>
-              <h2>Engine mặc định</h2>
-              {ENGINES.map((engine) => (
+              <h2>{t.engine_default_title}</h2>
+              {getEngines(appLang).map((engine) => (
                 <label key={engine.id} className="choice">
                   <input type="radio" name="engine" checked={config.engine === engine.id} onChange={() => update({ engine: engine.id })} />
                   <span>
@@ -579,14 +619,14 @@ export default function Settings() {
                 </label>
               ))}
               <label className="row">
-                <span>Khi engine chính lỗi, tự dùng dự phòng: offline trước, rồi API có key</span>
+                <span>{t.fallback_offline}</span>
                 <input type="checkbox" checked={config.fallback_offline} onChange={(e) => update({ fallback_offline: e.target.checked })} />
               </label>
             </section>
 
             <section>
-              <h2>API key</h2>
-              <p className="help">Key được lưu dạng văn bản thường trong thư mục dữ liệu của ứng dụng trên máy này.</p>
+              <h2>{t.api_keys_title}</h2>
+              <p className="help">{t.api_keys_help}</p>
               <label className="row">
                 <span>DeepL</span>
                 <input type="password" defaultValue={config.deepl_key} onBlur={(e) => update({ deepl_key: e.target.value.trim() })} />
@@ -598,39 +638,33 @@ export default function Settings() {
             </section>
 
             <section>
-              <h2>Nguồn từ điển</h2>
-              <p className="help">
-                Khi tra một từ tiếng Anh, popup có nút mở từ đó trong từ điển Cambridge và Oxford trên trình duyệt. Nếu bạn có tài khoản Oxford
-                Dictionaries API, nhập App ID và App Key để lấy định nghĩa Oxford ngay trong popup; không có thì dùng Free Dictionary API.
-              </p>
+              <h2>{t.dict_sources}</h2>
+              <p className="help">{t.dict_help}</p>
               <label className="row">
-                <span>Thêm định nghĩa tiếng Anh và phiên âm IPA (Free Dictionary API, cần mạng)</span>
+                <span>{t.english_definitions}</span>
                 <input type="checkbox" checked={config.english_definitions} onChange={(e) => update({ english_definitions: e.target.checked })} />
               </label>
             </section>
 
             <section>
-              <h2>AI qua OpenAI API (tuỳ chọn)</h2>
-              <p className="help">
-                Dùng được với mọi dịch vụ tương thích OpenAI. ChatGPT: https://api.openai.com/v1. Gemini:
-                https://generativelanguage.googleapis.com/v1beta/openai. Ollama trên máy: http://localhost:11434/v1 (không cần key).
-              </p>
+              <h2>{t.openai_title}</h2>
+              <p className="help">{t.openai_help}</p>
               <label className="row">
-                <span>Địa chỉ API</span>
+                <span>{t.api_url}</span>
                 <input defaultValue={config.openai_base} onBlur={(e) => update({ openai_base: e.target.value.trim() })} />
               </label>
               <label className="row">
-                <span>Tên model</span>
+                <span>{t.model_name}</span>
                 <input defaultValue={config.openai_model} onBlur={(e) => update({ openai_model: e.target.value.trim() })} />
               </label>
               <label className="row">
-                <span>API key</span>
+                <span>{t.api_key}</span>
                 <input type="password" defaultValue={config.openai_key} onBlur={(e) => update({ openai_key: e.target.value.trim() })} />
               </label>
             </section>
 
             <section>
-              <h2>Oxford Dictionaries API (tuỳ chọn)</h2>
+              <h2>{t.oxford_title}</h2>
               <label className="row">
                 <span>App ID</span>
                 <input type="password" defaultValue={config.oxford_app_id} onBlur={(e) => update({ oxford_app_id: e.target.value.trim() })} />
@@ -641,13 +675,13 @@ export default function Settings() {
               </label>
             </section>
 
-            <OfflineModels />
+            <OfflineModels lang={appLang} />
 
             <section>
-              <h2>Dịch thử</h2>
+              <h2>{t.test_title}</h2>
               <textarea rows={3} value={sample} onChange={(e) => setSample(e.target.value)} />
               <button className="primary" onClick={runSample} disabled={busy || !sample.trim()}>
-                {busy ? "Đang dịch…" : "Dịch thử"}
+                {busy ? t.test_busy : t.test_btn}
               </button>
               {sampleResult && (
                 <p className="sample">
@@ -665,71 +699,69 @@ export default function Settings() {
 
         {tab === "history" && (
           <section>
-            <h2>Lịch sử</h2>
+            <h2>{t.history_title}</h2>
             <label className="row">
-              <span>Lưu lịch sử dịch</span>
+              <span>{t.save_history}</span>
               <input type="checkbox" checked={config.save_history} onChange={(e) => update({ save_history: e.target.checked })} />
             </label>
             {config.save_history && (
               <>
                 <label className="row">
-                  <span>Tự động xoá sau thời gian</span>
+                  <span>{t.retention_days}</span>
                   <select
                     value={config.history_retention_days ?? 30}
                     onChange={(e) => update({ history_retention_days: Number(e.target.value) })}
                   >
-                    <option value={7}>7 ngày</option>
-                    <option value={14}>14 ngày</option>
-                    <option value={30}>30 ngày (Mặc định)</option>
-                    <option value={60}>60 ngày</option>
-                    <option value={90}>90 ngày</option>
-                    <option value={180}>180 ngày</option>
-                    <option value={0}>Không bao giờ (Lưu mãi mãi)</option>
+                    <option value={7}>{t.days_7}</option>
+                    <option value={14}>{t.days_14}</option>
+                    <option value={30}>{t.days_30}</option>
+                    <option value={60}>{t.days_60}</option>
+                    <option value={90}>{t.days_90}</option>
+                    <option value={180}>{t.days_180}</option>
+                    <option value={0}>{t.days_forever}</option>
                   </select>
                 </label>
                 <label className="row">
-                  <span>Số lượng bản dịch tối đa</span>
+                  <span>{t.max_entries}</span>
                   <select
                     value={config.history_max_entries ?? 500}
                     onChange={(e) => update({ history_max_entries: Number(e.target.value) })}
                   >
-                    <option value={100}>100 mục</option>
-                    <option value={300}>300 mục</option>
-                    <option value={500}>500 mục (Mặc định)</option>
-                    <option value={1000}>1.000 mục</option>
-                    <option value={2000}>2.000 mục</option>
-                    <option value={0}>Không giới hạn số lượng</option>
+                    <option value={100}>{t.entries_100}</option>
+                    <option value={300}>{t.entries_300}</option>
+                    <option value={500}>{t.entries_500}</option>
+                    <option value={1000}>{t.entries_1000}</option>
+                    <option value={2000}>{t.entries_2000}</option>
+                    <option value={0}>{t.entries_unlimited}</option>
                   </select>
                 </label>
-                <p className="help">
-                  Lịch sử được tự động dọn dẹp theo các giới hạn trên khi mở ứng dụng và sau mỗi bản dịch mới để ứng dụng luôn nhanh và nhẹ.
-                </p>
+                <p className="help">{t.history_help}</p>
               </>
             )}
             {history.length === 0 ? (
-              <p className="help">Chưa có bản dịch nào.</p>
+              <p className="help">{t.no_history}</p>
             ) : (
               <>
                 <div className="row-buttons">
                   <button
                     onClick={async () => {
                       const count = await invoke<number>("history_clear_older_than", { days: 30 });
-                      setStatus(`Đã dọn dẹp ${count} mục cũ hơn 30 ngày.`);
+                      setStatus(appLang === "en" ? `Cleaned ${count} entries older than 30 days.` : `Đã dọn dẹp ${count} mục cũ hơn 30 ngày.`);
                       setHistory(await invoke<HistoryEntry[]>("history_list"));
                     }}
                   >
-                    Dọn mục &gt; 30 ngày
+                    {t.clear_older_30}
                   </button>
                   {historyNeedle && (
                     <button
                       className="danger"
                       onClick={async () => {
                         const count = await invoke<number>("history_clear_matches", { query: historyQuery.trim() });
-                        setStatus(`Đã xoá ${count} mục tìm kiếm.`);
+                        setStatus(appLang === "en" ? `Deleted ${count} search matches.` : `Đã xoá ${count} mục tìm kiếm.`);
                         setHistory(await invoke<HistoryEntry[]>("history_list"));
                       }}
                     >
-                      Xoá {filteredHistory.length} kết quả tìm kiếm
+                      {t.clear_filtered(filteredHistory.length)}
                     </button>
                   )}
                   <button
@@ -737,16 +769,16 @@ export default function Settings() {
                     onClick={async () => {
                       await invoke("history_clear");
                       setHistory([]);
-                      setStatus("Đã xoá toàn bộ lịch sử.");
+                      setStatus(appLang === "en" ? "Cleared all history." : "Đã xoá toàn bộ lịch sử.");
                     }}
                   >
-                    Xoá toàn bộ ({history.length})
+                    {t.clear_all_history(history.length)}
                   </button>
                 </div>
                 <input
                   className="search"
                   type="search"
-                  placeholder={`Tìm trong ${history.length} bản dịch…`}
+                  placeholder={t.search_history_ph(history.length)}
                   value={historyQuery}
                   onChange={(e) => {
                     setHistoryQuery(e.target.value);
@@ -754,17 +786,17 @@ export default function Settings() {
                   }}
                 />
                 {filteredHistory.length === 0 ? (
-                  <p className="help">Không có mục nào khớp.</p>
+                  <p className="help">{t.no_history_matches}</p>
                 ) : (
                   <>
                     <p className="help count-hint">
-                      Đang hiển thị {Math.min(historyVisibleCount, filteredHistory.length)} trên {filteredHistory.length} mục
+                      {t.showing_history(Math.min(historyVisibleCount, filteredHistory.length), filteredHistory.length)}
                     </p>
                     <ul className="history">
                       {filteredHistory.slice(0, historyVisibleCount).map((entry) => (
                         <li key={`${entry.at}-${entry.source}`}>
                           <small>
-                            {new Date(entry.at * 1000).toLocaleString("vi-VN")} · {entry.from.toUpperCase()} → {entry.to.toUpperCase()} ·{" "}
+                            {new Date(entry.at * 1000).toLocaleString(appLang === "en" ? "en-US" : "vi-VN")} · {entry.from.toUpperCase()} → {entry.to.toUpperCase()} ·{" "}
                             {ENGINE_NAMES[entry.engine] ?? entry.engine}
                           </small>
                           <p className="from">{entry.source}</p>
@@ -775,7 +807,7 @@ export default function Settings() {
                     {filteredHistory.length > historyVisibleCount && (
                       <div className="pagination">
                         <button onClick={() => setHistoryVisibleCount((c) => c + 40)}>
-                          Tải thêm 40 mục ({filteredHistory.length - historyVisibleCount} mục còn lại)
+                          {t.load_more(40, filteredHistory.length - historyVisibleCount)}
                         </button>
                       </div>
                     )}
@@ -786,11 +818,13 @@ export default function Settings() {
           </section>
         )}
 
-        {tab === "subtitles" && <Subtitles />}
+        {tab === "subtitles" && <Subtitles lang={appLang} />}
 
-        {tab === "vocab" && <Vocab />}
+        {tab === "vocab" && <Vocab lang={appLang} />}
 
-        {tab === "about" && <About checkUpdates={config.check_updates} setCheckUpdates={(on) => update({ check_updates: on })} />}
+        {tab === "about" && (
+          <About lang={appLang} checkUpdates={config.check_updates} setCheckUpdates={(on) => update({ check_updates: on })} />
+        )}
       </main>
     </div>
   );

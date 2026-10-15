@@ -3,9 +3,12 @@ import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { deckLink, qrDeck } from "./deck";
 import type { Card } from "./types";
+import { AppLanguage, useT } from "./i18n";
 
 /** Saved words: search, remove, export, import, and send to the phone as flashcards. */
-export default function Vocab() {
+export default function Vocab({ lang = "vi" }: { lang?: AppLanguage }) {
+  const t = useT(lang);
+  const isEn = lang === "en";
   const [cards, setCards] = useState<Card[]>([]);
   const [query, setQuery] = useState("");
   const [qr, setQr] = useState<{ count: number; svg: string } | null>(null);
@@ -26,7 +29,7 @@ export default function Vocab() {
   const shown = needle ? cards.filter((c) => `${c.front}\n${c.back}`.toLowerCase().includes(needle)) : cards;
 
   // Runs an action and shows its error instead of failing silently.
-  const attempt = (action: () => Promise<unknown>) => () => action().catch((error) => setNote(`Không thực hiện được: ${error}`));
+  const attempt = (action: () => Promise<unknown>) => () => action().catch((error) => setNote(isEn ? `Failed: ${error}` : `Không thực hiện được: ${error}`));
 
   const remove = (card: Card) =>
     attempt(async () => {
@@ -42,7 +45,7 @@ export default function Vocab() {
 
   const copyLink = attempt(async () => {
     await invoke("copy_text", { text: await deckLink(shown) });
-    setNote("Đã sao chép liên kết. Gửi sang điện thoại (Zalo, email…) rồi mở.");
+    setNote(isEn ? "Link copied. Send to your phone (email, chat…) and open." : "Đã sao chép liên kết. Gửi sang điện thoại (Zalo, email…) rồi mở.");
   });
 
   const openHere = attempt(async () => openUrl(await deckLink(shown)));
@@ -56,74 +59,68 @@ export default function Vocab() {
     a.download = `swipelate-vocab-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    setNote(`Đã xuất ${cards.length} thẻ ra tệp CSV (dùng được cho Anki và Excel).`);
+    setNote(isEn ? `Exported ${cards.length} cards to CSV (compatible with Anki and Excel).` : `Đã xuất ${cards.length} thẻ ra tệp CSV (dùng được cho Anki và Excel).`);
   });
 
   const exportJson = attempt(async () => {
-    const blob = new Blob([JSON.stringify(cards, null, 2)], { type: "application/json;charset=utf-8;" });
+    const json = JSON.stringify(cards, null, 2);
+    const blob = new Blob([json], { type: "application/json;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `swipelate-vocab-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `swipelate-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    setNote(`Đã sao lưu ${cards.length} thẻ ra tệp JSON.`);
+    setNote(isEn ? `Backed up ${cards.length} cards to JSON file.` : `Đã sao lưu ${cards.length} thẻ ra tệp JSON.`);
   });
 
-  const importJson = (file: File) => {
+  const handleImportJson = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
     const reader = new FileReader();
-    reader.onload = async (e) => {
+    reader.onload = async (event) => {
       try {
-        const text = e.target?.result as string;
-        const imported = JSON.parse(text);
-        if (!Array.isArray(imported)) {
-          throw new Error("Tệp không đúng định dạng (cần danh sách thẻ).");
+        const text = event.target?.result as string;
+        const importedCards: Card[] = JSON.parse(text);
+        if (!Array.isArray(importedCards)) {
+          setNote(isEn ? "Invalid file format: JSON array expected." : "Tệp không đúng định dạng: cần mảng JSON các thẻ.");
+          return;
         }
-        const count = await invoke<number>("vocab_import_cards", { cards: imported });
-        setNote(`Đã nhập thành công ${count} thẻ mới.`);
+        const added = await invoke<number>("vocab_import_cards", { cards: importedCards });
         await load();
+        setNote(isEn ? `Imported ${added} new cards (${importedCards.length - added} duplicates skipped).` : `Đã nhập thành công ${added} thẻ mới (bỏ qua ${importedCards.length - added} thẻ trùng lặp).`);
       } catch (err) {
-        setNote(`Không thể nhập thẻ: ${err}`);
+        setNote(isEn ? `Failed to read file: ${err}` : `Không đọc được tệp: ${err}`);
       }
     };
     reader.readAsText(file);
+    e.target.value = "";
   };
 
   const clearMatches = attempt(async () => {
-    if (!needle) return;
-    const count = await invoke<number>("vocab_clear_matches", { query: query.trim() });
-    setNote(`Đã xoá ${count} thẻ phù hợp.`);
-    setQr(null);
+    const count = await invoke<number>("vocab_clear_matches", { query: needle });
+    setQuery("");
+    setNote(isEn ? `Deleted ${count} search results.` : `Đã xoá ${count} thẻ theo kết quả tìm kiếm.`);
     await load();
   });
 
   return (
     <section>
-      <h2>Từ vựng</h2>
-      <p className="help">
-        Bấm nút đánh dấu trên popup dịch để lưu từ hoặc câu. Học trên điện thoại bằng flashcard: quét mã QR, trang học tự nhớ tiến độ và
-        nhắc ôn theo lịch lặp lại ngắt quãng. Thẻ chỉ nằm trên máy bạn và trong liên kết, không gửi lên máy chủ nào.
-      </p>
-      {note && <p className="help">{note}</p>}
+      <h2>{t.vocab_title}</h2>
+      {note && <p className="note">{note}</p>}
       <input
         type="file"
         ref={fileInputRef}
         style={{ display: "none" }}
-        accept=".json"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) {
-            importJson(file);
-            e.target.value = "";
-          }
-        }}
+        accept="application/json,.json"
+        onChange={handleImportJson}
       />
       {cards.length === 0 ? (
         <>
-          <p className="help">Chưa lưu từ nào.</p>
+          <p className="help">{t.vocab_empty}</p>
           <p className="row-buttons">
             <button onClick={() => fileInputRef.current?.click()}>
-              Nhập thẻ từ tệp sao lưu JSON…
+              {t.import_json}
             </button>
           </p>
         </>
@@ -132,7 +129,7 @@ export default function Vocab() {
           <input
             className="search"
             type="search"
-            placeholder={`Tìm trong ${cards.length} thẻ…`}
+            placeholder={t.vocab_search_ph(cards.length)}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -142,54 +139,54 @@ export default function Vocab() {
           />
           <p className="row-buttons">
             <button onClick={showQr} disabled={!shown.length}>
-              Học trên điện thoại (mã QR)
+              {t.learn_phone}
             </button>
             <button onClick={copyLink} disabled={!shown.length}>
-              Sao chép liên kết
+              {t.copy_link}
             </button>
             <button onClick={openHere} disabled={!shown.length}>
-              Mở trên máy này
+              {isEn ? "Open on this PC" : "Mở trên máy này"}
             </button>
-            <button onClick={exportCsv} disabled={!cards.length} title="Xuất ra tệp CSV tương thích Anki và Excel">
-              Xuất CSV (Anki)
+            <button onClick={exportCsv} disabled={!cards.length} title="Export to CSV compatible with Anki and Excel">
+              {t.export_csv}
             </button>
-            <button onClick={exportJson} disabled={!cards.length} title="Sao lưu toàn bộ thẻ từ vựng ra tệp JSON">
-              Sao lưu JSON
+            <button onClick={exportJson} disabled={!cards.length} title="Backup all vocabulary cards to JSON">
+              {t.backup_json}
             </button>
-            <button onClick={() => fileInputRef.current?.click()} title="Nhập thẻ từ vựng từ tệp JSON đã sao lưu">
-              Nhập JSON…
+            <button onClick={() => fileInputRef.current?.click()} title="Import vocabulary cards from JSON file">
+              {t.import_json}
             </button>
             {needle && (
               <button className="danger" onClick={clearMatches}>
-                Xoá {shown.length} thẻ tìm thấy
+                {t.clear_vocab_matches(shown.length)}
               </button>
             )}
           </p>
-          {qr && qr.count === 0 && <p className="help">Thẻ mới nhất quá dài để vừa một mã QR. Dùng "Sao chép liên kết".</p>}
+          {qr && qr.count === 0 && <p className="help">{isEn ? "Newest card is too long for QR code. Use 'Copy link'." : "Thẻ mới nhất quá dài để vừa một mã QR. Dùng 'Sao chép liên kết'."}</p>}
           {qr && qr.count > 0 && (
             <div className="qr">
               <div dangerouslySetInnerHTML={{ __html: qr.svg }} />
               <p className="help">
                 {qr.count < shown.length
-                  ? `Mã QR chứa ${qr.count} thẻ mới nhất (giới hạn dung lượng QR). Dùng "Sao chép liên kết" để gửi đủ ${shown.length} thẻ.`
-                  : `Mã QR chứa ${qr.count} thẻ. Quét lại khi lưu thêm từ, tiến độ học cũ được giữ.`}
+                  ? (isEn ? `QR code holds newest ${qr.count} cards. Use 'Copy link' to transfer all ${shown.length} cards.` : `Mã QR chứa ${qr.count} thẻ mới nhất (giới hạn dung lượng QR). Dùng 'Sao chép liên kết' để gửi đủ ${shown.length} thẻ.`)
+                  : (isEn ? `QR code contains ${qr.count} cards. Scan again when saving more words; existing review history is preserved.` : `Mã QR chứa ${qr.count} thẻ. Quét lại khi lưu thêm từ, tiến độ học cũ được giữ.`)}
               </p>
             </div>
           )}
           {shown.length === 0 ? (
-            <p className="help">Không tìm thấy thẻ nào phù hợp.</p>
+            <p className="help">{t.no_vocab_matches}</p>
           ) : (
             <>
               <p className="help count-hint">
-                Đang hiển thị {Math.min(visibleCount, shown.length)} trên {shown.length} thẻ
+                {t.showing_vocab(Math.min(visibleCount, shown.length), shown.length)}
               </p>
               <ul className="history">
                 {shown.slice(0, visibleCount).map((card) => (
                   <li key={`${card.to}-${card.front}`}>
                     <small>
-                      {new Date(card.at * 1000).toLocaleDateString("vi-VN")} · {card.from.toUpperCase()} → {card.to.toUpperCase()} ·{" "}
+                      {new Date(card.at * 1000).toLocaleDateString(isEn ? "en-US" : "vi-VN")} · {card.from.toUpperCase()} → {card.to.toUpperCase()} ·{" "}
                       <button className="link" onClick={() => remove(card)}>
-                        Xoá
+                        {isEn ? "Delete" : "Xoá"}
                       </button>
                     </small>
                     <p className="from">{card.front}</p>
@@ -201,7 +198,7 @@ export default function Vocab() {
               {shown.length > visibleCount && (
                 <div className="pagination">
                   <button onClick={() => setVisibleCount((c) => c + 40)}>
-                    Tải thêm 40 thẻ ({shown.length - visibleCount} thẻ còn lại)
+                    {t.load_more(40, shown.length - visibleCount)}
                   </button>
                 </div>
               )}

@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ENGINE_NAMES, PopupState } from "./types";
+import { AppLanguage, useT } from "./i18n";
 
 const MAX_HEIGHT = 460;
 
@@ -71,13 +72,17 @@ export default function Popup() {
 
   // Text size and opacity come from the settings.
   const [look, setLook] = useState("");
+  const [appLang, setAppLang] = useState<AppLanguage>("vi");
   useEffect(() => {
     const apply = () =>
-      invoke<{ popup_font_size: number; popup_opacity: number }>("get_settings").then((settings) => {
+      invoke<{ popup_font_size: number; popup_opacity: number; app_language?: string }>("get_settings").then((settings) => {
         const root = document.documentElement.style;
         root.fontSize = `${settings.popup_font_size}px`;
         root.setProperty("--popup-opacity", `${settings.popup_opacity}%`);
         setLook(`${settings.popup_font_size}/${settings.popup_opacity}`);
+        if (settings.app_language === "en" || settings.app_language === "vi") {
+          setAppLang(settings.app_language as AppLanguage);
+        }
       });
     apply();
     const unlisten = listen("settings-changed", apply);
@@ -85,6 +90,8 @@ export default function Popup() {
       unlisten.then((off) => off());
     };
   }, []);
+
+  const t = useT(appLang);
 
   // Tell the window how tall the rendered card is.
   useLayoutEffect(() => {
@@ -97,7 +104,7 @@ export default function Popup() {
 
   if (state.mode === "icon") {
     return (
-      <button className="trigger" onClick={() => invoke("popup_activate")} aria-label="Dịch vùng bôi đen">
+      <button className="trigger" onClick={() => invoke("popup_activate")} aria-label={t.popup_drag_hint}>
         <IconBrand size={18} />
       </button>
     );
@@ -174,7 +181,7 @@ export default function Popup() {
     <div className="card" ref={card}>
       <header className="bar">
         {trail.length > 0 && (
-          <button className="tool" onClick={back} title="Quay lại">
+          <button className="tool" onClick={back} title={t.popup_back}>
             <IconBack size={16} />
           </button>
         )}
@@ -185,29 +192,29 @@ export default function Popup() {
               <span className="engine">{ENGINE_NAMES[result.engine] ?? result.engine}</span>
             </>
           ) : state.mode === "loading" ? (
-            "Đang dịch…"
+            t.popup_loading
           ) : (
-            "Không dịch được"
+            t.popup_failed
           )}
         </span>
         <span className="tools">
           {result && (
             <>
-              <button className="tool" onClick={() => speak(source, result.from)} title="Đọc văn bản gốc">
+              <button className="tool" onClick={() => speak(source, result.from)} title={t.popup_speak}>
                 <IconSpeak size={16} />
               </button>
-              <button className={saved ? "tool on" : "tool"} onClick={toggleSave} title={saved ? "Bỏ khỏi bộ từ vựng" : "Lưu vào bộ từ vựng"}>
+              <button className={saved ? "tool on" : "tool"} onClick={toggleSave} title={saved ? t.popup_saved : t.popup_save}>
                 <IconBookmark size={16} filled={saved} />
               </button>
-              <button className="tool" onClick={copy} title="Sao chép bản dịch">
+              <button className="tool" onClick={copy} title={t.popup_copy}>
                 {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
               </button>
             </>
           )}
-          <button className={pinned ? "tool on" : "tool"} onClick={togglePin} title="Ghim">
+          <button className={pinned ? "tool on" : "tool"} onClick={togglePin} title={t.popup_pin}>
             <IconPin size={16} />
           </button>
-          <button className="tool" onClick={() => invoke("popup_close")} title="Đóng">
+          <button className="tool" onClick={() => invoke("popup_close")} title={t.popup_close}>
             <IconClose size={16} />
           </button>
         </span>
@@ -238,7 +245,7 @@ export default function Popup() {
           <p className="result">{result.text}</p>
           {result.context && (
             <div className="context">
-              <p className="context-label">{result.context.meaning ? "Nghĩa trong câu này" : "Trong câu"}</p>
+              <p className="context-label">{result.context.meaning ? t.context_meaning : t.context_in_sentence}</p>
               {result.context.meaning && <p className="context-meaning">{result.context.meaning}</p>}
               <p className="context-sentence">
                 <Highlight text={result.context.sentence} word={source.trim()} />
@@ -277,7 +284,7 @@ export default function Popup() {
             </button>
           )}
           {result.note && <p className="note">{result.note}</p>}
-          {saveError && <p className="note">Không lưu được từ: {saveError}</p>}
+          {saveError && <p className="note">{appLang === "en" ? `Could not save card: ${saveError}` : `Không lưu được từ: ${saveError}`}</p>}
         </>
       )}
     </div>

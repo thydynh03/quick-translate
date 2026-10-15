@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="vi">
 <head>
   <meta charset="utf-8">
@@ -6,36 +6,89 @@
   <title>Giấy phép và bản quyền – Swipelate</title>
   <meta name="description" content="Swipelate là phần mềm mã nguồn mở, bản quyền © 2026 thydynh03, phát hành theo giấy phép MIT. Trang này có toàn văn giấy phép và ghi công các thành phần bên thứ ba.">
   <link rel="canonical" href="https://swipelate.com/license.html">
+  <link rel="alternate" hreflang="vi" href="https://swipelate.com/license.html">
+  <link rel="alternate" hreflang="en" href="https://swipelate.com/license.html">
+  <link rel="alternate" hreflang="x-default" href="https://swipelate.com/license.html">
   <meta property="og:type" content="article">
   <meta property="og:locale" content="vi_VN">
   <meta property="og:site_name" content="Swipelate">
   <meta property="og:title" content="Giấy phép và bản quyền – Swipelate">
+  <meta property="og:description" content="Toàn văn giấy phép MIT và ghi công các thành phần bên thứ ba của Swipelate.">
   <meta property="og:url" content="https://swipelate.com/license.html">
   <meta property="og:image" content="https://swipelate.com/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Giấy phép và bản quyền – Swipelate">
+  <meta name="twitter:description" content="Toàn văn giấy phép MIT và ghi công các thành phần bên thứ ba của Swipelate.">
+  <meta name="twitter:image" content="https://swipelate.com/assets/og.png">
   <meta name="theme-color" content="#c03546">
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/icon-256.png">
   <link rel="manifest" href="site.webmanifest">
+  <link rel="preload" as="image" href="assets/icon.svg" type="image/svg+xml">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="assets/site.css">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+  </noscript>
+  <link rel="stylesheet" href="assets/site.css?v=0.1.27">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Trang chủ",
+        "item": "https://swipelate.com/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Giấy phép",
+        "item": "https://swipelate.com/license.html"
+      }
+    ]
+  }
+  </script>
+  <script>
+    (function(){
+      const t = localStorage.getItem("swipelate-theme");
+      if (t === "dark" || (t !== "light" && matchMedia("(prefers-color-scheme: dark)").matches)) {
+        document.documentElement.dataset.theme = "dark";
+      } else if (t === "light") {
+        document.documentElement.dataset.theme = "light";
+      }
+    })();
+  </script>
+  <script src="assets/theme-i18n.js?v=0.1.27" defer></script>
 </head>
 <body>
-  <a class="skip" href="#main">Bỏ qua điều hướng</a>
+  <a class="skip" href="#main" data-i18n="nav-skip">Bỏ qua điều hướng</a>
   <header class="top">
     <a class="brand" href="./" aria-label="Swipelate, trang chủ">
-      <img src="assets/icon.svg" alt="" width="28" height="28">
+      <img src="assets/icon.svg" alt="Swipelate Logo" width="28" height="28" decoding="async">
       <span>Swipelate</span>
     </a>
     <nav class="nav" aria-label="Điều hướng chính">
-      <a href="./#cach-dung">Cách dùng</a>
-      <a href="./#offline">Dịch offline</a>
-      <a href="docs.html">Tài liệu</a>
-      <a href="license.html" aria-current="page">Giấy phép</a>
+      <a href="./#cach-dung" data-i18n="nav-how">Cách dùng</a>
+      <a href="./#offline" data-i18n="nav-offline">Dịch offline</a>
+      <a href="docs.html" data-i18n="nav-docs">Tài liệu</a>
+      <a href="license.html" aria-current="page" data-i18n="nav-license">Giấy phép</a>
     </nav>
-    <a class="btn small" href="./#tai-ve">Tải về</a>
+    <div class="top-controls">
+      <div class="lang-switch" role="group" aria-label="Ngôn ngữ / Language">
+        <button class="lang-btn active" data-lang="vi" type="button" title="Tiếng Việt">VI</button>
+        <button class="lang-btn" data-lang="en" type="button" title="English">EN</button>
+      </div>
+      <button class="theme-btn" id="theme-toggle" type="button" aria-label="Chuyển giao diện sáng/tối" title="Chuyển giao diện sáng/tối">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <a class="btn small" href="./#tai-ve" data-i18n="nav-download">Tải về</a>
+    </div>
   </header>
 
   <div class="doc single">
@@ -98,6 +151,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
       </nav>
     </div>
   </footer>
-  <script src="assets/stats-config.js" defer></script>
+  <script src="assets/stats-config.js?v=0.1.27" defer></script>
 </body>
 </html>
+

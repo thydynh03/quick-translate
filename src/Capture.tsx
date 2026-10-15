@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { AppLanguage, useT } from "./i18n";
 
 type Box = { x0: number; y0: number; x1: number; y1: number };
 
@@ -16,6 +17,7 @@ export default function Capture() {
   const [blocks, setBlocks] = useState<Block[] | null>(null);
   const [expected, setExpected] = useState(0);
   const [done, setDone] = useState(false);
+  const [appLang, setAppLang] = useState<AppLanguage>("vi");
   // Live mode: the shortcut that switches it off, while it is on.
   const [live, setLive] = useState<string | null>(null);
   // The part of the screen live mode follows, when it is not all of it.
@@ -49,6 +51,13 @@ export default function Capture() {
       if (event.key === "3") invoke("live_listen");
     };
     window.addEventListener("keydown", onKey);
+    const updateLang = () => {
+      invoke<{ app_language?: string }>("get_settings").then((s) => {
+        if (s.app_language === "en" || s.app_language === "vi") setAppLang(s.app_language as AppLanguage);
+      }).catch(() => {});
+    };
+    updateLang();
+    const unlistenSettings = listen("settings-changed", updateLang);
     const listeners = [
       listen("capture-start", () => {
         isLive.current = false;
@@ -88,19 +97,22 @@ export default function Capture() {
     ];
     return () => {
       window.removeEventListener("keydown", onKey);
+      unlistenSettings.then((off) => off());
       listeners.forEach((unlisten) => unlisten.then((off) => off()));
     };
   }, []);
 
+  const t = useT(appLang);
+
   if (blocks) {
     const scale = window.devicePixelRatio;
     const status = live !== null
-      ? `Đang dịch thời gian thực · nhấn ${live} để tắt`
+      ? t.capture_live_status(live)
       : !done
-      ? `Đang dịch ${blocks.length}/${expected} đoạn…`
+      ? t.capture_window_translating(blocks.length, expected)
       : blocks.length === 0
-        ? "Không tìm thấy chữ cần dịch trong cửa sổ này"
-        : "Bấm chuột hoặc nhấn Esc để đóng";
+        ? t.capture_window_empty
+        : t.capture_window_close_hint;
     return (
       <div ref={root} className={live !== null ? "capture result live" : "capture result"} onClick={() => invoke("capture_cancel")} onContextMenu={(e) => e.preventDefault()}>
         {live !== null && region && (
@@ -149,17 +161,17 @@ export default function Capture() {
     return (
       <div ref={root} className="capture choose" onContextMenu={(e) => { e.preventDefault(); invoke("capture_cancel"); }}>
         <div className="capture-choice">
-          <strong>Dịch thời gian thực</strong>
+          <strong>{t.capture_live_title}</strong>
           <button autoFocus onClick={() => invoke("live_begin", { region: null })}>
-            <kbd>1</kbd> Toàn màn hình
+            <kbd>1</kbd> {t.capture_fullscreen}
           </button>
           <button onClick={pickRegion}>
-            <kbd>2</kbd> Chọn một vùng
+            <kbd>2</kbd> {t.capture_pick_region}
           </button>
           <button onClick={() => invoke("live_listen")}>
-            <kbd>3</kbd> Nghe tiếng (Live Captions)
+            <kbd>3</kbd> {t.capture_live_captions}
           </button>
-          <small>Esc để huỷ</small>
+          <small>{t.capture_esc_cancel}</small>
         </div>
       </div>
     );
@@ -210,7 +222,7 @@ export default function Capture() {
           }}
         />
       ) : (
-        <p className="capture-hint">{forLive ? "Kéo để chọn vùng dịch thời gian thực · Esc để huỷ" : "Kéo để chọn vùng cần dịch · Esc để huỷ"}</p>
+        <p className="capture-hint">{forLive ? t.capture_live_hint : t.capture_hint}</p>
       )}
     </div>
   );

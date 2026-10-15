@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { langName } from "./types";
+import { AppLanguage, useT } from "./i18n";
 
 type Model = {
   id: string;
@@ -13,7 +14,8 @@ type Model = {
 
 type Progress = { id: string; done: number; total: number; error: string | null; finished: boolean };
 
-export default function OfflineModels() {
+export default function OfflineModels({ lang = "vi" }: { lang?: AppLanguage }) {
+  const t = useT(lang);
   const [models, setModels] = useState<Model[]>([]);
   const [progress, setProgress] = useState<Record<string, Progress>>({});
   const [error, setError] = useState("");
@@ -46,8 +48,8 @@ export default function OfflineModels() {
 
   return (
     <section>
-      <h2>Model offline</h2>
-      <p className="help">Mỗi model dịch một chiều. Tải một lần, sau đó dịch không cần mạng. Windows không đọc được dấu tiếng Việt trên ảnh; tải model cuối danh sách để quét vùng màn hình có chữ tiếng Việt.</p>
+      <h2>{t.offline_title}</h2>
+      <p className="help">{t.offline_help}</p>
       <ul className="models">
         {models.map((model) => {
           const p = progress[model.id];
@@ -55,18 +57,18 @@ export default function OfflineModels() {
           return (
             <li key={model.id}>
               <span>
-                {model.from === "ocr" ? "Đọc chữ tiếng Việt khi quét vùng màn hình" : `${langName(model.from)} → ${langName(model.to)}`}
-                <small>khoảng {model.size_mb} MB</small>
+                {model.from === "ocr" ? t.model_ocr_label : `${langName(model.from, lang)} → ${langName(model.to, lang)}`}
+                <small>{t.size_approx(model.size_mb)}</small>
               </span>
               {running ? (
                 <span className="progress">
-                  {p.total > 0 ? `${Math.round((p.done / p.total) * 100)}%` : "Đang tải…"}
+                  {p.total > 0 ? t.downloading(Math.round((p.done / p.total) * 100)) : t.test_busy}
                 </span>
               ) : model.installed ? (
-                <button onClick={() => remove(model.id)}>Xoá</button>
+                <button onClick={() => remove(model.id)}>{t.delete_btn}</button>
               ) : (
                 <button className="primary" onClick={() => download(model.id)}>
-                  Tải về
+                  {t.download_btn}
                 </button>
               )}
             </li>

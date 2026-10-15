@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="vi">
 <head>
   <meta charset="utf-8">
@@ -10,16 +10,45 @@
   <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/assets/icon-256.png">
   <link rel="manifest" href="/site.webmanifest">
-  <link rel="stylesheet" href="/assets/site.css">
+  <link rel="preload" as="image" href="/assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/site.css?v=0.1.27">
+  <script>
+    (function(){
+      const t = localStorage.getItem("swipelate-theme");
+      if (t === "dark" || (t !== "light" && matchMedia("(prefers-color-scheme: dark)").matches)) {
+        document.documentElement.dataset.theme = "dark";
+      } else if (t === "light") {
+        document.documentElement.dataset.theme = "light";
+      }
+    })();
+  </script>
+  <script src="/assets/theme-i18n.js?v=0.1.27" defer></script>
 </head>
 <body>
+  <header class="top">
+    <a class="brand" href="/" aria-label="Swipelate, trang chủ">
+      <img src="/assets/icon.svg" alt="Swipelate Logo" width="28" height="28" decoding="async">
+      <span>Swipelate</span>
+    </a>
+    <div class="top-controls">
+      <div class="lang-switch" role="group" aria-label="Ngôn ngữ / Language">
+        <button class="lang-btn active" data-lang="vi" type="button" title="Tiếng Việt">VI</button>
+        <button class="lang-btn" data-lang="en" type="button" title="English">EN</button>
+      </div>
+      <button class="theme-btn" id="theme-toggle" type="button" aria-label="Chuyển giao diện sáng/tối" title="Chuyển giao diện sáng/tối">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </header>
+
   <div class="doc single">
     <main class="prose">
-      <h1>Không tìm thấy trang</h1>
-      <p>Địa chỉ này không tồn tại hoặc đã được chuyển đi.</p>
-      <p><a class="btn" href="/">Về trang chủ</a></p>
+      <h1 data-i18n="404-title">Không tìm thấy trang</h1>
+      <p data-i18n="404-desc">Địa chỉ này không tồn tại hoặc đã được chuyển đi.</p>
+      <p><a class="btn" href="/" data-i18n="404-home">Về trang chủ</a></p>
     </main>
   </div>
-  <script src="/assets/stats-config.js" defer></script>
+  <script src="/assets/stats-config.js?v=0.1.27" defer></script>
 </body>
 </html>
+

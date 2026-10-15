@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="vi">
 <head>
   <meta charset="utf-8">
@@ -11,13 +11,40 @@
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/icon-256.png">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="assets/site.css">
-  <link rel="stylesheet" href="assets/learn.css">
+  <link rel="preload" as="image" href="assets/icon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+  </noscript>
+  <link rel="stylesheet" href="assets/site.css?v=0.1.27">
+  <link rel="stylesheet" href="assets/learn.css?v=0.1.27">
+  <script>
+    (function(){
+      const t = localStorage.getItem("swipelate-theme");
+      if (t === "dark" || (t !== "light" && matchMedia("(prefers-color-scheme: dark)").matches)) {
+        document.documentElement.dataset.theme = "dark";
+      } else if (t === "light") {
+        document.documentElement.dataset.theme = "light";
+      }
+    })();
+  </script>
+  <script src="assets/theme-i18n.js?v=0.1.27" defer></script>
 </head>
 <body class="learn">
   <header class="lbar">
-    <a class="brand" href="./"><img src="assets/icon.svg" alt="" width="24" height="24"><span>Học từ vựng</span></a>
+    <a class="brand" href="./"><img src="assets/icon.svg" alt="Swipelate Logo" width="24" height="24" decoding="async"><span data-i18n="learn-title">Học từ vựng</span></a>
+    <div class="top-controls">
+      <div class="lang-switch" role="group" aria-label="Ngôn ngữ / Language">
+        <button class="lang-btn active" data-lang="vi" type="button" title="Tiếng Việt">VI</button>
+        <button class="lang-btn" data-lang="en" type="button" title="English">EN</button>
+      </div>
+      <button class="theme-btn" id="theme-toggle" type="button" aria-label="Chuyển giao diện sáng/tối" title="Chuyển giao diện sáng/tối">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
     <span class="streak" id="streak" title="Số ngày học liên tiếp"></span>
   </header>
 
@@ -26,29 +53,29 @@
     <section id="home">
       <p class="toast" id="toast" hidden></p>
       <div class="stats">
-        <div><b id="s-due">0</b><span>Cần ôn</span></div>
-        <div><b id="s-new">0</b><span>Thẻ mới</span></div>
-        <div><b id="s-total">0</b><span>Tổng số thẻ</span></div>
+        <div><b id="s-due">0</b><span data-i18n="learn-due">Cần ôn</span></div>
+        <div><b id="s-new">0</b><span data-i18n="learn-new">Thẻ mới</span></div>
+        <div><b id="s-total">0</b><span data-i18n="learn-total">Tổng số thẻ</span></div>
       </div>
       <div class="actions">
-        <button class="btn" id="start-study">Học thẻ</button>
-        <button class="btn ghost" id="start-quiz">Trắc nghiệm</button>
+        <button class="btn" id="start-study" data-i18n="learn-study">Học thẻ</button>
+        <button class="btn ghost" id="start-quiz" data-i18n="learn-quiz">Trắc nghiệm</button>
       </div>
       <div class="empty" id="empty" hidden>
-        <p><b>Chưa có thẻ nào.</b></p>
-        <p>Trên máy tính: bấm nút đánh dấu trên popup dịch để lưu từ, rồi vào Cài đặt → Từ vựng → <i>Học trên điện thoại</i> và quét mã QR bằng camera.</p>
+        <p><b data-i18n="learn-empty-title">Chưa có thẻ nào.</b></p>
+        <p data-i18n="learn-empty-desc">Trên máy tính: bấm nút đánh dấu trên popup dịch để lưu từ, rồi vào Cài đặt → Từ vựng → <i>Học trên điện thoại</i> và quét mã QR bằng camera.</p>
       </div>
       <details class="list" id="list-box">
-        <summary>Danh sách thẻ</summary>
-        <input type="search" id="search" placeholder="Tìm từ">
+        <summary data-i18n="learn-list">Danh sách thẻ</summary>
+        <input type="search" id="search" data-i18n-ph="learn-search-ph" placeholder="Tìm từ">
         <ul id="list"></ul>
       </details>
       <details class="list">
-        <summary>Sao lưu</summary>
-        <p class="fine">Tiến độ học lưu trong trình duyệt này. Thêm trang vào màn hình chính để mở như một ứng dụng và học cả khi không có mạng.</p>
+        <summary data-i18n="learn-backup">Sao lưu</summary>
+        <p class="fine" data-i18n="learn-backup-desc">Tiến độ học lưu trong trình duyệt này. Thêm trang vào màn hình chính để mở như một ứng dụng và học cả khi không có mạng.</p>
         <div class="actions">
-          <button class="btn ghost small" id="export">Xuất tệp</button>
-          <label class="btn ghost small">Nhập tệp<input type="file" id="import" accept="application/json,.json" hidden></label>
+          <button class="btn ghost small" id="export" data-i18n="learn-export">Xuất tệp</button>
+          <label class="btn ghost small" data-i18n="learn-import">Nhập tệp<input type="file" id="import" accept="application/json,.json" hidden></label>
           <button class="btn ghost small" id="reverse"></button>
         </div>
       </details>
@@ -56,37 +83,38 @@
 
     <!-- Flashcards -->
     <section id="study" hidden>
-      <p class="progress"><button class="back" data-home>← Xong</button><span id="study-left"></span></p>
+      <p class="progress"><button class="back" data-home data-i18n="learn-done">← Xong</button><span id="study-left"></span></p>
       <button class="flash" id="flash" aria-live="polite">
         <span class="face" id="face-front"></span>
         <span class="face answer" id="face-back" hidden></span>
       </button>
       <button class="speak" id="speak" aria-label="Đọc">🔊</button>
-      <p class="hint" id="hint">Chạm vào thẻ để lật</p>
+      <p class="hint" id="hint" data-i18n="learn-tap-hint">Chạm vào thẻ để lật</p>
       <div class="grades" id="grades" hidden>
-        <button data-grade="0">Quên<small id="g0"></small></button>
-        <button data-grade="1">Khó<small id="g1"></small></button>
-        <button data-grade="2">Nhớ<small id="g2"></small></button>
-        <button data-grade="3">Dễ<small id="g3"></small></button>
+        <button data-grade="0"><span data-i18n="grade-0">Quên</span><small id="g0"></small></button>
+        <button data-grade="1"><span data-i18n="grade-1">Khó</span><small id="g1"></small></button>
+        <button data-grade="2"><span data-i18n="grade-2">Nhớ</span><small id="g2"></small></button>
+        <button data-grade="3"><span data-i18n="grade-3">Dễ</span><small id="g3"></small></button>
       </div>
     </section>
 
     <!-- Quiz -->
     <section id="quiz" hidden>
-      <p class="progress"><button class="back" data-home>← Xong</button><span id="quiz-score"></span></p>
+      <p class="progress"><button class="back" data-home data-i18n="learn-done">← Xong</button><span id="quiz-score"></span></p>
       <div class="flash static"><span class="face" id="quiz-q"></span></div>
       <div class="choices" id="choices"></div>
-      <button class="btn" id="quiz-next" hidden>Câu tiếp</button>
+      <button class="btn" id="quiz-next" data-i18n="quiz-next" hidden>Câu tiếp</button>
     </section>
 
     <!-- Done -->
     <section id="done" hidden>
       <p class="done-big">🎉</p>
       <p id="done-text"></p>
-      <button class="btn" data-home>Về trang chính</button>
+      <button class="btn" data-home data-i18n="learn-finished">Về trang chính</button>
     </section>
   </main>
 
   <script src="assets/learn.js" defer></script>
 </body>
 </html>
+

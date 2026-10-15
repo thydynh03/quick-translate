@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="vi">
 <head>
   <meta charset="utf-8">
@@ -11,45 +11,69 @@
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/icon-256.png">
   <link rel="manifest" href="site.webmanifest">
+  <link rel="preload" as="image" href="assets/icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="assets/site.css">
-  <link rel="stylesheet" href="assets/stats.css">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+  </noscript>
+  <link rel="stylesheet" href="assets/site.css?v=0.1.27">
+  <link rel="stylesheet" href="assets/stats.css?v=0.1.27">
+  <script>
+    (function(){
+      const t = localStorage.getItem("swipelate-theme");
+      if (t === "dark" || (t !== "light" && matchMedia("(prefers-color-scheme: dark)").matches)) {
+        document.documentElement.dataset.theme = "dark";
+      } else if (t === "light") {
+        document.documentElement.dataset.theme = "light";
+      }
+    })();
+  </script>
+  <script src="assets/theme-i18n.js?v=0.1.27" defer></script>
 </head>
 <body>
   <header class="top">
     <a class="brand" href="./" aria-label="Swipelate, trang chủ">
-      <img src="assets/icon.svg" alt="" width="28" height="28">
+      <img src="assets/icon.svg" alt="Swipelate Logo" width="28" height="28" decoding="async">
       <span>Swipelate</span>
     </a>
     <nav class="nav" aria-label="Điều hướng chính">
-      <a href="./">Trang chủ</a>
-      <a href="docs.html">Tài liệu</a>
-      <a href="stats.html" aria-current="page">Thống kê</a>
+      <a href="./" data-i18n="nav-home">Trang chủ</a>
+      <a href="docs.html" data-i18n="nav-docs">Tài liệu</a>
+      <a href="stats.html" aria-current="page" data-i18n="nav-stats">Thống kê</a>
     </nav>
+    <div class="top-controls">
+      <div class="lang-switch" role="group" aria-label="Ngôn ngữ / Language">
+        <button class="lang-btn active" data-lang="vi" type="button" title="Tiếng Việt">VI</button>
+        <button class="lang-btn" data-lang="en" type="button" title="English">EN</button>
+      </div>
+      <button class="theme-btn" id="theme-toggle" type="button" aria-label="Chuyển giao diện sáng/tối" title="Chuyển giao diện sáng/tối">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
   </header>
 
   <main class="dash viz-root">
     <div class="dash-head">
       <div>
-        <h1>Thống kê</h1>
-        <p class="sub">Số liệu thật, đọc trực tiếp khi mở trang. <span id="updated"></span></p>
+        <h1 data-i18n="stats-title">Thống kê</h1>
+        <p class="sub" data-i18n="stats-sub">Số liệu thật, đọc trực tiếp khi mở trang. <span id="updated"></span></p>
       </div>
-      <button class="ghost-btn" id="refresh" type="button">Làm mới</button>
+      <button class="ghost-btn" id="refresh" type="button" data-i18n="stats-refresh">Làm mới</button>
     </div>
 
     <!-- Downloads -->
     <section class="block" aria-labelledby="h-dl">
       <div class="block-head">
-        <h2 id="h-dl">Lượt tải bộ cài</h2>
-        <span class="source">Nguồn: GitHub Releases</span>
+        <h2 id="h-dl" data-i18n="stats-dl-title">Lượt tải bộ cài</h2>
+        <span class="source" data-i18n="stats-dl-source">Nguồn: GitHub Releases</span>
       </div>
       <div class="tiles" id="dl-tiles" aria-busy="true">
-        <div class="tile"><span class="label">Tổng lượt tải</span><b class="value" data-k="total"></b><span class="meta" data-k="total-meta"></span></div>
-        <div class="tile"><span class="label">Bản mới nhất</span><b class="value" data-k="latest"></b><span class="meta" data-k="latest-meta"></span></div>
-        <div class="tile"><span class="label">Windows</span><b class="value" data-k="win"></b><span class="meta" data-k="win-meta"></span></div>
-        <div class="tile"><span class="label">macOS</span><b class="value" data-k="mac"></b><span class="meta" data-k="mac-meta"></span></div>
+        <div class="tile"><span class="label" data-i18n="stats-total-dl">Tổng lượt tải</span><b class="value" data-k="total"></b><span class="meta" data-k="total-meta"></span></div>
+        <div class="tile"><span class="label" data-i18n="stats-latest-ver">Bản mới nhất</span><b class="value" data-k="latest"></b><span class="meta" data-k="latest-meta"></span></div>
+        <div class="tile"><span class="label" data-i18n="stats-win-dl">Windows</span><b class="value" data-k="win"></b><span class="meta" data-k="win-meta"></span></div>
+        <div class="tile"><span class="label" data-i18n="stats-mac-dl">macOS</span><b class="value" data-k="mac"></b><span class="meta" data-k="mac-meta"></span></div>
       </div>
 
       <figure class="card">
@@ -104,7 +128,8 @@
 
   <div class="tip" id="tip" role="status" hidden></div>
 
-  <script src="assets/stats-config.js"></script>
-  <script src="assets/stats.js" defer></script>
+  <script src="assets/stats-config.js?v=0.1.27"></script>
+  <script src="assets/stats.js?v=0.1.27" defer></script>
 </body>
 </html>
+

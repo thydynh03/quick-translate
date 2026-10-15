@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { AppLanguage, useT } from "./i18n";
 
 type Item = { id: number; text: string; pinned: boolean; app: string | null; at: number };
 
@@ -16,13 +17,14 @@ function kind(text: string): string {
   return "Aa";
 }
 
-function ago(at: number): string {
+function ago(at: number, lang: AppLanguage): string {
   if (!at) return "";
   const minutes = Math.floor((Date.now() - at) / 60000);
-  if (minutes < 1) return "vừa xong";
-  if (minutes < 60) return `${minutes} phút trước`;
-  if (minutes < 60 * 24) return `${Math.floor(minutes / 60)} giờ trước`;
-  return `${Math.floor(minutes / 60 / 24)} ngày trước`;
+  const isEn = lang === "en";
+  if (minutes < 1) return isEn ? "just now" : "vừa xong";
+  if (minutes < 60) return isEn ? `${minutes}m ago` : `${minutes} phút trước`;
+  if (minutes < 60 * 24) return isEn ? `${Math.floor(minutes / 60)}h ago` : `${Math.floor(minutes / 60)} giờ trước`;
+  return isEn ? `${Math.floor(minutes / 60 / 24)}d ago` : `${Math.floor(minutes / 60 / 24)} ngày trước`;
 }
 
 /** The texts copied lately, laid out like Spotlight: pick one to paste it where you were typing. */
@@ -30,6 +32,7 @@ export default function Clipboard() {
   const [items, setItems] = useState<Item[]>([]);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
+  const [appLang, setAppLang] = useState<AppLanguage>("vi");
   const search = useRef<HTMLInputElement>(null);
   const list = useRef<HTMLDivElement>(null);
   const follow = useRef<number | null>(null);
@@ -38,10 +41,16 @@ export default function Clipboard() {
 
   useEffect(() => {
     load();
+    invoke<{ app_language?: string }>("get_settings").then((s) => {
+      if (s.app_language === "en" || s.app_language === "vi") setAppLang(s.app_language as AppLanguage);
+    }).catch(() => {});
     const opened = listen("clipboard-open", () => {
       setQuery("");
       setActive(0);
       load();
+      invoke<{ app_language?: string }>("get_settings").then((s) => {
+        if (s.app_language === "en" || s.app_language === "vi") setAppLang(s.app_language as AppLanguage);
+      }).catch(() => {});
       search.current?.focus();
     });
     const changed = listen("clipboard-changed", load);
@@ -50,6 +59,8 @@ export default function Clipboard() {
       changed.then((off) => off());
     };
   }, []);
+
+  const t = useT(appLang);
 
   // The newest first, then the pinned ones.
   const [recent, pinned] = useMemo(() => {
@@ -145,7 +156,7 @@ export default function Clipboard() {
           ref={search}
           autoFocus
           spellCheck={false}
-          placeholder="Tìm trong clipboard"
+          placeholder={t.clipboard_search_ph}
           value={query}
           onChange={(event) => {
             setQuery(event.target.value);
@@ -155,38 +166,38 @@ export default function Clipboard() {
       </div>
       <div className="board-body">
         {shown.length === 0 ? (
-          <div className="board-empty">{items.length === 0 ? "Chưa có gì. Copy một đoạn văn bản để bắt đầu." : "Không tìm thấy đoạn nào."}</div>
+          <div className="board-empty">{items.length === 0 ? t.clipboard_empty : t.clipboard_no_matches}</div>
         ) : (
           <>
             <div className="board-list" ref={list}>
-              {recent.length > 0 && <div className="board-section">Gần đây</div>}
+              {recent.length > 0 && <div className="board-section">{t.clipboard_recent}</div>}
               {recent.map((item, position) => row(item, position))}
-              {pinned.length > 0 && <div className="board-section">Đã ghim</div>}
+              {pinned.length > 0 && <div className="board-section">{t.clipboard_pinned}</div>}
               {pinned.map((item, position) => row(item, recent.length + position))}
             </div>
             <div className="board-preview">
               <div className="board-full">{current?.text.slice(0, 4000)}</div>
               <div className="board-meta">
-                {[current?.app, ago(current?.at ?? 0), `${current?.text.length ?? 0} ký tự`].filter(Boolean).join(" · ")}
+                {[current?.app, ago(current?.at ?? 0, appLang), t.clipboard_chars(current?.text.length ?? 0)].filter(Boolean).join(" · ")}
               </div>
             </div>
           </>
         )}
       </div>
       <div className="board-foot">
-        <button onClick={() => invoke("clipboard_clear")}>Xoá hết</button>
+        <button onClick={() => invoke("clipboard_clear")}>{t.clipboard_clear}</button>
         <button onClick={() => paste(current)}>
-          Dán<kbd>↵</kbd>
+          {t.clipboard_paste}<kbd>↵</kbd>
         </button>
         <button onClick={() => translate(current)}>
-          Dịch<kbd>{MOD}T</kbd>
+          {t.clipboard_translate}<kbd>{MOD}T</kbd>
         </button>
         <button onClick={() => pin(current)}>
-          {current?.pinned ? "Bỏ ghim" : "Ghim"}
+          {current?.pinned ? t.clipboard_unpin : t.clipboard_pin}
           <kbd>{MOD}P</kbd>
         </button>
         <button onClick={() => remove(current)}>
-          Xoá<kbd>{MOD}⌫</kbd>
+          {t.clipboard_remove}<kbd>{MOD}⌫</kbd>
         </button>
       </div>
     </div>

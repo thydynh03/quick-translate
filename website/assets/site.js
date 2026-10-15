@@ -21,8 +21,10 @@
     .then((release) => {
       if (!release) return;
       const version = release.tag_name.replace(/^v/, "");
+      window.swipelateVersion = version;
       const line = document.getElementById("release-line");
-      if (line) line.textContent = `Phiên bản ${version}. Miễn phí, mã nguồn mở, không cần tài khoản.`;
+      const isEn = window.SwipelateI18n?.getActiveLang?.() === "en";
+      if (line) line.textContent = isEn ? `Version ${version}. Free, open source, no account required.` : `Phiên bản ${version}. Miễn phí, mã nguồn mở, không cần tài khoản.`;
       document.querySelectorAll("[data-asset]").forEach((link) => {
         const asset = release.assets.find((item) => item.name === link.dataset.asset);
         const size = link.querySelector(".size");
@@ -67,8 +69,10 @@
   const demo = document.getElementById("demo");
   if (!demo) return;
 
-  const NOTE = "Nguồn dịch chính không dịch được; đã dùng nguồn dự phòng.";
-  const SCENES = {
+  const NOTE_VI = "Nguồn dịch chính không dịch được; đã dùng nguồn dự phòng.";
+  const NOTE_EN = "Primary engine unreachable; switched to offline model.";
+
+  const SCENES_VI = {
     select: {
       title: "Thư khách hàng",
       net: "Đang có mạng",
@@ -104,11 +108,58 @@
       gesture: "drag",
       route: "EN → VI · OFFLINE",
       text: "Chuyến bay của bạn đã bị hoãn hai giờ. Chúng tôi xin lỗi vì sự bất tiện này.",
-      note: NOTE,
+      note: NOTE_VI,
       steps: ["Máy đang không có mạng. Vẫn bôi đen như thường.", "Bấm biểu tượng.", "Google không phản hồi nên ứng dụng tự dịch bằng model trên máy."],
     },
   };
-  const ORDER = Object.keys(SCENES);
+
+  const SCENES_EN = {
+    select: {
+      title: "Customer email",
+      net: "Online",
+      body: "<p>Hi Lan,</p><p><mark>The meeting has been moved to Thursday afternoon. Please confirm whether you can attend.</mark></p><p>Thanks,<br>David</p>",
+      gesture: "drag",
+      route: "EN → VI · GOOGLE",
+      text: "Cuộc họp đã được dời sang chiều thứ Năm. Vui lòng xác nhận bạn có thể tham dự hay không.",
+      steps: ["Highlight the sentence you want to understand.", "A small trigger icon appears next to the cursor. Click it.", "The translation displays right under the selection."],
+    },
+    word: {
+      title: "Customer email",
+      net: "Online",
+      body: "<p>Hi Lan,</p><p>The meeting has been moved to Thursday afternoon. Please confirm whether you can <mark>attend</mark>.</p><p>Thanks,<br>David</p>",
+      gesture: "double",
+      route: "EN → VI · GOOGLE",
+      html: '<p class="pop-word">attend<span>/əˈtend/</span></p><p><span class="pop-pos">verb</span> to be present, to attend, to visit</p><p class="pop-def">to be present at an event, or to go regularly to a place</p>',
+      steps: ["Double-click any word.", "Click the popup icon that appears.", "Single words show parts of speech, phonetics, and English definitions."],
+    },
+    ocr: {
+      title: "IMG_2041.jpg",
+      net: "Online",
+      body: '<p class="photo-note">Image file, text cannot be selected directly</p><div class="sign" data-target><b>RESTRICTED AREA</b><span>Authorized staff only</span></div>',
+      gesture: "box",
+      route: "EN → VI · GOOGLE · OCR",
+      text: "KHU VỰC HẠN CHẾ. Chỉ nhân viên được phép vào.",
+      steps: ["Press Alt + W, the screen darkens.", "Drag a rectangle around the text.", "Swipelate recognizes the text on screen and translates it."],
+    },
+    offline: {
+      title: "Flight notification",
+      net: "Offline",
+      netOff: true,
+      body: "<p><mark>Your flight has been delayed by two hours. We apologize for the inconvenience.</mark></p><p>Gate B12 · Boarding 21:40</p>",
+      gesture: "drag",
+      route: "EN → VI · OFFLINE",
+      text: "Chuyến bay của bạn đã bị hoãn hai giờ. Chúng tôi xin lỗi vì sự bất tiện này.",
+      note: NOTE_EN,
+      steps: ["Device is disconnected. Select text as usual.", "Click the popup icon.", "Google is unreachable, so Swipelate seamlessly translates using local models."],
+    },
+  };
+
+  const getScene = (id) => {
+    const isEn = window.SwipelateI18n?.getActiveLang?.() === "en";
+    return (isEn ? SCENES_EN : SCENES_VI)[id] || SCENES_VI[id];
+  };
+
+  const ORDER = Object.keys(SCENES_VI);
 
   const $ = (selector) => demo.querySelector(selector);
   const stage = $(".stage");
@@ -191,9 +242,11 @@
     fillPopup(scene);
     const width = stage.clientWidth;
     const height = stage.clientHeight;
-    const left = Math.max(12, Math.min(anchor.left, width - pop.offsetWidth - 12));
+    const popW = pop.offsetWidth;
+    const popH = pop.offsetHeight;
+    const left = Math.max(12, Math.min(anchor.left, width - popW - 12));
     const below = anchor.bottom + 12;
-    const top = below + pop.offsetHeight <= height + 28 ? below : Math.max(8, anchor.top - pop.offsetHeight - 12);
+    const top = below + popH <= height + 28 ? below : Math.max(8, anchor.top - popH - 12);
     place(pop, left, top);
     pop.classList.add("on");
     for (const word of pop.querySelectorAll(".w")) {
@@ -203,7 +256,7 @@
   }
 
   async function play(id, token) {
-    const scene = SCENES[id];
+    const scene = getScene(id);
     reset();
     $(".win-title").textContent = scene.title;
     const net = $(".win-net");
@@ -288,19 +341,45 @@
     return auto;
   }
 
+  let initialized = false;
+  function initDemo() {
+    if (initialized) return;
+    initialized = true;
+    (document.fonts?.ready ?? Promise.resolve()).then(() => {
+      requestAnimationFrame(() => start(current));
+    });
+  }
+
   tabs.forEach((tab, index) => {
-    tab.addEventListener("click", () => start(tab.dataset.scene));
+    tab.addEventListener("click", () => {
+      initDemo();
+      start(tab.dataset.scene);
+    });
     tab.addEventListener("keydown", (event) => {
       const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
       if (!step) return;
       const next = tabs[(index + step + tabs.length) % tabs.length];
       next.focus();
+      initDemo();
       start(next.dataset.scene);
     });
   });
 
   if ("IntersectionObserver" in window) {
-    new IntersectionObserver(([entry]) => (onScreen = entry.isIntersecting), { threshold: 0.2 }).observe(stage);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        onScreen = entry.isIntersecting;
+        if (entry.isIntersecting && !initialized) {
+          initDemo();
+        }
+      },
+      { threshold: 0.15 }
+    );
+    observer.observe(stage);
+  } else {
+    window.addEventListener("load", () => {
+      setTimeout(initDemo, 800);
+    });
   }
 
   let resizing;
@@ -309,9 +388,20 @@
     if (innerWidth === lastWidth) return;
     lastWidth = innerWidth;
     clearTimeout(resizing);
-    resizing = setTimeout(() => start(current), 250);
+    resizing = setTimeout(() => {
+      if (initialized) start(current);
+    }, 250);
   });
 
-  // Fonts change the line breaks, so the positions are measured after they load.
-  (document.fonts?.ready ?? Promise.resolve()).then(() => start(current));
+  // Listen to language switch event to restart scene and update release line
+  window.addEventListener("swipelate-lang-changed", (e) => {
+    const line = document.getElementById("release-line");
+    const version = window.swipelateVersion;
+    if (line && version) {
+      line.textContent = e.detail.lang === "en"
+        ? `Version ${version}. Free, open source, no account required.`
+        : `Phiên bản ${version}. Miễn phí, mã nguồn mở, không cần tài khoản.`;
+    }
+    if (initialized) start(current);
+  });
 })();

@@ -77,6 +77,8 @@ pub struct Settings {
     pub usage_stats: bool,
     /// "system", "light" or "dark".
     pub theme: String,
+    /// "vi" or "en".
+    pub app_language: String,
 }
 
 impl Settings {
@@ -137,6 +139,7 @@ impl Default for Settings {
             profiles: Vec::new(),
             usage_stats: true,
             theme: "system".into(),
+            app_language: "vi".into(),
         }
     }
 }

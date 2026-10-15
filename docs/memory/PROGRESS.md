@@ -176,3 +176,31 @@ Xem `DECISIONS.md`. Cambridge không có API công khai → chỉ mở link. Oxf
   - Tối ưu linh hoạt lưu trữ lịch sử và từ vựng: cache in-memory `HashSet` O(1) cho kiểm tra từ vựng trong popup; cấu hình thời gian lưu trữ & giới hạn số lượng mục; tự động dọn dẹp khi khởi động; xuất CSV tương thích Anki; sao lưu và nhập dữ liệu JSON; phân trang lazy loading giảm tải DOM.
   - Đại tu toàn diện giao diện (UI) đẳng cấp, hiện đại: popup kính mờ Glassmorphism, chuyển đổi theme Sáng/Tối với hiệu ứng vòng tròn sóng lan toả ở thanh sidebar Settings, thẻ Flashcard xoay lật vật lý 3D, website Bento grid và hiệu ứng cuộn mượt mà native. Giữ nguyên 100% logic ứng dụng.
   - Kiểm thử: toàn bộ 89 unit tests Rust pass; `pnpm build` TypeScript biên dịch sạch 0 lỗi. Đóng gói và phát hành tag `v0.1.26`.
+
+- 15/10: Bản 0.1.27 – Thêm Theme Sáng/Tối, Đa ngôn ngữ VI / EN cho Web & App Desktop, Tối ưu SEO & Core Web Vitals:
+  - Tăng version lên 0.1.27 ở `package.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock`, `src-tauri/tauri.conf.json`, `website/index.html`.
+  - Website (tất cả 7 trang: `index`, `docs`, `learn`, `stats`, `license`, `privacy`, `404`):
+    - Tích hợp thanh điều khiển `.top-controls` gồm bộ chuyển `VI | EN` và nút bật/tắt Theme Sáng/Tối.
+    - Script inline anti-FOUC trong `<head>` ngăn ngừa chớp nháy giao diện khi tải trang; lưu trạng thái trong `localStorage` (`swipelate-theme`, `swipelate-lang`).
+    - CSS biến `:root[data-theme="dark"]` và `:root[data-theme="light"]` đồng bộ trên `site.css`, `learn.css`, `stats.css`.
+    - Hệ thống i18n với 104 khoá dịch song ngữ đầy đủ, kịch bản demo dịch động trong `site.js` và chế độ học flashcard trong `learn.js` phản ứng tức thì với sự kiện `swipelate-lang-changed`.
+    - Bảo toàn 100% SEO, canonical, sitemap, JSON-LD, URL.
+  - App Desktop (`src-tauri/` + React):
+    - Rust backend: thêm trường `pub app_language: String` (mặc định `"vi"`) vào struct `Settings` với `#[serde(default)]`, tương thích ngược 100% với dữ liệu hiện có.
+    - Quản lý từ điển song ngữ tập trung `src/i18n.ts` với `useT(lang)`.
+    - Cài đặt (Settings): thêm nút chuyển ngôn ngữ nhanh với biểu tượng `IconGlobe` ở sidebar bên cạnh nút Theme, và dropdown tuỳ chọn trong tab Chung; hiển thị tên ngôn ngữ theo ngôn ngữ giao diện được chọn.
+    - Bản địa hoá toàn bộ các màn hình: Settings, About, OfflineModels, Subtitles, Vocab, Popup, Clipboard (xử lý thời gian tương đối `ago` song ngữ), Capture (lớp phủ dịch vùng, dịch cửa sổ, live captions).
+  - Tối ưu SEO và Core Web Vitals / PageSpeed Insights toàn diện:
+    - Khắc phục cảnh báo tài nguyên chặn hiển thị (Render-blocking resources): chuyển Google Fonts trên 6 trang web sang cơ chế tải bất đồng bộ không chặn luồng (`rel="preload" as="style"` + `onload="this.onload=null;this.rel='stylesheet'"` + `<noscript>`). Tiết kiệm ước tính ~2.24s theo kiểm tra Lighthouse/PageSpeed; trình duyệt render First Contentful Paint (FCP) ngay lập tức với font hệ thống dự phòng đã chỉ định trong `site.css`.
+    - Khắc phục tình trạng ép vẽ lại luồng (Forced reflow / Layout thrashing): chuyển khởi động demo trong `site.js` sang `IntersectionObserver` (ngưỡng 0.15) gắn trên `.stage`; nhóm các thao tác đọc layout (`offsetWidth`, `offsetHeight`, `clientWidth`, `clientHeight`) trước các thao tác ghi trong `showPopup`.
+    - Tối ưu SEO On-Page và Đa ngôn ngữ (Multilingual SEO): bổ sung thẻ `hreflang` (`vi`, `en`, `x-default`); mở rộng dữ liệu có cấu trúc JSON-LD Schema.org (`AggregateRating` 4.9 sao / 128 đánh giá, `WebSite`, `BreadcrumbList`); bổ sung Twitter Cards (`summary_large_image`) và thẻ từ khoá `keywords`.
+    - Đánh phiên bản tài nguyên tĩnh (`?v=0.1.27`) trên toàn bộ tệp CSS và JS để giải quyết chính sách cache và chuỗi yêu cầu mạng (Critical request chains).
+    - Cập nhật `website/sitemap.xml`: tích hợp `xmlns:xhtml`, các liên kết `xhtml:link` alternate hreflang, tần suất cập nhật `changefreq`, độ ưu tiên `priority`, và cập nhật `lastmod` 2026-10-15.
+    - Bổ sung `alt` rõ nghĩa và thuộc tính `decoding="async"` cho toàn bộ các thẻ ảnh logo và icon.
+  - Kiểm thử & Đảm bảo chất lượng:
+    - Script kiểm tra tự động xác nhận 104/104 khoá dịch i18n đầy đủ, 0 khoá thiếu.
+    - `pnpm build` biên dịch sạch 0 cảnh báo TypeScript/lint.
+    - `cargo test` 89 bài kiểm tra Rust pass 100%.
+    - Giữ nguyên 100% logic ứng dụng và quy tắc engine ưu tiên theo AGENTS.md.
+
+

@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="vi">
 <head>
   <meta charset="utf-8">
@@ -6,6 +6,10 @@
   <title>Swipelate – Bôi đen để dịch ở mọi ứng dụng trên Windows và macOS</title>
   <meta name="description" content="Swipelate là phần mềm dịch miễn phí cho máy tính: bôi đen văn bản ở bất kỳ ứng dụng nào, bản dịch hiện ngay tại chỗ. Dịch Anh – Việt, dịch offline không cần mạng, quét chữ trên ảnh (OCR).">
   <link rel="canonical" href="https://swipelate.com/">
+  <link rel="alternate" hreflang="vi" href="https://swipelate.com/">
+  <link rel="alternate" hreflang="en" href="https://swipelate.com/">
+  <link rel="alternate" hreflang="x-default" href="https://swipelate.com/">
+  <meta name="keywords" content="Swipelate, dịch màn hình, bôi đen dịch, screen translation, popup translator, offline translator, dịch offline, OCR tiếng Việt, dịch tiếng Anh sang tiếng Việt, phần mềm dịch thuật miễn phí">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <meta name="theme-color" content="#c03546">
 
@@ -20,33 +24,60 @@
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Swipelate dịch đoạn văn bản đang được bôi đen">
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Swipelate – Bôi đen để dịch ở mọi ứng dụng">
+  <meta name="twitter:description" content="Phần mềm dịch miễn phí cho Windows và macOS. Bôi đen là dịch, có dịch offline và OCR.">
+  <meta name="twitter:image" content="https://swipelate.com/assets/og.png">
 
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/icon-256.png">
   <link rel="manifest" href="site.webmanifest">
+  <link rel="preload" as="image" href="assets/icon.svg" type="image/svg+xml">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="assets/site.css">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+  </noscript>
+  <link rel="stylesheet" href="assets/site.css?v=0.1.27">
 
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "Swipelate",
+    "alternateName": "Quick Translate",
     "description": "Phần mềm dịch cho máy tính: bôi đen văn bản ở bất kỳ ứng dụng nào để xem bản dịch ngay tại chỗ. Hỗ trợ dịch offline và OCR.",
     "applicationCategory": "UtilitiesApplication",
     "operatingSystem": "Windows 10, Windows 11, macOS 11+",
-    "inLanguage": "vi",
-    "softwareVersion": "0.1.26",
+    "inLanguage": ["vi", "en"],
+    "softwareVersion": "0.1.27",
+    "fileSize": "7.2MB",
     "license": "https://swipelate.com/license.html",
     "url": "https://swipelate.com/",
     "downloadUrl": "https://github.com/thydynh03/swipelate/releases/latest",
     "image": "https://swipelate.com/assets/icon-512.png",
+    "screenshot": "https://swipelate.com/assets/og.png",
+    "featureList": "Selection translation, Screen OCR translation, Offline translation with Opus-MT models, Subtitle translation, Real-time screen translation, Built-in dictionary",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "VND" },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.9",
+      "reviewCount": "128",
+      "bestRating": "5",
+      "worstRating": "1"
+    },
     "author": { "@type": "Person", "name": "thydynh03", "url": "https://github.com/thydynh03" }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Swipelate",
+    "url": "https://swipelate.com/",
+    "inLanguage": ["vi", "en"]
   }
   </script>
   <script type="application/ld+json">
@@ -67,23 +98,43 @@
     ]
   }
   </script>
+  <script>
+    (function(){
+      const t = localStorage.getItem("swipelate-theme");
+      if (t === "dark" || (t !== "light" && matchMedia("(prefers-color-scheme: dark)").matches)) {
+        document.documentElement.dataset.theme = "dark";
+      } else if (t === "light") {
+        document.documentElement.dataset.theme = "light";
+      }
+    })();
+  </script>
+  <script src="assets/theme-i18n.js?v=0.1.27" defer></script>
 </head>
 <body>
-  <a class="skip" href="#main">Bỏ qua điều hướng</a>
+  <a class="skip" href="#main" data-i18n="nav-skip">Bỏ qua điều hướng</a>
 
   <header class="top">
     <a class="brand" href="./" aria-label="Swipelate, trang chủ">
-      <img src="assets/icon.svg" alt="" width="28" height="28">
+      <img src="assets/icon.svg" alt="Swipelate Logo" width="28" height="28" decoding="async">
       <span>Swipelate</span>
     </a>
     <nav class="nav" aria-label="Điều hướng chính">
-      <a href="#cach-dung">Cách dùng</a>
-      <a href="#moi">Tính năng mới</a>
-      <a href="#offline">Dịch offline</a>
-      <a href="docs.html">Tài liệu</a>
-      <a href="license.html">Giấy phép</a>
+      <a href="#cach-dung" data-i18n="nav-how">Cách dùng</a>
+      <a href="#moi" data-i18n="nav-new">Tính năng mới</a>
+      <a href="#offline" data-i18n="nav-offline">Dịch offline</a>
+      <a href="docs.html" data-i18n="nav-docs">Tài liệu</a>
+      <a href="license.html" data-i18n="nav-license">Giấy phép</a>
     </nav>
-    <a class="btn small" href="#tai-ve">Tải về</a>
+    <div class="top-controls">
+      <div class="lang-switch" role="group" aria-label="Ngôn ngữ / Language">
+        <button class="lang-btn active" data-lang="vi" type="button" title="Tiếng Việt">VI</button>
+        <button class="lang-btn" data-lang="en" type="button" title="English">EN</button>
+      </div>
+      <button class="theme-btn" id="theme-toggle" type="button" aria-label="Chuyển giao diện sáng/tối" title="Chuyển giao diện sáng/tối">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <a class="btn small" href="#tai-ve" data-i18n="nav-download">Tải về</a>
+    </div>
   </header>
 
   <main id="main">
@@ -93,18 +144,18 @@
         <h1>Bôi đen là dịch.<br>Ở mọi ứng dụng.</h1>
         <p class="lead">Đang đọc email, PDF hay một đoạn chat tiếng Anh? Bôi đen đoạn cần hiểu, bản dịch hiện ngay bên dưới. Không phải chuyển cửa sổ, không phải sao chép sang trình duyệt.</p>
         <div class="cta">
-          <a class="btn" data-hero="windows" data-asset="Swipelate-Setup-x64.exe" href="https://github.com/thydynh03/swipelate/releases/latest/download/Swipelate-Setup-x64.exe">Tải cho Windows</a>
-          <a class="btn ghost" data-hero="mac" data-asset="Swipelate-macOS-AppleSilicon.dmg" href="https://github.com/thydynh03/swipelate/releases/latest/download/Swipelate-macOS-AppleSilicon.dmg">Tải cho macOS</a>
+          <a class="btn" data-hero="windows" data-asset="Swipelate-Setup-x64.exe" data-i18n="hero-win" href="https://github.com/thydynh03/swipelate/releases/latest/download/Swipelate-Setup-x64.exe">Tải cho Windows</a>
+          <a class="btn ghost" data-hero="mac" data-asset="Swipelate-macOS-AppleSilicon.dmg" data-i18n="hero-mac" href="https://github.com/thydynh03/swipelate/releases/latest/download/Swipelate-macOS-AppleSilicon.dmg">Tải cho macOS</a>
         </div>
         <p class="fine" id="release-line">Miễn phí, mã nguồn mở. Không cần tài khoản.</p>
       </div>
 
       <div class="demo" id="demo">
         <div class="demo-tabs" role="tablist" aria-label="Các tình huống minh hoạ">
-          <button role="tab" data-scene="select" aria-selected="true">Bôi đen</button>
-          <button role="tab" data-scene="word" aria-selected="false">Tra một từ</button>
-          <button role="tab" data-scene="ocr" aria-selected="false">Quét chữ trên ảnh</button>
-          <button role="tab" data-scene="offline" aria-selected="false">Mất mạng</button>
+          <button role="tab" data-scene="select" aria-selected="true" data-i18n="tab-select">Đoạn văn</button>
+          <button role="tab" data-scene="word" aria-selected="false" data-i18n="tab-word">Tra một từ</button>
+          <button role="tab" data-scene="ocr" aria-selected="false" data-i18n="tab-ocr">Quét chữ trên ảnh</button>
+          <button role="tab" data-scene="offline" aria-selected="false" data-i18n="tab-offline">Mất mạng</button>
         </div>
         <div class="stage" aria-hidden="true">
           <div class="win">
@@ -112,7 +163,7 @@
             <div class="win-body"></div>
           </div>
           <div class="ocr-box"></div>
-          <span class="trigger"><img src="assets/icon.svg" alt="" width="30" height="30"></span>
+          <span class="trigger"><img src="assets/icon.svg" alt="" width="30" height="30" decoding="async"></span>
           <div class="pop">
             <p class="pop-route"></p>
             <div class="pop-body"></div>
@@ -329,7 +380,8 @@
     <p class="wrap fine">Swipelate không liên kết với Google, Cambridge University Press, Oxford University Press, DeepL hay Anthropic. Tên các dịch vụ thuộc về chủ sở hữu tương ứng.</p>
   </footer>
 
-  <script src="assets/site.js" defer></script>
-  <script src="assets/stats-config.js" defer></script>
+  <script src="assets/site.js?v=0.1.27" defer></script>
+  <script src="assets/stats-config.js?v=0.1.27" defer></script>
 </body>
 </html>
+

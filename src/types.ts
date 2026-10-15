@@ -45,6 +45,7 @@ export type Settings = {
   history_max_entries: number;
   usage_stats: boolean;
   theme: "system" | "light" | "dark";
+  app_language: "vi" | "en";
   english_definitions: boolean;
   oxford_app_id: string;
   oxford_app_key: string;
@@ -105,6 +106,29 @@ export const LANGUAGES: [string, string][] = [
   ["uk", "Tiếng Ukraina"],
 ];
 
+export const LANGUAGES_EN: [string, string][] = [
+  ["vi", "Vietnamese"],
+  ["en", "English"],
+  ["ja", "Japanese"],
+  ["ko", "Korean"],
+  ["zh", "Chinese"],
+  ["fr", "French"],
+  ["de", "German"],
+  ["es", "Spanish"],
+  ["pt", "Portuguese"],
+  ["it", "Italian"],
+  ["ru", "Russian"],
+  ["th", "Thai"],
+  ["id", "Indonesian"],
+  ["ms", "Malay"],
+  ["hi", "Hindi"],
+  ["ar", "Arabic"],
+  ["tr", "Turkish"],
+  ["nl", "Dutch"],
+  ["pl", "Polish"],
+  ["uk", "Ukrainian"],
+];
+
 export const ENGINE_NAMES: Record<string, string> = {
   google: "Google",
   deepl: "DeepL",
@@ -113,9 +137,10 @@ export const ENGINE_NAMES: Record<string, string> = {
   openai: "AI (OpenAI API)",
 };
 
-export function langName(code: string): string {
+export function langName(code: string, appLang?: string): string {
   const base = code.toLowerCase().split("-")[0];
-  return LANGUAGES.find(([c]) => c === base)?.[1] ?? code.toUpperCase();
+  const list = appLang === "en" ? LANGUAGES_EN : LANGUAGES;
+  return list.find(([c]) => c === base)?.[1] ?? code.toUpperCase();
 }
 
 export type Card = {
