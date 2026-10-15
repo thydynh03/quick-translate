@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { AppLanguage, useT } from "./i18n";
 
 type Item = {
@@ -9,6 +10,10 @@ type Item = {
   pinned: boolean;
   /** True when this entry is a screenshot / image copied to the clipboard. */
   image?: boolean;
+  /** Base64 data URL (data:image/png;base64,...) for screenshot preview. */
+  image_data?: string | null;
+  /** Rich text HTML when available, preserving fonts, colors, and styles. */
+  html?: string | null;
   app: string | null;
   at: number;
 };
@@ -18,10 +23,11 @@ const MAC = navigator.userAgent.includes("Mac");
 const MOD = MAC ? "⌘" : "Ctrl+";
 
 /** Detect what kind of content the text is. */
-type ContentKind = "image" | "url" | "code" | "text";
+type ContentKind = "image" | "rich" | "url" | "code" | "text";
 
 function detectKind(item: Item): ContentKind {
   if (item.image) return "image";
+  if (item.html && item.html.trim().length > 0 && /<[a-z][\s\S]*>/i.test(item.html)) return "rich";
   const trimmed = item.text.trim();
   if (/^(https?:\/\/|www\.)\S+$/i.test(trimmed)) return "url";
   if (looksLikeCode(trimmed)) return "code";
@@ -30,6 +36,7 @@ function detectKind(item: Item): ContentKind {
 
 function kindBadge(kind: ContentKind): string {
   if (kind === "image") return "📷";
+  if (kind === "rich") return "Aa";
   if (kind === "url") return "↗";
   if (kind === "code") return "</>";
   return "Aa";
@@ -57,8 +64,6 @@ function looksLikeCode(text: string): boolean {
 
 // ---------------------------------------------------------------- syntax highlight
 
-/** Very lightweight token-based syntax coloring — no external dependency.
- *  Returns an array of {type, value} tokens. */
 type Token = { type: "keyword" | "string" | "comment" | "number" | "operator" | "plain" | "tag" | "attr"; value: string };
 
 const KEYWORDS = new Set([
@@ -77,7 +82,6 @@ function tokenize(code: string): Token[] {
   const tokens: Token[] = [];
   let i = 0;
   while (i < code.length) {
-    // Line comments // or #
     if ((code[i] === "/" && code[i + 1] === "/") || code[i] === "#") {
       const end = code.indexOf("\n", i);
       const value = end === -1 ? code.slice(i) : code.slice(i, end);
@@ -85,7 +89,6 @@ function tokenize(code: string): Token[] {
       i += value.length;
       continue;
     }
-    // Block comment /* ... */
     if (code[i] === "/" && code[i + 1] === "*") {
       const end = code.indexOf("*/", i + 2);
       const value = end === -1 ? code.slice(i) : code.slice(i, end + 2);
@@ -93,7 +96,6 @@ function tokenize(code: string): Token[] {
       i += value.length;
       continue;
     }
-    // String literals " or ' or `
     if (code[i] === '"' || code[i] === "'" || code[i] === "`") {
       const q = code[i];
       let j = i + 1;
@@ -105,7 +107,6 @@ function tokenize(code: string): Token[] {
       i = j + 1;
       continue;
     }
-    // Numbers
     if (/\d/.test(code[i]) || (code[i] === "-" && /\d/.test(code[i + 1] ?? ""))) {
       let j = i + 1;
       while (j < code.length && /[\d._xXa-fA-F]/.test(code[j])) j++;
@@ -113,7 +114,6 @@ function tokenize(code: string): Token[] {
       i = j;
       continue;
     }
-    // Identifiers / keywords
     if (/[a-zA-Z_$]/.test(code[i])) {
       let j = i + 1;
       while (j < code.length && /[\w$]/.test(code[j])) j++;
@@ -122,7 +122,6 @@ function tokenize(code: string): Token[] {
       i = j;
       continue;
     }
-    // HTML tags  <tag or </tag
     if (code[i] === "<" && /[a-zA-Z/!]/.test(code[i + 1] ?? "")) {
       const end = code.indexOf(">", i);
       const value = end === -1 ? code.slice(i) : code.slice(i, end + 1);
@@ -130,7 +129,6 @@ function tokenize(code: string): Token[] {
       i += value.length;
       continue;
     }
-    // Operators and punctuation
     if (/[+\-*/%=&|^~<>!?:;,()[\]{}.]/.test(code[i])) {
       tokens.push({ type: "operator", value: code[i] });
       i++;
@@ -177,7 +175,20 @@ function UrlPreview({ url }: { url: string }) {
   );
 }
 
-function ImagePreview({ app }: { app: string | null }) {
+function ImagePreview({ src, text, app }: { src?: string | null; text?: string; app: string | null }) {
+  if (src) {
+    return (
+      <div className="preview-image-wrap">
+        <div className="preview-image-canvas">
+          <img src={src} alt="Clipboard capture" className="preview-image-img" />
+        </div>
+        <div className="preview-image-footer">
+          <span className="preview-image-tag">{text || "Ảnh chụp màn hình"}</span>
+          {app && <span className="preview-image-source">{app}</span>}
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="preview-image">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -193,9 +204,22 @@ function ImagePreview({ app }: { app: string | null }) {
   );
 }
 
-/** Renders rich inline text: detect **bold**, _italic_, `inline code` */
+/** Renders rich text HTML while preserving fonts, styles, and colors. */
+function HtmlPreview({ html }: { html: string }) {
+  const clean = useMemo(() => {
+    return html
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+      .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, "");
+  }, [html]);
+
+  return (
+    <div className="preview-html-wrap">
+      <div className="preview-html-body" dangerouslySetInnerHTML={{ __html: clean }} />
+    </div>
+  );
+}
+
 function RichText({ text }: { text: string }) {
-  // Split by inline patterns
   const parts: Array<{ type: "bold" | "italic" | "code" | "plain"; value: string }> = [];
   const pattern = /\*\*(.+?)\*\*|__(.+?)__|_(.+?)_|\*(.+?)\*|`(.+?)`/g;
   let last = 0;
@@ -239,7 +263,8 @@ function RichPreview({ item, appLang, t }: { item: Item | undefined; appLang: Ap
   if (!item) return <div className="board-preview" />;
   const kind = detectKind(item);
   const content = (() => {
-    if (kind === "image") return <ImagePreview app={item.app} />;
+    if (kind === "image") return <ImagePreview src={item.image_data} text={item.text} app={item.app} />;
+    if (kind === "rich" && item.html) return <HtmlPreview html={item.html} />;
     if (kind === "url") return <UrlPreview url={item.text.trim()} />;
     if (kind === "code") return <CodePreview code={item.text.slice(0, 8000)} />;
     return <TextPreview text={item.text.slice(0, 4000)} />;
@@ -268,7 +293,6 @@ function ago(at: number, lang: AppLanguage): string {
 
 // ---------------------------------------------------------------- main component
 
-/** The texts copied lately, laid out like Spotlight: pick one to paste it where you were typing. */
 export default function Clipboard() {
   const [items, setItems] = useState<Item[]>([]);
   const [query, setQuery] = useState("");
@@ -277,6 +301,46 @@ export default function Clipboard() {
   const search = useRef<HTMLInputElement>(null);
   const list = useRef<HTMLDivElement>(null);
   const follow = useRef<number | null>(null);
+
+  // Splitter state: ratio in percent for the left list column
+  const [splitRatio, setSplitRatio] = useState<number>(() => {
+    const saved = localStorage.getItem("swipelate_clipboard_split");
+    return saved ? Math.min(Math.max(Number(saved), 20), 75) : 45;
+  });
+  const isResizingSplit = useRef(false);
+
+  const startSplitResize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizingSplit.current = true;
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      if (!isResizingSplit.current) return;
+      const bodyEl = document.querySelector(".board-body");
+      if (!bodyEl) return;
+      const rect = bodyEl.getBoundingClientRect();
+      if (rect.width === 0) return;
+      const ratio = ((moveEvent.clientX - rect.left) / rect.width) * 100;
+      const clamped = Math.min(Math.max(ratio, 20), 75);
+      setSplitRatio(clamped);
+      localStorage.setItem("swipelate_clipboard_split", clamped.toFixed(1));
+    };
+    const onMouseUp = () => {
+      isResizingSplit.current = false;
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+  };
+
+  // 4 corners and 4 edges resize handlers
+  const handleEdgeResize = (direction: "North" | "South" | "East" | "West" | "NorthEast" | "NorthWest" | "SouthEast" | "SouthWest") => (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      getCurrentWindow().startResizeDragging(direction);
+    } catch {
+      // Fallback if not supported
+    }
+  };
 
   const load = () => invoke<Item[]>("clipboard_list").then(setItems);
 
@@ -303,7 +367,6 @@ export default function Clipboard() {
 
   const t = useT(appLang);
 
-  // The newest first, then the pinned ones.
   const [recent, pinned] = useMemo(() => {
     const wanted = query.trim().toLowerCase();
     const found = wanted ? items.filter((item) => item.text.toLowerCase().includes(wanted)) : items;
@@ -329,7 +392,6 @@ export default function Clipboard() {
   const translate = (item?: Item) => item && !item.image && invoke("clipboard_translate", { id: item.id });
   const pin = (item?: Item) => {
     if (!item) return;
-    // It changes group: the selection follows it.
     follow.current = item.id;
     invoke("clipboard_pin", { id: item.id, pinned: !item.pinned });
   };
@@ -338,9 +400,7 @@ export default function Clipboard() {
   const onKeyDown = (event: KeyboardEvent) => {
     const command = MAC ? event.metaKey : event.ctrlKey;
     const moving = event.key === "ArrowDown" || event.key === "ArrowUp";
-    // A held key acts once, and the Enter that ends a composed word is not ours.
     if (event.isComposing || (event.repeat && !moving)) return;
-    // By position on the keyboard when known, so other layouts work; by character otherwise.
     const digit = /^Digit\d$/.test(event.code) ? event.code.slice(5) : event.key;
     const letter = /^Key[A-Z]$/.test(event.code) ? event.code.slice(3).toLowerCase() : event.key.toLowerCase();
     if (event.key === "Escape") invoke("clipboard_hide");
@@ -354,7 +414,7 @@ export default function Clipboard() {
     else return;
     event.preventDefault();
   };
-  // On the window, so the keys work wherever the focus is inside the board.
+
   const handler = useRef(onKeyDown);
   handler.current = onKeyDown;
   useEffect(() => {
@@ -377,7 +437,13 @@ export default function Clipboard() {
         onMouseMove={() => select(position)}
         onClick={() => paste(item)}
       >
-        <span className={`board-kind kind-${k}`}>{kindBadge(k)}</span>
+        <span className={`board-kind kind-${k}`}>
+          {item.image && item.image_data ? (
+            <img src={item.image_data} alt="" className="board-kind-thumb" />
+          ) : (
+            kindBadge(k)
+          )}
+        </span>
         <span className="board-line">{item.text.trim().slice(0, 200)}</span>
         {position < 9 && (
           <kbd>
@@ -391,6 +457,17 @@ export default function Clipboard() {
 
   return (
     <div className="board">
+      {/* 4 Edges for window resizing */}
+      <div className="board-resizer edge-n" onMouseDown={handleEdgeResize("North")} />
+      <div className="board-resizer edge-s" onMouseDown={handleEdgeResize("South")} />
+      <div className="board-resizer edge-w" onMouseDown={handleEdgeResize("West")} />
+      <div className="board-resizer edge-e" onMouseDown={handleEdgeResize("East")} />
+      {/* 4 Corners for window resizing */}
+      <div className="board-resizer corner-nw" onMouseDown={handleEdgeResize("NorthWest")} />
+      <div className="board-resizer corner-ne" onMouseDown={handleEdgeResize("NorthEast")} />
+      <div className="board-resizer corner-sw" onMouseDown={handleEdgeResize("SouthWest")} />
+      <div className="board-resizer corner-se" onMouseDown={handleEdgeResize("SouthEast")} />
+
       <div className="board-search">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <circle cx="11" cy="11" r="7" />
@@ -408,7 +485,10 @@ export default function Clipboard() {
           }}
         />
       </div>
-      <div className="board-body">
+      <div
+        className="board-body"
+        style={{ gridTemplateColumns: `${splitRatio}% 6px minmax(0, 1fr)` }}
+      >
         {shown.length === 0 ? (
           <div className="board-empty">{items.length === 0 ? t.clipboard_empty : t.clipboard_no_matches}</div>
         ) : (
@@ -418,6 +498,14 @@ export default function Clipboard() {
               {recent.map((item, position) => row(item, position))}
               {pinned.length > 0 && <div className="board-section">{t.clipboard_pinned}</div>}
               {pinned.map((item, position) => row(item, recent.length + position))}
+            </div>
+            {/* Splitter bar in the middle: drag to resize columns */}
+            <div
+              className="board-splitter"
+              onMouseDown={startSplitResize}
+              title="Kéo sang trái/phải để thay đổi kích thước"
+            >
+              <div className="board-splitter-handle" />
             </div>
             <RichPreview item={current} appLang={appLang} t={t} />
           </>

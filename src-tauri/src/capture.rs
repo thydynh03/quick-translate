@@ -74,6 +74,10 @@ pub fn capture_region(app: AppHandle, x: i32, y: i32, width: i32, height: i32) {
     std::thread::spawn(move || {
         // Let the overlay disappear from the screen before grabbing pixels.
         std::thread::sleep(std::time::Duration::from_millis(180));
+        // Save the captured screenshot into the system clipboard so the user can paste it.
+        if let Err(error) = platform::copy_screenshot(rect) {
+            log(format!("copy_screenshot error: {error:#}"));
+        }
         let models = crate::engine::offline::models_dir(&app);
         let vietnamese = crate::engine::ocr_vi::installed(&models).then_some(models.as_path());
         match platform::ocr_lines(rect, vietnamese).map(join_lines) {

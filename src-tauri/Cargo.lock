@@ -3332,14 +3332,16 @@ checksum = "a993555f31e5a609f617c12db6250dedcac1b0a85076912c436e6fc9b2c8e6a3"
 
 [[package]]
 name = "quick-translate"
-version = "0.1.27"
+version = "0.1.29"
 dependencies = [
  "accessibility-sys",
  "anyhow",
  "arboard",
+ "base64 0.22.1",
  "core-foundation",
  "core-graphics",
  "futures-util",
+ "image",
  "objc2",
  "ort",
  "parking_lot",

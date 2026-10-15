@@ -737,14 +737,89 @@ pub fn clipboard_has_image() -> bool {
         if types.is_null() {
             return false;
         }
-        let image_type = CFString::new("public.image");
-        let found: bool = msg_send![types, containsObject: image_type.as_concrete_TypeRef() as *mut AnyObject];
-        found
+        const IMAGE_TYPES: [&str; 6] = [
+            "public.tiff",
+            "public.png",
+            "public.jpeg",
+            "NeXT TIFF v4.0 pasteboard type",
+            "Apple PNG pasteboard type",
+            "com.apple.pict",
+        ];
+        IMAGE_TYPES.iter().any(|name| {
+            let cf = CFString::new(name);
+            let found: bool = msg_send![types, containsObject: cf.as_concrete_TypeRef() as *mut AnyObject];
+            found
+        })
     })
 }
 
+/// Copies a screen rectangle to the system clipboard as an image.
+pub fn copy_screenshot(rect: Rect) -> anyhow::Result<()> {
+    unsafe {
+        let image = screenshot(rect)?;
+        autoreleasepool(|_| {
+            let rep: *mut AnyObject = msg_send![class!(NSBitmapImageRep), alloc];
+            let rep: *mut AnyObject = msg_send![rep, initWithCGImage: image];
+            if !rep.is_null() {
+                // 4 = NSBitmapImageFileTypePNG
+                let data: *mut AnyObject = msg_send![rep, representationUsingType: 4usize, properties: ptr::null_mut::<AnyObject>()];
+                let board: *mut AnyObject = msg_send![class!(NSPasteboard), generalPasteboard];
+                if !board.is_null() && !data.is_null() {
+                    let _: isize = msg_send![board, clearContents];
+                    let png_type = CFString::new("public.png");
+                    let _: bool = msg_send![board, setData: data, forType: png_type.as_concrete_TypeRef() as *mut AnyObject];
+                    let tiff_data: *mut AnyObject = msg_send![rep, TIFFRepresentation];
+                    if !tiff_data.is_null() {
+                        let tiff_type = CFString::new("public.tiff");
+                        let _: bool = msg_send![board, setData: tiff_data, forType: tiff_type.as_concrete_TypeRef() as *mut AnyObject];
+                    }
+                }
+                let _: () = msg_send![rep, release];
+            }
+        });
+        CGImageRelease(image);
+        Ok(())
+    }
+/// Reads rich text (HTML) from the clipboard if available.
+pub fn clipboard_html() -> Option<String> {
+    autoreleasepool(|_| unsafe {
+        let board: *mut AnyObject = msg_send![class!(NSPasteboard), generalPasteboard];
+        if board.is_null() {
+            return None;
+        }
+        let html_type = CFString::new("public.html");
+        let data: *mut AnyObject = msg_send![board, dataForType: html_type.as_concrete_TypeRef() as *mut AnyObject];
+        if data.is_null() {
+            return None;
+        }
+        let bytes: *const u8 = msg_send![data, bytes];
+        let length: usize = msg_send![data, length];
+        if bytes.is_null() || length == 0 {
+            return None;
+        }
+        let slice = std::slice::from_raw_parts(bytes, length);
+        String::from_utf8(slice.to_vec()).ok()
+    })
+}
 
-/// The application in front (its process id), to come back to with `activate`.
+/// Sets rich text (HTML) and plain text fallback to the clipboard.
+pub fn set_clipboard_html(html: &str, text: &str) -> anyhow::Result<()> {
+    autoreleasepool(|_| unsafe {
+        let board: *mut AnyObject = msg_send![class!(NSPasteboard), generalPasteboard];
+        if board.is_null() {
+            anyhow::bail!("NSPasteboard null");
+        }
+        let _: isize = msg_send![board, clearContents];
+        let html_type = CFString::new("public.html");
+        let html_str = CFString::new(html);
+        let _: bool = msg_send![board, setString: html_str.as_concrete_TypeRef() as *mut AnyObject, forType: html_type.as_concrete_TypeRef() as *mut AnyObject];
+        let text_type = CFString::new("public.utf8-plain-text");
+        let text_str = CFString::new(text);
+        let _: bool = msg_send![board, setString: text_str.as_concrete_TypeRef() as *mut AnyObject, forType: text_type.as_concrete_TypeRef() as *mut AnyObject];
+        Ok(())
+    })
+}
+
 pub fn foreground_handle() -> isize {
     autoreleasepool(|_| unsafe {
         let workspace: *mut AnyObject = msg_send![class!(NSWorkspace), sharedWorkspace];

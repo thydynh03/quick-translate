@@ -132,7 +132,8 @@ async fn latest(current: &str) -> anyhow::Result<UpdateInfo> {
 }
 
 pub async fn check(app: &AppHandle) -> anyhow::Result<UpdateInfo> {
-    let info = latest(env!("CARGO_PKG_VERSION")).await?;
+    let current = app.package_info().version.to_string();
+    let info = latest(&current).await?;
     *app.state::<UpdateState>().0.lock() = Some(info.clone());
     if info.available {
         crate::show_update_in_tray(app, &info.latest);

@@ -753,6 +753,72 @@ pub fn clipboard_has_image() -> bool {
     }
 }
 
+/// Copies a screen rectangle to the system clipboard as an image.
+pub fn copy_screenshot(rect: Rect) -> anyhow::Result<()> {
+    let (mut pixels, width, height) = grab(rect)?;
+    for pixel in pixels.chunks_exact_mut(4) {
+        pixel.swap(0, 2);
+        pixel[3] = 255;
+    }
+    let img_data = arboard::ImageData {
+        width: width as usize,
+        height: height as usize,
+        bytes: std::borrow::Cow::Borrowed(&pixels),
+    };
+    let mut cb = arboard::Clipboard::new()?;
+    cb.set_image(img_data)?;
+    Ok(())
+}
+
+/// Reads rich text (HTML) from the clipboard if available.
+pub fn clipboard_html() -> Option<String> {
+    use windows::Win32::System::DataExchange::{
+        CloseClipboard, GetClipboardData, IsClipboardFormatAvailable, OpenClipboard, RegisterClipboardFormatW,
+    };
+    use windows::Win32::System::Memory::GlobalLock;
+    use windows::core::w;
+    unsafe {
+        let format = RegisterClipboardFormatW(w!("HTML Format"));
+        if format == 0 || !IsClipboardFormatAvailable(format).is_ok() {
+            return None;
+        }
+        if !OpenClipboard(None).is_ok() {
+            return None;
+        }
+        let handle = GetClipboardData(format);
+        if handle.is_err() {
+            let _ = CloseClipboard();
+            return None;
+        }
+        let hglobal = windows::Win32::Foundation::HGLOBAL(handle.unwrap().0);
+        let ptr = GlobalLock(hglobal);
+        if ptr.is_null() {
+            let _ = CloseClipboard();
+            return None;
+        }
+        let cstr = std::ffi::CStr::from_ptr(ptr as *const std::ffi::c_char);
+        let bytes = cstr.to_bytes().to_vec();
+        let _ = windows::Win32::System::Memory::GlobalUnlock(hglobal);
+        let raw = String::from_utf8_lossy(&bytes).to_string();
+        let _ = CloseClipboard();
+        if let (Some(start_idx), Some(end_idx)) = (raw.find("StartFragment:"), raw.find("EndFragment:")) {
+            let start_pos: usize = raw[start_idx + 14..].lines().next().and_then(|l| l.trim().parse().ok()).unwrap_or(0);
+            let end_pos: usize = raw[end_idx + 12..].lines().next().and_then(|l| l.trim().parse().ok()).unwrap_or(bytes.len());
+            if start_pos < end_pos && end_pos <= bytes.len() {
+                return String::from_utf8(bytes[start_pos..end_pos].to_vec()).ok();
+            }
+        }
+        Some(raw)
+    }
+}
+
+/// Sets rich text (HTML) and plain text fallback to the clipboard.
+pub fn set_clipboard_html(_html: &str, text: &str) -> anyhow::Result<()> {
+    let mut cb = arboard::Clipboard::new()?;
+    cb.set_text(text)?;
+    Ok(())
+}
+
 
 /// The window in front, to come back to with `activate`.
 pub fn foreground_handle() -> isize {

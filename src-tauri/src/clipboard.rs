@@ -31,6 +31,12 @@ pub struct Item {
     /// (e.g. a screenshot). The text is a display-only placeholder.
     #[serde(default)]
     pub image: bool,
+    /// Base64 data URL (data:image/png;base64,...) for previewing screenshots/images.
+    #[serde(default)]
+    pub image_data: Option<String>,
+    /// Rich text HTML format when available, preserving fonts, styles, and colors.
+    #[serde(default)]
+    pub html: Option<String>,
     /// The application it was copied in, when known.
     #[serde(default)]
     pub app: Option<String>,
@@ -43,6 +49,47 @@ fn now() -> u64 {
     std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|since| since.as_millis() as u64).unwrap_or(0)
 }
 
+fn rgba_to_png_data_url(width: u32, height: u32, rgba: &[u8]) -> Option<String> {
+    use image::{ImageBuffer, Rgba};
+    use std::io::Cursor;
+    use base64::Engine;
+
+    let img: ImageBuffer<Rgba<u8>, _> = ImageBuffer::from_raw(width, height, rgba.to_vec())?;
+    let max_dim = 960;
+    let preview = if width > max_dim || height > max_dim {
+        let (nw, nh) = if width > height {
+            (max_dim, (height * max_dim / width).max(1))
+        } else {
+            ((width * max_dim / height).max(1), max_dim)
+        };
+        image::imageops::resize(&img, nw, nh, image::imageops::FilterType::Triangle)
+    } else {
+        img
+    };
+    let mut buf = Cursor::new(Vec::new());
+    preview.write_to(&mut buf, image::ImageFormat::Png).ok()?;
+    let b64 = base64::engine::general_purpose::STANDARD.encode(buf.into_inner());
+    Some(format!("data:image/png;base64,{b64}"))
+}
+
+fn set_clipboard_image_from_data_url(data_url: &str) -> anyhow::Result<()> {
+    use base64::Engine;
+    let b64 = data_url.strip_prefix("data:image/png;base64,").unwrap_or(data_url);
+    let bytes = base64::engine::general_purpose::STANDARD.decode(b64)?;
+    let dynamic = image::load_from_memory(&bytes)?;
+    let rgba = dynamic.to_rgba8();
+    let (width, height) = (rgba.width() as usize, rgba.height() as usize);
+    let raw = rgba.into_raw();
+    let img_data = arboard::ImageData {
+        width,
+        height,
+        bytes: std::borrow::Cow::Owned(raw),
+    };
+    let mut cb = arboard::Clipboard::new()?;
+    cb.set_image(img_data)?;
+    Ok(())
+}
+
 /// Copied texts, newest first.
 #[derive(Default)]
 pub struct Store {
@@ -52,30 +99,39 @@ pub struct Store {
 
 impl Store {
     /// Puts a copied text on top; a text already known moves up instead.
-    pub fn add(&mut self, text: &str, app: Option<String>) -> bool {
-        self.add_item(text, false, app)
+    pub fn add(&mut self, text: &str, html: Option<String>, app: Option<String>) -> bool {
+        self.add_item(text, html, false, None, app)
     }
 
-    /// Puts an image placeholder on top.
-    pub fn add_image(&mut self, app: Option<String>) -> bool {
-        // Only one image placeholder at a time: if the newest item is already
-        // an image, just refresh it (same as add() does for repeated texts).
+    /// Puts an image placeholder on top with preview image data.
+    pub fn add_image(&mut self, data_url: Option<String>, width: usize, height: usize, app: Option<String>) -> bool {
+        let label = if width > 0 && height > 0 {
+            format!("[Ảnh {width}×{height}]")
+        } else {
+            "[Ảnh 📷]".to_string()
+        };
         if let Some(newest) = self.items.first_mut().filter(|item| item.image) {
+            newest.text = label;
+            if data_url.is_some() {
+                newest.image_data = data_url;
+            }
             newest.app = app;
             newest.at = now();
             return false;
         }
-        self.add_item("[Ảnh 📷]", true, app)
+        self.add_item(&label, None, true, data_url, app)
     }
 
-    fn add_item(&mut self, text: &str, image: bool, app: Option<String>) -> bool {
+    fn add_item(&mut self, text: &str, html: Option<String>, image: bool, image_data: Option<String>, app: Option<String>) -> bool {
         if !image && (text.trim().is_empty() || text.len() > MAX_BYTES) {
             return false;
         }
         if let Some(newest) = self.items.first_mut().filter(|item| item.text == text && item.image == image) {
-            // Copied once more: only where and when change.
             newest.app = app;
             newest.at = now();
+            if html.is_some() {
+                newest.html = html;
+            }
             return false;
         }
         let pinned = match self.items.iter().position(|item| item.text == text && item.image == image) {
@@ -83,8 +139,7 @@ impl Store {
             None => false,
         };
         self.next += 1;
-        self.items.insert(0, Item { id: self.next, text: text.to_string(), image, pinned, app, at: now() });
-        // The oldest texts that are not pinned make room.
+        self.items.insert(0, Item { id: self.next, text: text.to_string(), image, image_data, html, pinned, app, at: now() });
         let mut loose = 0;
         self.items.retain(|item| {
             item.pinned || {
@@ -161,6 +216,7 @@ pub fn create_window(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     tauri::WebviewWindowBuilder::new(app, LABEL, tauri::WebviewUrl::App("index.html".into()))
         .title("Swipelate Clipboard")
         .inner_size(WIDTH, HEIGHT)
+        .min_inner_size(520.0, 340.0)
         .visible(false)
         .decorations(false)
         .transparent(true)
@@ -173,7 +229,7 @@ pub fn create_window(app: &AppHandle) -> tauri::Result<WebviewWindow> {
                 .radius(14.0)
                 .build(),
         )
-        .resizable(false)
+        .resizable(true)
         .always_on_top(true)
         .skip_taskbar(true)
         .build()
@@ -223,9 +279,16 @@ fn watch(app: AppHandle) {
         }
         // Try text first; fall back to an image placeholder when the clipboard holds a picture.
         let added = if let Some(text) = arboard::Clipboard::new().and_then(|mut cb| cb.get_text()).ok() {
-            STORE.lock().add(&text, source)
+            let html = platform::clipboard_html();
+            STORE.lock().add(&text, html, source)
         } else if platform::clipboard_has_image() {
-            STORE.lock().add_image(source)
+            let (data_url, w, h) = if let Ok(img) = arboard::Clipboard::new().and_then(|mut cb| cb.get_image()) {
+                let url = rgba_to_png_data_url(img.width as u32, img.height as u32, &img.bytes);
+                (url, img.width, img.height)
+            } else {
+                (None, 0, 0)
+            };
+            STORE.lock().add_image(data_url, w, h, source)
         } else {
             false
         };
@@ -282,8 +345,10 @@ pub fn clipboard_paste(app: AppHandle, id: u64) -> Result<(), String> {
     let item = STORE.lock().items.iter().find(|i| i.id == id).cloned().ok_or("Mục này không còn trong danh sách")?;
     let target = TARGET.load(Ordering::SeqCst);
     if item.image {
-        // The image is still on the clipboard from when it was captured.
-        // Just close the board and send Cmd/Ctrl+V — do not overwrite the clipboard.
+        // If we have saved image data, restore it to clipboard in case clipboard was overwritten
+        if let Some(ref data_url) = item.image_data {
+            let _ = own(|| set_clipboard_image_from_data_url(data_url).map_err(|e| arboard::Error::Unknown { description: e.to_string() }));
+        }
         std::thread::spawn(move || {
             platform::activate(target);
             hide(&app);
@@ -295,8 +360,13 @@ pub fn clipboard_paste(app: AppHandle, id: u64) -> Result<(), String> {
             platform::send_paste();
         });
     } else {
-        // As a copy of our own, so the list keeps its order.
-        own(|| arboard::Clipboard::new().and_then(|mut clipboard| clipboard.set_text(item.text))).map_err(|error| error.to_string())?;
+        // If rich text HTML was copied, restore HTML format so target apps receive font & style
+        if let Some(ref html) = item.html {
+            let _ = own(|| platform::set_clipboard_html(html, &item.text));
+        } else {
+            // As a copy of our own, so the list keeps its order.
+            own(|| arboard::Clipboard::new().and_then(|mut clipboard| clipboard.set_text(item.text))).map_err(|error| error.to_string())?;
+        }
         std::thread::spawn(move || {
             // In this order: once the board is gone, the system picks the next window by itself.
             platform::activate(target);
@@ -358,28 +428,28 @@ mod tests {
     #[test]
     fn a_known_text_moves_to_the_top() {
         let mut store = Store::default();
-        assert!(store.add("one", None));
-        assert!(store.add("two", None));
-        assert!(!store.add("two", None));
-        assert!(store.add("one", None));
+        assert!(store.add("one", None, None));
+        assert!(store.add("two", None, None));
+        assert!(!store.add("two", None, None));
+        assert!(store.add("one", None, None));
         assert_eq!(texts(&store), ["one", "two"]);
-        assert!(!store.add("  \n", None));
-        assert!(!store.add(&"x".repeat(MAX_BYTES + 1), None));
+        assert!(!store.add("  \n", None, None));
+        assert!(!store.add(&"x".repeat(MAX_BYTES + 1), None, None));
     }
 
     #[test]
     fn pinned_texts_outlive_the_limit_and_a_clear() {
         let mut store = Store::default();
-        store.add("keep", None);
+        store.add("keep", None, None);
         let id = store.items[0].id;
         store.pin(id, true);
         for number in 0..LIMIT + 5 {
-            store.add(&number.to_string(), None);
+            store.add(&number.to_string(), None, None);
         }
         assert_eq!(store.items.len(), LIMIT + 1);
         assert!(texts(&store).contains(&"keep"));
         // Copied again, it stays pinned.
-        store.add("keep", None);
+        store.add("keep", None, None);
         assert!(store.items[0].pinned);
         store.clear();
         assert_eq!(texts(&store), ["keep"]);
