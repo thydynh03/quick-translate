@@ -134,7 +134,8 @@
       if (dated) svg("text", { x: cx, y: H - m.bottom + 33, "text-anchor": "middle", "font-size": 11 }, root).textContent = d.date;
 
       hits.push({ cx, band, html: null, total });
-      const html = `<b>${esc(d.tag)}</b> · ${esc(d.date)}<div class="row"><i class="sw s1"></i>Windows <b>${fmt(d.win)}</b></div><div class="row"><i class="sw s2"></i>macOS <b>${fmt(d.mac)}</b></div><div>Tổng <b>${fmt(total)}</b></div>`;
+      const isEn = window.SwipelateI18n?.getActiveLang?.() === "en";
+      const html = `<b>${esc(d.tag)}</b> · ${esc(d.date)}<div class="row"><i class="sw s1"></i>Windows <b>${fmt(d.win)}</b></div><div class="row"><i class="sw s2"></i>macOS <b>${fmt(d.mac)}</b></div><div>${isEn ? "Total" : "Tổng"} <b>${fmt(total)}</b></div>`;
       hits[hits.length - 1].html = html;
     });
     // Hit areas go last so labels drawn for later columns never sit on top of them.
@@ -208,7 +209,8 @@
     container.replaceChildren();
     const total = rows.reduce((sum, r) => sum + r.n, 0);
     if (!rows.length) {
-      container.textContent = "Chưa có dữ liệu.";
+      const isEn = window.SwipelateI18n?.getActiveLang?.() === "en";
+      container.textContent = isEn ? "No data yet." : "Chưa có dữ liệu.";
       return;
     }
     for (const r of rows) {
@@ -325,14 +327,15 @@
     const drawUsers = () => lineChart($("users-chart"), days, series);
     drawUsers();
     redraws.users = drawUsers;
+    const isEn = window.SwipelateI18n?.getActiveLang?.() === "en";
     table(
       $("users-table"),
-      [["Ngày"], ["App", 1], ["Web", 1]],
-      [...days].reverse().map((d) => [dateVi(d), fmt(by[d].app), fmt(by[d].web)]),
+      [[isEn ? "Date" : "Ngày"], ["App", 1], ["Web", 1]],
+      [...days].reverse().map((d) => [isEn ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : dateVi(d), fmt(by[d].app), fmt(by[d].web)]),
     );
-    barList($("versions"), data.versions, (r) => (r.version ? `v${r.version}` : "Không rõ"));
+    barList($("versions"), data.versions, (r) => (r.version ? `v${r.version}` : (isEn ? "Unknown" : "Không rõ")));
     const OS = { windows: "Windows", macos: "macOS", linux: "Linux" };
-    barList($("systems"), data.systems, (r) => OS[r.os] || r.os || "Không rõ");
+    barList($("systems"), data.systems, (r) => OS[r.os] || r.os || (isEn ? "Unknown" : "Không rõ"));
   }
 
   // -------------------------------------------------------------- run

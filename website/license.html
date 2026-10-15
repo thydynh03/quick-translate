@@ -64,9 +64,9 @@
       }
     })();
   </script>
-  <script src="assets/theme-i18n.js?v=0.1.27" defer></script>
+  <script src="assets/theme-i18n.js?v=0.1.31" defer></script>
 </head>
-<body>
+<body data-page="license">
   <a class="skip" href="#main" data-i18n="nav-skip">Bỏ qua điều hướng</a>
   <header class="top">
     <a class="brand" href="./" aria-label="Swipelate, trang chủ">
@@ -93,19 +93,19 @@
 
   <div class="doc single">
     <main id="main" class="prose">
-      <h1>Giấy phép và bản quyền</h1>
-      <p>Swipelate là phần mềm mã nguồn mở. Bản quyền © 2026 thuộc về thydynh03. Phần mềm được phát hành theo giấy phép MIT.</p>
+      <h1 data-i18n="lic-title">Giấy phép và bản quyền</h1>
+      <p data-i18n="lic-intro">Swipelate là phần mềm mã nguồn mở. Bản quyền © 2026 thuộc về thydynh03. Phần mềm được phát hành theo giấy phép MIT.</p>
 
-      <h2 id="tom-tat">Tóm tắt</h2>
+      <h2 id="tom-tat" data-i18n="lic-sum-title">Tóm tắt</h2>
       <ul>
-        <li>Bạn được dùng phần mềm miễn phí, cho cả mục đích cá nhân và thương mại.</li>
-        <li>Bạn được sao chép, sửa đổi, phân phối lại và tích hợp vào sản phẩm khác.</li>
-        <li>Khi phân phối lại, bạn phải giữ nguyên thông báo bản quyền và toàn văn giấy phép.</li>
-        <li>Phần mềm được cung cấp nguyên trạng. Tác giả không bảo hành và không chịu trách nhiệm về thiệt hại phát sinh từ việc sử dụng.</li>
+        <li data-i18n="lic-sum-1">Bạn được dùng phần mềm miễn phí, cho cả mục đích cá nhân và thương mại.</li>
+        <li data-i18n="lic-sum-2">Bạn được sao chép, sửa đổi, phân phối lại và tích hợp vào sản phẩm khác.</li>
+        <li data-i18n="lic-sum-3">Khi phân phối lại, bạn phải giữ nguyên thông báo bản quyền và toàn văn giấy phép.</li>
+        <li data-i18n="lic-sum-4">Phần mềm được cung cấp nguyên trạng. Tác giả không bảo hành và không chịu trách nhiệm về thiệt hại phát sinh từ việc sử dụng.</li>
       </ul>
-      <p>Phần tóm tắt chỉ để dễ đọc. Văn bản có giá trị pháp lý là bản tiếng Anh dưới đây.</p>
+      <p data-i18n="lic-sum-note">Phần tóm tắt chỉ để dễ đọc. Văn bản có giá trị pháp lý là bản tiếng Anh dưới đây.</p>
 
-      <h2 id="mit">Toàn văn giấy phép MIT</h2>
+      <h2 id="mit" data-i18n="lic-mit-title">Toàn văn giấy phép MIT</h2>
       <pre lang="en">MIT License
 
 Copyright (c) 2026 thydynh03
@@ -116,27 +116,27 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</pre>
 
-      <h2 id="ben-thu-ba">Thành phần của bên thứ ba</h2>
+      <h2 id="ben-thu-ba" data-i18n="lic-3rd-title">Thành phần của bên thứ ba</h2>
       <table>
-        <thead><tr><th>Thành phần</th><th>Vai trò</th><th>Giấy phép</th></tr></thead>
+        <thead><tr><th data-i18n="lic-th-comp">Thành phần</th><th data-i18n="lic-th-role">Vai trò</th><th data-i18n="lic-th-lic">Giấy phép</th></tr></thead>
         <tbody>
-          <tr><td>Danh sách từ Anh–Việt từ en.wiktionary.org, trích bởi Matthias Buchmeier (bản 2015-01-02)</td><td>Tra từ đơn khi offline, đóng gói trong ứng dụng, giữ nguyên không chỉnh sửa</td><td>CC BY-SA 3.0, GFDL</td></tr>
-          <tr><td>Từ điển Anh–Việt rút gọn từ Wiktionary tiếng Việt (vi.wiktionary.org), qua bản trích của kaikki.org</td><td>Tra từ đơn tiếng Anh khi offline (hơn 107.000 từ), đóng gói trong ứng dụng, đã rút gọn so với bản gốc</td><td>CC BY-SA 4.0, GFDL</td></tr>
-          <tr><td>Opus-MT của Helsinki-NLP, bản ONNX do Xenova chuyển đổi</td><td>Model dịch offline, tải về khi người dùng yêu cầu</td><td>CC BY 4.0 (model), Apache 2.0 (mã chuyển đổi)</td></tr>
-          <tr><td>VietOCR của Phạm Quốc, bản ONNX do vemines chuyển đổi</td><td>Đọc chữ tiếng Việt khi quét vùng màn hình, tải về khi người dùng yêu cầu</td><td>Apache 2.0 (VietOCR), MIT (bản ONNX)</td></tr>
-          <tr><td>Tauri, React</td><td>Khung ứng dụng và giao diện</td><td>MIT hoặc Apache 2.0</td></tr>
-          <tr><td>ONNX Runtime, crate <code>ort</code>, <code>tokenizers</code></td><td>Chạy model trên máy</td><td>MIT, Apache 2.0</td></tr>
-          <tr><td>Be Vietnam Pro</td><td>Phông chữ của trang web này</td><td>SIL Open Font License 1.1</td></tr>
+          <tr><td data-i18n="lic-r1-comp">Danh sách từ Anh–Việt từ en.wiktionary.org, trích bởi Matthias Buchmeier (bản 2015-01-02)</td><td data-i18n="lic-r1-role">Tra từ đơn khi offline, đóng gói trong ứng dụng, giữ nguyên không chỉnh sửa</td><td data-i18n="lic-r1-lic">CC BY-SA 3.0, GFDL</td></tr>
+          <tr><td data-i18n="lic-r2-comp">Từ điển Anh–Việt rút gọn từ Wiktionary tiếng Việt (vi.wiktionary.org), qua bản trích của kaikki.org</td><td data-i18n="lic-r2-role">Tra từ đơn tiếng Anh khi offline (hơn 107.000 từ), đóng gói trong ứng dụng, đã rút gọn so với bản gốc</td><td data-i18n="lic-r2-lic">CC BY-SA 4.0, GFDL</td></tr>
+          <tr><td data-i18n="lic-r3-comp">Opus-MT của Helsinki-NLP, bản ONNX do Xenova chuyển đổi</td><td data-i18n="lic-r3-role">Model dịch offline, tải về khi người dùng yêu cầu</td><td data-i18n="lic-r3-lic">CC BY 4.0 (model), Apache 2.0 (mã chuyển đổi)</td></tr>
+          <tr><td data-i18n="lic-r4-comp">VietOCR của Phạm Quốc, bản ONNX do vemines chuyển đổi</td><td data-i18n="lic-r4-role">Đọc chữ tiếng Việt khi quét vùng màn hình, tải về khi người dùng yêu cầu</td><td data-i18n="lic-r4-lic">Apache 2.0 (VietOCR), MIT (bản ONNX)</td></tr>
+          <tr><td data-i18n="lic-r5-comp">Tauri, React</td><td data-i18n="lic-r5-role">Khung ứng dụng và giao diện</td><td data-i18n="lic-r5-lic">MIT hoặc Apache 2.0</td></tr>
+          <tr><td data-i18n="lic-r6-comp">ONNX Runtime, crate <code>ort</code>, <code>tokenizers</code></td><td data-i18n="lic-r6-role">Chạy model trên máy</td><td data-i18n="lic-r6-lic">MIT, Apache 2.0</td></tr>
+          <tr><td data-i18n="lic-r7-comp">Be Vietnam Pro</td><td data-i18n="lic-r7-role">Phông chữ của trang web này</td><td data-i18n="lic-r7-lic">SIL Open Font License 1.1</td></tr>
         </tbody>
       </table>
-      <p>Danh sách đầy đủ các thư viện nằm trong <code>Cargo.lock</code> và <code>pnpm-lock.yaml</code> của <a href="https://github.com/thydynh03/swipelate">kho mã nguồn</a>.</p>
+      <p data-i18n="lic-3rd-note">Danh sách đầy đủ các thư viện nằm trong <code>Cargo.lock</code> và <code>pnpm-lock.yaml</code> của <a href="https://github.com/thydynh03/swipelate">kho mã nguồn</a>.</p>
 
-      <h2 id="dich-vu">Dịch vụ bên ngoài và thương hiệu</h2>
-      <p>Swipelate gọi tới Google Translate, Free Dictionary API và, nếu bạn nhập key, tới Anthropic, DeepL hoặc Oxford Dictionaries. Việc sử dụng các dịch vụ đó tuân theo điều khoản của từng nhà cung cấp. Giấy phép MIT của Swipelate không cấp quyền gì đối với các dịch vụ này.</p>
-      <p>Google Translate, Cambridge Dictionary, Oxford Learner’s Dictionaries, DeepL, Claude, Windows và macOS là thương hiệu của chủ sở hữu tương ứng. Swipelate là dự án độc lập, không liên kết và không được các bên đó bảo trợ.</p>
+      <h2 id="dich-vu" data-i18n="lic-ext-title">Dịch vụ bên ngoài và thương hiệu</h2>
+      <p data-i18n="lic-ext-p1">Swipelate gọi tới Google Translate, Free Dictionary API và, nếu bạn nhập key, tới Anthropic, DeepL hoặc Oxford Dictionaries. Việc sử dụng các dịch vụ đó tuân theo điều khoản của từng nhà cung cấp. Giấy phép MIT của Swipelate không cấp quyền gì đối với các dịch vụ này.</p>
+      <p data-i18n="lic-ext-p2">Google Translate, Cambridge Dictionary, Oxford Learner’s Dictionaries, DeepL, Claude, Windows và macOS là thương hiệu của chủ sở hữu tương ứng. Swipelate là dự án độc lập, không liên kết và không được các bên đó bảo trợ.</p>
 
-      <h2 id="lien-he">Liên hệ</h2>
-      <p>Câu hỏi về bản quyền hoặc giấy phép: mở một mục tại <a href="https://github.com/thydynh03/swipelate/issues">GitHub Issues</a>.</p>
+      <h2 id="lien-he" data-i18n="lic-contact-title">Liên hệ</h2>
+      <p data-i18n="lic-contact-p">Câu hỏi về bản quyền hoặc giấy phép: mở một mục tại <a href="https://github.com/thydynh03/swipelate/issues">GitHub Issues</a>.</p>
     </main>
   </div>
 
@@ -154,4 +154,3 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
   <script src="assets/stats-config.js?v=0.1.27" defer></script>
 </body>
 </html>
-

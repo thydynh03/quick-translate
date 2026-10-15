@@ -5,6 +5,7 @@
   const NEW_PER_DAY = 20;
   const DAY = 86400000;
   const $ = (id) => document.getElementById(id);
+  const isEn = () => window.SwipelateI18n?.getActiveLang?.() === "en";
 
   // ------------------------------------------------------------ storage
   const blank = () => ({ cards: {}, removed: [], days: [], reverse: false, fresh: { day: "", count: 0 } });
@@ -16,7 +17,7 @@
     try {
       localStorage.setItem(KEY, JSON.stringify(db));
     } catch {
-      toast("Không lưu được tiến độ (trình duyệt chặn bộ nhớ).");
+      toast(isEn() ? "Cannot save progress (storage blocked)." : "Không lưu được tiến độ (trình duyệt chặn bộ nhớ).");
     }
   };
   const keyOf = (c) => `${c.to}|${c.front.trim().toLowerCase()}`;
@@ -66,7 +67,6 @@
     return { reps: reps + 1, ivl, ease, due: now + ivl * DAY };
   }
 
-  const isEn = () => window.SwipelateI18n?.getActiveLang?.() === "en";
   const label = (srs) => {
     if (isEn()) {
       return srs.ivl === 0 ? "<1 min" : srs.ivl < 30 ? `${Math.round(srs.ivl)}d` : `${Math.round(srs.ivl / 30)}mo`;
@@ -127,13 +127,13 @@
       const front = document.createElement("p");
       front.textContent = card.front;
       const back = document.createElement("small");
-      back.textContent = card.back + (card.srs ? ` · ôn lại sau ${label(card.srs)}` : " · chưa học");
+      back.textContent = card.back + (card.srs ? (isEn() ? ` · review in ${label(card.srs)}` : ` · ôn lại sau ${label(card.srs)}`) : (isEn() ? " · not studied" : " · chưa học"));
       text.append(front, back);
       const del = document.createElement("button");
       del.textContent = "×";
-      del.setAttribute("aria-label", `Xoá ${card.front}`);
+      del.setAttribute("aria-label", isEn() ? `Delete ${card.front}` : `Xoá ${card.front}`);
       del.onclick = () => {
-        if (!confirm(`Xoá thẻ "${card.front}"?`)) return;
+        if (!confirm(isEn() ? `Delete card "${card.front}"?` : `Xoá thẻ "${card.front}"?`)) return;
         delete db.cards[keyOf(card)];
         db.removed = [...db.removed.slice(-2000), keyOf(card)];
         save();
@@ -155,7 +155,7 @@
       .sort((a, b) => a.added - b.added)
       .slice(0, newLeft());
     queue = [...due, ...fresh];
-    if (!queue.length) return finish("Hôm nay đã ôn hết. Quay lại vào ngày mai nhé!");
+    if (!queue.length) return finish(isEn() ? "All caught up for today. See you tomorrow!" : "Hôm nay đã ôn hết. Quay lại vào ngày mai nhé!");
     show("study");
     nextCard();
   }
@@ -176,14 +176,14 @@
 
   function nextCard() {
     current = queue.shift();
-    if (!current) return finish("Xong lượt học. Giỏi lắm!");
+    if (!current) return finish(isEn() ? "Study session finished. Great job!" : "Xong lượt học. Giỏi lắm!");
     const [front, back] = sides(current);
     $("face-front").replaceChildren(front);
     $("face-back").replaceChildren(back);
     $("face-back").hidden = true;
     $("grades").hidden = true;
     $("hint").hidden = false;
-    $("study-left").textContent = `Còn ${queue.length + 1} thẻ`;
+    $("study-left").textContent = isEn() ? `${queue.length + 1} cards left` : `Còn ${queue.length + 1} thẻ`;
     for (let g = 0; g < 4; g++) $(`g${g}`).textContent = label(next(current.srs, g));
   }
 
@@ -224,7 +224,7 @@
 
   function startQuiz() {
     const cards = all();
-    if (cards.length < 2) return toast("Cần ít nhất 2 thẻ để làm trắc nghiệm.");
+    if (cards.length < 2) return toast(isEn() ? "Need at least 2 cards for quiz mode." : "Cần ít nhất 2 thẻ để làm trắc nghiệm.");
     quizCards = cards.sort(() => Math.random() - 0.5).slice(0, 10);
     score = { right: 0, total: 0 };
     show("quiz");
@@ -233,7 +233,7 @@
 
   function askNext() {
     const card = quizCards.shift();
-    if (!card) return finish(`Đúng ${score.right}/${score.total} câu.`);
+    if (!card) return finish(isEn() ? `${score.right}/${score.total} correct.` : `Đúng ${score.right}/${score.total} câu.`);
     current = card;
     const [q, a] = db.reverse ? ["back", "front"] : ["front", "back"];
     $("quiz-q").textContent = card[q];
@@ -298,9 +298,9 @@
       db = next;
       save();
       home();
-      toast(`Đã nhập ${Object.keys(db.cards).length - before} thẻ mới.`);
+      toast(isEn() ? `Imported ${Object.keys(db.cards).length - before} new cards.` : `Đã nhập ${Object.keys(db.cards).length - before} thẻ mới.`);
     } catch {
-      toast("Tệp không đúng định dạng.");
+      toast(isEn() ? "File format is invalid." : "Tệp không đúng định dạng.");
     }
   }
 
@@ -340,10 +340,12 @@
     try {
       const added = merge(await unpack(match[1]));
       home();
-      toast(added ? `Đã thêm ${added} thẻ mới.` : "Bộ thẻ đã có sẵn, không có thẻ mới.");
+      toast(added
+        ? (isEn() ? `Added ${added} new cards.` : `Đã thêm ${added} thẻ mới.`)
+        : (isEn() ? "Cards already present, no new cards added." : "Bộ thẻ đã có sẵn, không có thẻ mới."));
     } catch {
       home();
-      toast("Liên kết bộ thẻ bị hỏng. Quét lại mã QR trên máy tính.");
+      toast(isEn() ? "Card link is corrupted. Scan the QR code again on desktop." : "Liên kết bộ thẻ bị hỏng. Quét lại mã QR trên máy tính.");
     }
   }
   window.addEventListener("swipelate-lang-changed", () => home());
