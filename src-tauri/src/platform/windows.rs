@@ -733,6 +733,27 @@ pub fn clipboard_concealed() -> bool {
     }
 }
 
+/// Whether the clipboard holds an image (bitmap, DIB, or PNG) rather than
+/// text. The board saves a placeholder so the image can be pasted back.
+pub fn clipboard_has_image() -> bool {
+    use windows::Win32::System::DataExchange::IsClipboardFormatAvailable;
+    use windows::Win32::System::Ole::{CF_BITMAP, CF_DIB, CF_DIBV5};
+    // Also check PNG format registered by many apps (e.g. Snipping Tool).
+    use windows::core::w;
+    use windows::Win32::System::DataExchange::RegisterClipboardFormatW;
+    unsafe {
+        if IsClipboardFormatAvailable(CF_BITMAP.0 as u32).is_ok()
+            || IsClipboardFormatAvailable(CF_DIB.0 as u32).is_ok()
+            || IsClipboardFormatAvailable(CF_DIBV5.0 as u32).is_ok()
+        {
+            return true;
+        }
+        let png = RegisterClipboardFormatW(w!("PNG"));
+        png != 0 && IsClipboardFormatAvailable(png).is_ok()
+    }
+}
+
+
 /// The window in front, to come back to with `activate`.
 pub fn foreground_handle() -> isize {
     unsafe { GetForegroundWindow().0 as isize }

@@ -724,6 +724,26 @@ pub fn clipboard_concealed() -> bool {
     })
 }
 
+/// Whether the clipboard holds an image (e.g. a screenshot taken with
+/// Cmd+Shift+4) rather than text. The board saves a placeholder so the
+/// image can be pasted back from the list.
+pub fn clipboard_has_image() -> bool {
+    autoreleasepool(|_| unsafe {
+        let board: *mut AnyObject = msg_send![class!(NSPasteboard), generalPasteboard];
+        if board.is_null() {
+            return false;
+        }
+        let types: *mut AnyObject = msg_send![board, types];
+        if types.is_null() {
+            return false;
+        }
+        let image_type = CFString::new("public.image");
+        let found: bool = msg_send![types, containsObject: image_type.as_concrete_TypeRef() as *mut AnyObject];
+        found
+    })
+}
+
+
 /// The application in front (its process id), to come back to with `activate`.
 pub fn foreground_handle() -> isize {
     autoreleasepool(|_| unsafe {

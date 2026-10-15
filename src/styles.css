@@ -1066,17 +1066,199 @@ html[data-window="clipboard"] body {
   flex-direction: column;
   min-height: 0;
   padding: 14px 18px 10px;
+  overflow: hidden;
 }
 
 .board-full {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  line-height: 1.6;
   user-select: text;
   -webkit-user-select: text;
+}
+
+.board-full::-webkit-scrollbar {
+  width: 6px;
+}
+
+.board-full::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background: var(--fill);
+}
+
+/* ---- Kind badge colours ---- */
+.board-kind.kind-code {
+  background: color-mix(in srgb, #5b8def 22%, var(--fill));
+  color: #5b8def;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 9px;
+}
+.board-item.active .board-kind.kind-code {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+.board-kind.kind-url {
+  background: color-mix(in srgb, #34c759 22%, var(--fill));
+  color: #34c759;
+  font-size: 13px;
+}
+.board-item.active .board-kind.kind-url {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+.board-kind.kind-image {
+  background: color-mix(in srgb, #ff9f0a 22%, var(--fill));
+  color: #ff9f0a;
+  font-size: 13px;
+}
+.board-item.active .board-kind.kind-image {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+/* ---- URL preview ---- */
+.preview-url {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 10px;
+  background: color-mix(in srgb, #34c759 10%, var(--fill));
+  border: 1px solid color-mix(in srgb, #34c759 28%, var(--hairline));
+  margin: 4px 0;
+}
+.preview-url svg {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  color: #34c759;
+  margin-top: 1px;
+}
+.preview-url-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+  color: #34c759;
+  font-size: 13px;
+}
+
+/* ---- Image preview ---- */
+.preview-image {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 100%;
+  min-height: 120px;
+  border-radius: 10px;
+  background: color-mix(in srgb, #ff9f0a 10%, var(--fill));
+  border: 2px dashed color-mix(in srgb, #ff9f0a 40%, var(--hairline));
+}
+.preview-image svg {
+  width: 52px;
+  height: 52px;
+  color: #ff9f0a;
+  opacity: 0.75;
+}
+.preview-image-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+.preview-image-label strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.preview-image-label span {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+/* ---- Code preview ---- */
+.preview-code {
+  font: 12px/1.65 ui-monospace, "SF Mono", "Cascadia Code", Consolas, "Liberation Mono", monospace;
+  white-space: pre;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 8px 0;
+  counter-reset: line;
+}
+.preview-code-line {
+  display: flex;
+  min-height: 1.65em;
+}
+.preview-line-num {
+  flex: none;
+  width: 34px;
+  padding-right: 14px;
+  text-align: right;
+  color: var(--ink-3);
+  font-size: 11px;
+  user-select: none;
+  -webkit-user-select: none;
+  opacity: 0.55;
+}
+.preview-line-body {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Light theme syntax tokens */
+.tok-keyword { color: #9333ea; font-weight: 600; }
+.tok-string  { color: #c0392b; }
+.tok-comment { color: #6b7280; font-style: italic; }
+.tok-number  { color: #b45309; }
+.tok-operator{ color: #64748b; }
+.tok-tag     { color: #0369a1; }
+.tok-attr    { color: #0891b2; }
+.tok-plain   { color: var(--ink); }
+
+/* Dark theme syntax tokens */
+:root[data-theme="dark"] .tok-keyword { color: #c084fc; font-weight: 600; }
+:root[data-theme="dark"] .tok-string  { color: #f87171; }
+:root[data-theme="dark"] .tok-comment { color: #9ca3af; font-style: italic; }
+:root[data-theme="dark"] .tok-number  { color: #fb923c; }
+:root[data-theme="dark"] .tok-operator{ color: #94a3b8; }
+:root[data-theme="dark"] .tok-tag     { color: #38bdf8; }
+:root[data-theme="dark"] .tok-attr    { color: #22d3ee; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .tok-keyword { color: #c084fc; font-weight: 600; }
+  :root:not([data-theme="light"]) .tok-string  { color: #f87171; }
+  :root:not([data-theme="light"]) .tok-comment { color: #9ca3af; font-style: italic; }
+  :root:not([data-theme="light"]) .tok-number  { color: #fb923c; }
+  :root:not([data-theme="light"]) .tok-operator{ color: #94a3b8; }
+  :root:not([data-theme="light"]) .tok-tag     { color: #38bdf8; }
+  :root:not([data-theme="light"]) .tok-attr    { color: #22d3ee; }
+}
+
+/* ---- Plain text preview ---- */
+.preview-text {
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.preview-text-line {
+  margin: 0;
+  min-height: 1.65em;
+}
+
+/* ---- Inline elements ---- */
+.preview-inline-code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--fill);
+  font: 12px/1.5 ui-monospace, "SF Mono", Consolas, monospace;
+  color: #0369a1;
+}
+:root[data-theme="dark"] .preview-inline-code { color: #38bdf8; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .preview-inline-code { color: #38bdf8; }
 }
 
 .board-meta {

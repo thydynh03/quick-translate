@@ -27,6 +27,10 @@ pub struct Item {
     pub id: u64,
     pub text: String,
     pub pinned: bool,
+    /// True when this entry represents an image copied to the clipboard
+    /// (e.g. a screenshot). The text is a display-only placeholder.
+    #[serde(default)]
+    pub image: bool,
     /// The application it was copied in, when known.
     #[serde(default)]
     pub app: Option<String>,
@@ -49,21 +53,37 @@ pub struct Store {
 impl Store {
     /// Puts a copied text on top; a text already known moves up instead.
     pub fn add(&mut self, text: &str, app: Option<String>) -> bool {
-        if text.trim().is_empty() || text.len() > MAX_BYTES {
+        self.add_item(text, false, app)
+    }
+
+    /// Puts an image placeholder on top.
+    pub fn add_image(&mut self, app: Option<String>) -> bool {
+        // Only one image placeholder at a time: if the newest item is already
+        // an image, just refresh it (same as add() does for repeated texts).
+        if let Some(newest) = self.items.first_mut().filter(|item| item.image) {
+            newest.app = app;
+            newest.at = now();
             return false;
         }
-        if let Some(newest) = self.items.first_mut().filter(|item| item.text == text) {
+        self.add_item("[Ảnh 📷]", true, app)
+    }
+
+    fn add_item(&mut self, text: &str, image: bool, app: Option<String>) -> bool {
+        if !image && (text.trim().is_empty() || text.len() > MAX_BYTES) {
+            return false;
+        }
+        if let Some(newest) = self.items.first_mut().filter(|item| item.text == text && item.image == image) {
             // Copied once more: only where and when change.
             newest.app = app;
             newest.at = now();
             return false;
         }
-        let pinned = match self.items.iter().position(|item| item.text == text) {
+        let pinned = match self.items.iter().position(|item| item.text == text && item.image == image) {
             Some(index) => self.items.remove(index).pinned,
             None => false,
         };
         self.next += 1;
-        self.items.insert(0, Item { id: self.next, text: text.to_string(), pinned, app, at: now() });
+        self.items.insert(0, Item { id: self.next, text: text.to_string(), image, pinned, app, at: now() });
         // The oldest texts that are not pinned make room.
         let mut loose = 0;
         self.items.retain(|item| {
@@ -201,8 +221,15 @@ fn watch(app: AppHandle) {
         if excluded {
             continue;
         }
-        let Some(text) = arboard::Clipboard::new().and_then(|mut clipboard| clipboard.get_text()).ok() else { continue };
-        if STORE.lock().add(&text, source) {
+        // Try text first; fall back to an image placeholder when the clipboard holds a picture.
+        let added = if let Some(text) = arboard::Clipboard::new().and_then(|mut cb| cb.get_text()).ok() {
+            STORE.lock().add(&text, source)
+        } else if platform::clipboard_has_image() {
+            STORE.lock().add_image(source)
+        } else {
+            false
+        };
+        if added {
             changed(&app);
         }
     }
@@ -252,23 +279,38 @@ pub fn clipboard_list() -> Vec<Item> {
 /// Puts a text of the list back on the clipboard and pastes it where the user was.
 #[tauri::command]
 pub fn clipboard_paste(app: AppHandle, id: u64) -> Result<(), String> {
-    let text = STORE.lock().text(id).ok_or("Mục này không còn trong danh sách")?;
-    // As a copy of our own, so the list keeps its order.
-    own(|| arboard::Clipboard::new().and_then(|mut clipboard| clipboard.set_text(text))).map_err(|error| error.to_string())?;
+    let item = STORE.lock().items.iter().find(|i| i.id == id).cloned().ok_or("Mục này không còn trong danh sách")?;
     let target = TARGET.load(Ordering::SeqCst);
-    std::thread::spawn(move || {
-        // In this order: once the board is gone, the system picks the next window by itself.
-        platform::activate(target);
-        hide(&app);
-        std::thread::sleep(Duration::from_millis(150));
-        // The system may refuse to bring the target back; pasting would then land elsewhere.
-        // The text stays on the clipboard for the user to paste.
-        if target != 0 && platform::foreground_handle() != target {
-            log("clipboard: target not in front, paste left to the user");
-            return;
-        }
-        platform::send_paste();
-    });
+    if item.image {
+        // The image is still on the clipboard from when it was captured.
+        // Just close the board and send Cmd/Ctrl+V — do not overwrite the clipboard.
+        std::thread::spawn(move || {
+            platform::activate(target);
+            hide(&app);
+            std::thread::sleep(Duration::from_millis(150));
+            if target != 0 && platform::foreground_handle() != target {
+                log("clipboard: target not in front, paste left to the user");
+                return;
+            }
+            platform::send_paste();
+        });
+    } else {
+        // As a copy of our own, so the list keeps its order.
+        own(|| arboard::Clipboard::new().and_then(|mut clipboard| clipboard.set_text(item.text))).map_err(|error| error.to_string())?;
+        std::thread::spawn(move || {
+            // In this order: once the board is gone, the system picks the next window by itself.
+            platform::activate(target);
+            hide(&app);
+            std::thread::sleep(Duration::from_millis(150));
+            // The system may refuse to bring the target back; pasting would then land elsewhere.
+            // The text stays on the clipboard for the user to paste.
+            if target != 0 && platform::foreground_handle() != target {
+                log("clipboard: target not in front, paste left to the user");
+                return;
+            }
+            platform::send_paste();
+        });
+    }
     Ok(())
 }
 

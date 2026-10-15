@@ -3,19 +3,258 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { AppLanguage, useT } from "./i18n";
 
-type Item = { id: number; text: string; pinned: boolean; app: string | null; at: number };
+type Item = {
+  id: number;
+  text: string;
+  pinned: boolean;
+  /** True when this entry is a screenshot / image copied to the clipboard. */
+  image?: boolean;
+  app: string | null;
+  at: number;
+};
 
 const MAC = navigator.userAgent.includes("Mac");
 /** How the command key is written on this system. */
 const MOD = MAC ? "⌘" : "Ctrl+";
 
-/** A letter for what the text looks like: a link, code or plain text. */
-function kind(text: string): string {
-  const trimmed = text.trim();
-  if (/^(https?:\/\/|www\.)\S+$/i.test(trimmed)) return "↗";
-  if (/[{};]\s*$|=>|^\s*(const|let|import|def|fn|function|class|#include|\$ )/m.test(trimmed)) return "<>";
+/** Detect what kind of content the text is. */
+type ContentKind = "image" | "url" | "code" | "text";
+
+function detectKind(item: Item): ContentKind {
+  if (item.image) return "image";
+  const trimmed = item.text.trim();
+  if (/^(https?:\/\/|www\.)\S+$/i.test(trimmed)) return "url";
+  if (looksLikeCode(trimmed)) return "code";
+  return "text";
+}
+
+function kindBadge(kind: ContentKind): string {
+  if (kind === "image") return "📷";
+  if (kind === "url") return "↗";
+  if (kind === "code") return "</>";
   return "Aa";
 }
+
+/** Heuristics to decide if the text looks like code. */
+function looksLikeCode(text: string): boolean {
+  const lines = text.split("\n");
+  // Multiple lines with consistent indentation
+  const indented = lines.filter((l) => /^[ \t]{2,}/.test(l)).length;
+  if (indented >= 2) return true;
+  // Common code patterns
+  if (
+    /[{};]\s*$|=>\s*\{|^\s*(const|let|var|import|export|from|def|fn|function|class|#include|#define|package|using|namespace|public|private|protected|void|int|str|bool)\s+/m.test(
+      text
+    )
+  )
+    return true;
+  // Shell commands
+  if (/^\s*\$\s+\w/.test(text)) return true;
+  // HTML/XML
+  if (/<\/?[a-z][\w-]*(\s[^>]*)?>/.test(text)) return true;
+  return false;
+}
+
+// ---------------------------------------------------------------- syntax highlight
+
+/** Very lightweight token-based syntax coloring — no external dependency.
+ *  Returns an array of {type, value} tokens. */
+type Token = { type: "keyword" | "string" | "comment" | "number" | "operator" | "plain" | "tag" | "attr"; value: string };
+
+const KEYWORDS = new Set([
+  "const","let","var","function","return","if","else","for","while","do","switch","case","break",
+  "continue","import","export","from","default","class","new","this","super","typeof","instanceof",
+  "void","null","undefined","true","false","async","await","try","catch","finally","throw",
+  "def","fn","pub","mut","let","use","mod","impl","struct","enum","trait","where","match",
+  "int","str","bool","float","double","char","string","None","Some","Ok","Err",
+  "package","import","public","private","protected","static","final","extends","implements",
+  "#include","#define","#ifdef","#endif","#pragma",
+  "and","or","not","in","is","lambda","pass","del","with","yield","global","nonlocal","assert",
+  "SELECT","FROM","WHERE","INSERT","UPDATE","DELETE","JOIN","ON","AS","CREATE","TABLE","INDEX",
+]);
+
+function tokenize(code: string): Token[] {
+  const tokens: Token[] = [];
+  let i = 0;
+  while (i < code.length) {
+    // Line comments // or #
+    if ((code[i] === "/" && code[i + 1] === "/") || code[i] === "#") {
+      const end = code.indexOf("\n", i);
+      const value = end === -1 ? code.slice(i) : code.slice(i, end);
+      tokens.push({ type: "comment", value });
+      i += value.length;
+      continue;
+    }
+    // Block comment /* ... */
+    if (code[i] === "/" && code[i + 1] === "*") {
+      const end = code.indexOf("*/", i + 2);
+      const value = end === -1 ? code.slice(i) : code.slice(i, end + 2);
+      tokens.push({ type: "comment", value });
+      i += value.length;
+      continue;
+    }
+    // String literals " or ' or `
+    if (code[i] === '"' || code[i] === "'" || code[i] === "`") {
+      const q = code[i];
+      let j = i + 1;
+      while (j < code.length && code[j] !== q) {
+        if (code[j] === "\\") j++;
+        j++;
+      }
+      tokens.push({ type: "string", value: code.slice(i, j + 1) });
+      i = j + 1;
+      continue;
+    }
+    // Numbers
+    if (/\d/.test(code[i]) || (code[i] === "-" && /\d/.test(code[i + 1] ?? ""))) {
+      let j = i + 1;
+      while (j < code.length && /[\d._xXa-fA-F]/.test(code[j])) j++;
+      tokens.push({ type: "number", value: code.slice(i, j) });
+      i = j;
+      continue;
+    }
+    // Identifiers / keywords
+    if (/[a-zA-Z_$]/.test(code[i])) {
+      let j = i + 1;
+      while (j < code.length && /[\w$]/.test(code[j])) j++;
+      const word = code.slice(i, j);
+      tokens.push({ type: KEYWORDS.has(word) ? "keyword" : "plain", value: word });
+      i = j;
+      continue;
+    }
+    // HTML tags  <tag or </tag
+    if (code[i] === "<" && /[a-zA-Z/!]/.test(code[i + 1] ?? "")) {
+      const end = code.indexOf(">", i);
+      const value = end === -1 ? code.slice(i) : code.slice(i, end + 1);
+      tokens.push({ type: "tag", value });
+      i += value.length;
+      continue;
+    }
+    // Operators and punctuation
+    if (/[+\-*/%=&|^~<>!?:;,()[\]{}.]/.test(code[i])) {
+      tokens.push({ type: "operator", value: code[i] });
+      i++;
+      continue;
+    }
+    tokens.push({ type: "plain", value: code[i] });
+    i++;
+  }
+  return tokens;
+}
+
+function CodePreview({ code }: { code: string }) {
+  const lines = code.split("\n");
+  return (
+    <div className="preview-code">
+      {lines.map((line, li) => {
+        const tokens = tokenize(line);
+        return (
+          <div key={li} className="preview-code-line">
+            <span className="preview-line-num">{li + 1}</span>
+            <span className="preview-line-body">
+              {tokens.map((tok, ti) => (
+                <span key={ti} className={`tok-${tok.type}`}>
+                  {tok.value}
+                </span>
+              ))}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function UrlPreview({ url }: { url: string }) {
+  return (
+    <div className="preview-url">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+        <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+      </svg>
+      <span className="preview-url-text">{url}</span>
+    </div>
+  );
+}
+
+function ImagePreview({ app }: { app: string | null }) {
+  return (
+    <div className="preview-image">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="3" ry="3" />
+        <circle cx="8.5" cy="8.5" r="1.5" />
+        <polyline points="21,15 16,10 5,21" />
+      </svg>
+      <div className="preview-image-label">
+        <strong>Ảnh trong clipboard</strong>
+        {app && <span>{app}</span>}
+      </div>
+    </div>
+  );
+}
+
+/** Renders rich inline text: detect **bold**, _italic_, `inline code` */
+function RichText({ text }: { text: string }) {
+  // Split by inline patterns
+  const parts: Array<{ type: "bold" | "italic" | "code" | "plain"; value: string }> = [];
+  const pattern = /\*\*(.+?)\*\*|__(.+?)__|_(.+?)_|\*(.+?)\*|`(.+?)`/g;
+  let last = 0;
+  let match;
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > last) parts.push({ type: "plain", value: text.slice(last, match.index) });
+    if (match[1] || match[2]) parts.push({ type: "bold", value: match[1] ?? match[2] });
+    else if (match[3] || match[4]) parts.push({ type: "italic", value: match[3] ?? match[4] });
+    else if (match[5]) parts.push({ type: "code", value: match[5] });
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) parts.push({ type: "plain", value: text.slice(last) });
+
+  return (
+    <>
+      {parts.map((p, i) => {
+        if (p.type === "bold") return <strong key={i}>{p.value}</strong>;
+        if (p.type === "italic") return <em key={i}>{p.value}</em>;
+        if (p.type === "code") return <code key={i} className="preview-inline-code">{p.value}</code>;
+        return <span key={i}>{p.value}</span>;
+      })}
+    </>
+  );
+}
+
+function TextPreview({ text }: { text: string }) {
+  const lines = text.split("\n");
+  return (
+    <div className="preview-text">
+      {lines.map((line, i) => (
+        <p key={i} className="preview-text-line">
+          {line ? <RichText text={line} /> : <br />}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+/** The right-hand preview pane that adapts its look to the item's content. */
+function RichPreview({ item, appLang, t }: { item: Item | undefined; appLang: AppLanguage; t: ReturnType<typeof useT> }) {
+  if (!item) return <div className="board-preview" />;
+  const kind = detectKind(item);
+  const content = (() => {
+    if (kind === "image") return <ImagePreview app={item.app} />;
+    if (kind === "url") return <UrlPreview url={item.text.trim()} />;
+    if (kind === "code") return <CodePreview code={item.text.slice(0, 8000)} />;
+    return <TextPreview text={item.text.slice(0, 4000)} />;
+  })();
+  return (
+    <div className={`board-preview preview-kind-${kind}`}>
+      <div className="board-full">{content}</div>
+      <div className="board-meta">
+        {[item.app, ago(item.at, appLang), !item.image ? t.clipboard_chars(item.text.length) : undefined].filter(Boolean).join(" · ")}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- timing
 
 function ago(at: number, lang: AppLanguage): string {
   if (!at) return "";
@@ -26,6 +265,8 @@ function ago(at: number, lang: AppLanguage): string {
   if (minutes < 60 * 24) return isEn ? `${Math.floor(minutes / 60)}h ago` : `${Math.floor(minutes / 60)} giờ trước`;
   return isEn ? `${Math.floor(minutes / 60 / 24)}d ago` : `${Math.floor(minutes / 60 / 24)} ngày trước`;
 }
+
+// ---------------------------------------------------------------- main component
 
 /** The texts copied lately, laid out like Spotlight: pick one to paste it where you were typing. */
 export default function Clipboard() {
@@ -85,7 +326,7 @@ export default function Clipboard() {
     setActive(position);
   };
   const paste = (item?: Item) => item && invoke("clipboard_paste", { id: item.id });
-  const translate = (item?: Item) => item && invoke("clipboard_translate", { id: item.id });
+  const translate = (item?: Item) => item && !item.image && invoke("clipboard_translate", { id: item.id });
   const pin = (item?: Item) => {
     if (!item) return;
     // It changes group: the selection follows it.
@@ -127,23 +368,26 @@ export default function Clipboard() {
     };
   }, []);
 
-  const row = (item: Item, position: number) => (
-    <div
-      key={item.id}
-      className={position === index ? "board-item active" : "board-item"}
-      onMouseMove={() => select(position)}
-      onClick={() => paste(item)}
-    >
-      <span className="board-kind">{kind(item.text)}</span>
-      <span className="board-line">{item.text.trim().slice(0, 200)}</span>
-      {position < 9 && (
-        <kbd>
-          {MOD}
-          {position + 1}
-        </kbd>
-      )}
-    </div>
-  );
+  const row = (item: Item, position: number) => {
+    const k = detectKind(item);
+    return (
+      <div
+        key={item.id}
+        className={position === index ? "board-item active" : "board-item"}
+        onMouseMove={() => select(position)}
+        onClick={() => paste(item)}
+      >
+        <span className={`board-kind kind-${k}`}>{kindBadge(k)}</span>
+        <span className="board-line">{item.text.trim().slice(0, 200)}</span>
+        {position < 9 && (
+          <kbd>
+            {MOD}
+            {position + 1}
+          </kbd>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="board">
@@ -175,12 +419,7 @@ export default function Clipboard() {
               {pinned.length > 0 && <div className="board-section">{t.clipboard_pinned}</div>}
               {pinned.map((item, position) => row(item, recent.length + position))}
             </div>
-            <div className="board-preview">
-              <div className="board-full">{current?.text.slice(0, 4000)}</div>
-              <div className="board-meta">
-                {[current?.app, ago(current?.at ?? 0, appLang), t.clipboard_chars(current?.text.length ?? 0)].filter(Boolean).join(" · ")}
-              </div>
-            </div>
+            <RichPreview item={current} appLang={appLang} t={t} />
           </>
         )}
       </div>
@@ -189,9 +428,11 @@ export default function Clipboard() {
         <button onClick={() => paste(current)}>
           {t.clipboard_paste}<kbd>↵</kbd>
         </button>
-        <button onClick={() => translate(current)}>
-          {t.clipboard_translate}<kbd>{MOD}T</kbd>
-        </button>
+        {!current?.image && (
+          <button onClick={() => translate(current)}>
+            {t.clipboard_translate}<kbd>{MOD}T</kbd>
+          </button>
+        )}
         <button onClick={() => pin(current)}>
           {current?.pinned ? t.clipboard_unpin : t.clipboard_pin}
           <kbd>{MOD}P</kbd>
